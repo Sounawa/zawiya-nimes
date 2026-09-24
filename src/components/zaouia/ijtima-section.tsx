@@ -316,6 +316,7 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
 /* ═══════════════ Section Al-Ijtimâ' groupée par semaine ═══════════════ */
 
 import { useMeetings } from '@/lib/api'
+import { MiniCalendrier } from './mini-calendrier'
 
 export function IjtimaSection() {
   const { data: meetings, isLoading } = useMeetings()
@@ -362,6 +363,8 @@ export function IjtimaSection() {
   return (
     <SectionShell titre="Al-Ijtimâ'" compteur={`${meetings?.length ?? 0} réunion${(meetings?.length ?? 0) > 1 ? 's' : ''}`} id="ijtima">
       <div className="space-y-5">
+        {/* Vue du mois — jours de réunion d'un coup d'œil */}
+        {meetings && meetings.length > 0 && <MiniCalendrier />}
         {semaines.map((s) => (
           <div key={s.label}>
             <div className="mb-2 flex items-center justify-between">

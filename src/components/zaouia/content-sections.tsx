@@ -15,8 +15,13 @@ function CarteContenu({ item, index }: { item: ContentItem; index: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ y: -3 }}
-      className="group rounded-2xl border border-primary/12 bg-card p-4 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-lg"
+      className="group relative overflow-hidden rounded-2xl border border-primary/12 bg-card p-4 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-lg"
     >
+      {/* Liseré doré discret qui s'illumine au survol */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-gold/50 via-accent/40 to-transparent transition-transform duration-500 group-hover:scale-x-100"
+      />
       <div className="flex items-start gap-3">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-background text-xl ring-1 ring-primary/10 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/6">
           {item.icon || '✦'}
@@ -39,9 +44,15 @@ function CarteContenu({ item, index }: { item: ContentItem; index: number }) {
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-primary underline-offset-4 hover:underline"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full py-0.5 pr-2 text-xs font-semibold text-primary underline-offset-4 transition-colors hover:text-gold-vif hover:underline"
             >
-              ▶ Écouter
+              <span
+                aria-hidden
+                className="grid h-5 w-5 place-items-center rounded-full bg-primary/10 text-[8px] transition-all duration-300 group-hover:translate-x-0.5 group-hover:bg-primary group-hover:text-white"
+              >
+                ▶
+              </span>
+              Écouter
             </a>
           )}
         </div>

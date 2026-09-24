@@ -478,6 +478,9 @@ button, a, [role="button"] {
     position: absolute !important;
     inset: 0 auto auto 0;
     width: 100%;
+    /* Conserver les teintes (en-têtes verts, barres, liserés) à l'impression */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   /* Les tableaux de feuilles se coupent proprement entre les pages */
   #zone-impression table {

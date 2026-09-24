@@ -54,6 +54,7 @@ export type CibleImpression =
   | { kind: 'presence'; meetingId: string }
   | { kind: 'comptes' }
   | { kind: 'bilan' }
+  | { kind: 'presences' }
 
 interface PrintState {
   cible: CibleImpression | null

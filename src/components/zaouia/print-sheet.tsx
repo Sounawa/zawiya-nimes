@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useContributions, useMeetings } from '@/lib/api'
+import { useContributions, useMeetings, useMembers } from '@/lib/api'
 import { usePrint } from '@/lib/store'
 import { dateLongue, euros } from '@/lib/format'
 import { parseProgram } from '@/lib/types'
@@ -35,6 +35,8 @@ export function ZoneImpression() {
         <FeuillePresence meetingId={cible.meetingId} />
       ) : cible.kind === 'comptes' ? (
         <ComptesImprimables />
+      ) : cible.kind === 'presences' ? (
+        <StatsPresences />
       ) : (
         <BilanAnnuel />
       )}
@@ -526,6 +528,174 @@ function BilanAnnuel() {
               </li>
             ))}
           </ul>
+        </div>
+      </div>
+
+      <PiedFeuille />
+    </div>
+  )
+}
+
+/* ═══════════════ Assiduité des frères — statistiques par membre ═══════════════ */
+function StatsPresences() {
+  const { data: members } = useMembers()
+  const { data: meetings } = useMeetings()
+
+  if (!members || !meetings) {
+    return <p className="p-8 text-center text-sm text-[#78877d]">Statistiques indisponibles…</p>
+  }
+
+  const totalReunions = meetings.length
+
+  /* Par frère : ijtimâ' suivis, invités amenés, dernière présence */
+  const lignes = members
+    .map((m) => {
+      const mesPresences = meetings.flatMap((r) =>
+        r.attendances.filter((a) => a.memberId === m.id)
+      )
+      const ijtimas = mesPresences.length
+      const invites = mesPresences.reduce((s, a) => s + a.guests, 0)
+      const derniere = mesPresences.length
+        ? new Date(
+            Math.max(
+              ...meetings
+                .filter((r) => r.attendances.some((a) => a.memberId === m.id))
+                .map((r) => new Date(r.date).getTime())
+            )
+          )
+        : null
+      return { nom: m.name, ijtimas, invites, derniere }
+    })
+    .sort((a, b) => b.ijtimas - a.ijtimas || a.nom.localeCompare(b.nom))
+
+  const participants = lignes.filter((l) => l.ijtimas > 0)
+  const totalPresences = participants.reduce((s, l) => s + l.ijtimas, 0)
+  const totalInvites = participants.reduce((s, l) => s + l.invites, 0)
+  const assiduiteMoyenne = totalReunions
+    ? Math.round((totalPresences / (totalReunions * members.length)) * 100)
+    : 0
+
+  return (
+    <div className="mx-auto max-w-[175mm]">
+      {EnteteFeuille('Assiduité des frères')}
+
+      {/* Chiffres clés */}
+      <div className="mb-5 grid grid-cols-4 gap-2 text-center">
+        <div className="rounded border-2 border-[#0b5d42] p-2.5">
+          <p className="font-display text-xl font-bold tabular-nums text-[#0b5d42]">
+            {totalReunions}
+          </p>
+          <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#78877d]">
+            Ijtimâ&rsquo; au calendrier
+          </p>
+        </div>
+        <div className="rounded border-2 border-[#4a7c6b] p-2.5">
+          <p className="font-display text-xl font-bold tabular-nums text-[#4a7c6b]">
+            {participants.length}/{members.length}
+          </p>
+          <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#78877d]">
+            Frères participants
+          </p>
+        </div>
+        <div className="rounded border-2 border-[#b8923a] p-2.5">
+          <p className="font-display text-xl font-bold tabular-nums text-[#8a6d2f]">
+            {totalInvites}
+          </p>
+          <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#78877d]">
+            Invités amenés
+          </p>
+        </div>
+        <div className="rounded border-2 border-[#123c2d] bg-[#f4f8f4] p-2.5">
+          <p className="font-display text-xl font-bold tabular-nums text-[#123c2d]">
+            {assiduiteMoyenne} %
+          </p>
+          <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#78877d]">
+            Assiduité moyenne
+          </p>
+        </div>
+      </div>
+
+      {/* Tableau par frère */}
+      <table className="w-full border-collapse text-xs">
+        <thead>
+          <tr className="bg-[#f4f8f4] text-left text-[10px] uppercase tracking-widest text-[#0b5d42]">
+            <th className="w-8 border border-[#c9d6cc] px-2 py-1.5 text-center font-bold">#</th>
+            <th className="border border-[#c9d6cc] px-3 py-1.5 font-bold">Frère</th>
+            <th className="w-16 border border-[#c9d6cc] px-2 py-1.5 text-center font-bold">Ijtimâ&rsquo;</th>
+            <th className="w-16 border border-[#c9d6cc] px-2 py-1.5 text-center font-bold">Invités</th>
+            <th className="border border-[#c9d6cc] px-3 py-1.5 font-bold">Assiduité</th>
+            <th className="w-24 border border-[#c9d6cc] px-2 py-1.5 text-center font-bold">Dernière</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lignes.map((l, i) => {
+            const taux = totalReunions ? Math.round((l.ijtimas / totalReunions) * 100) : 0
+            return (
+              <tr key={l.nom}>
+                <td className="border border-[#dde5de] px-2 py-1.5 text-center text-[10px] text-[#78877d]">
+                  {i + 1}
+                </td>
+                <td className="border border-[#dde5de] px-3 py-1.5 font-medium">Sidi {l.nom}</td>
+                <td className="border border-[#dde5de] px-2 py-1.5 text-center font-semibold tabular-nums">
+                  {l.ijtimas || '—'}
+                </td>
+                <td className="border border-[#dde5de] px-2 py-1.5 text-center tabular-nums text-[#8a6d2f]">
+                  {l.invites || '—'}
+                </td>
+                <td className="border border-[#dde5de] px-3 py-1.5">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-[#e4ddcc]">
+                      <span
+                        className="block h-full rounded-full"
+                        style={{
+                          width: `${taux}%`,
+                          background:
+                            taux >= 66
+                              ? '#0b5d42'
+                              : taux >= 33
+                                ? '#4a7c6b'
+                                : '#b8923a',
+                        }}
+                      />
+                    </span>
+                    <span className="w-8 shrink-0 text-right font-semibold tabular-nums text-[#33453a]">
+                      {taux} %
+                    </span>
+                  </span>
+                </td>
+                <td className="border border-[#dde5de] px-2 py-1.5 text-center tabular-nums text-[#78877d]">
+                  {l.derniere ? l.derniere.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}
+                </td>
+              </tr>
+            )
+          })}
+          <tr className="bg-[#f4f8f4] font-bold">
+            <td colSpan={2} className="border border-[#c9d6cc] px-3 py-2 text-right uppercase tracking-wider">
+              Total — {totalReunions} réunion{totalReunions > 1 ? 's' : ''}
+            </td>
+            <td className="border border-[#c9d6cc] px-2 py-2 text-center tabular-nums text-[#0b5d42]">
+              {totalPresences}
+            </td>
+            <td className="border border-[#c9d6cc] px-2 py-2 text-center tabular-nums text-[#8a6d2f]">
+              {totalInvites}
+            </td>
+            <td className="border border-[#c9d6cc] px-2 py-2 text-center tabular-nums">
+              {assiduiteMoyenne} %
+            </td>
+            <td className="border border-[#c9d6cc]" />
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Note + signature */}
+      <p className="mt-3 text-[9px] italic leading-relaxed text-[#a09a87]">
+        L&rsquo;assiduité compte les inscriptions « Je viendrai » — elle reflète la réponse des frères,
+        pas leur présence effective du jour. La vérification se fait sur les feuilles de présence signées.
+      </p>
+      <div className="mt-6 flex justify-end">
+        <div className="w-56 text-center text-[10px] uppercase tracking-[0.2em] text-[#78877d]">
+          <p>Visé par le Shaykh</p>
+          <p className="mt-8 border-t border-[#b6b1a0] pt-1" />
         </div>
       </div>
 

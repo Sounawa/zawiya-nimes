@@ -23,6 +23,7 @@ import { ZoneImpression } from '@/components/zaouia/print-sheet'
 import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
 import { BandeauProchainIjtima } from '@/components/zaouia/bandeau-prochain-ijtima'
 import { BoutonHautDePage } from '@/components/zaouia/bouton-haut-de-page'
+import { BoutonInstallation } from '@/components/zaouia/bouton-installation'
 
 export default function Page() {
   const name = useUser((s) => s.name)
@@ -143,6 +144,9 @@ export default function Page() {
 
       {/* Retour en haut — apparaît après défilement */}
       <BoutonHautDePage />
+
+      {/* Invitation à installer l'application (PWA) — si proposée */}
+      <BoutonInstallation />
 
       {/* Voile d'entrée — transition douce après le splash */}
       <AnimatePresence>{!memberId && null}</AnimatePresence>

@@ -29,7 +29,14 @@ export const metadata: Metadata = {
   description:
     "L'application de la zawiya de Nîmes — ijtima', cotisations, ziyara et vie de la communauté.",
   applicationName: "Zawiya Nimes",
+  manifest: "/manifest.webmanifest",
   icons: { icon: "/logo.png", apple: "/logo.png" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Zawiya Nimes",
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {

@@ -194,6 +194,62 @@
     radial-gradient(circle at 100% 100%, transparent 14px, rgba(201, 162, 75, 0.06) 15px, transparent 16px);
   background-size: 32px 32px;
 }
+/* Khatim — étoile à huit branches, géométrie classique */
+.pattern-khatim {
+  background-image:
+    linear-gradient(45deg, rgba(11, 93, 66, 0.05) 25%, transparent 25%, transparent 75%, rgba(11, 93, 66, 0.05) 75%),
+    linear-gradient(-45deg, rgba(11, 93, 66, 0.05) 25%, transparent 25%, transparent 75%, rgba(11, 93, 66, 0.05) 75%);
+  background-size: 28px 28px;
+  background-position: 0 0, 14px 14px;
+}
+/* Bandeau décoratif horizontal — séparateur orné */
+.bandeau-orne {
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 6px, rgba(184, 146, 58, 0.16) 6px 7px, transparent 7px 13px);
+  height: 1px;
+}
+
+/* ─── Défilement interne fin (listes bornées) ─── */
+.defile-fin {
+  scrollbar-width: thin;
+  scrollbar-color: #d8d0bd transparent;
+}
+.defile-fin::-webkit-scrollbar {
+  width: 5px;
+}
+.defile-fin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.defile-fin::-webkit-scrollbar-thumb {
+  background: #ddd5c2;
+  border-radius: 6px;
+  border: none;
+}
+.defile-fin::-webkit-scrollbar-thumb:hover {
+  background: #c3b896;
+}
+
+/* ─── Navigation clavier — anneau doré visible ─── */
+:focus-visible {
+  outline: 2px solid rgba(184, 146, 58, 0.75);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ─── Mobile — pas de flash au toucher ─── */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ─── Respect des préférences de mouvement réduit ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 /* Halo doré animé pour le logo */
 @keyframes halo-pulse {

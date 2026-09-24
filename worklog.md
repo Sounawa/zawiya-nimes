@@ -84,3 +84,25 @@ Stage Summary:
 - Bugs résolus ce round : comptage votes apostrophes, débordement header mobile
 - Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplir dans Réglages
 - Recommandations prochain round : édition/suppression en douceur des meetings existants (dialogue modifier), export PDF des comptes pour le trésorier, mode sombre, recherche de membre, notifications push
+
+---
+Task ID: 5
+Agent: main (Z.ai Code) — revue continue
+Task: QA complète + 3 nouvelles fonctionnalités (édition réunions, export CSV, annuaire) + polish visuel détaillé
+
+Work Log:
+- QA initiale agent-browser : gate animé ✓ → entrée Abde (trésorier, badge visible) ✓ → 7 sections présentes ✓ → vote sondage bascule (2→3→annulé→re-vote "Je viens" 8/10) ✓ → ajout Ziyara 15 € → total 90→105 € recalcul auto ✓ → suppression UI → retour 90 € ✓ → réglages Lundi ON/OFF persisté en DB ✓ → 0 erreur console/lint au départ
+- NOUVELLE FONCTIONNALITÉ — modification des réunions : useUpdateMeeting (PATCH /api/meetings/:id) dans api.ts ; NewMeetingDialog accepte meeting?: Meeting (mode édition : titre "Modifier la réunion", pré-remplissage complet date/ville/adresse/titre/icone/horaires/annonce/mot/programme via parseProgram, sélecteur de modèle masqué, bouton "Enregistrer les modifications") ; MeetingCard : bouton crayon doré (h-11 w-11) à côté de la corbeille. Testé : titre "Sadaqa de l'Ijtimâ' — test QA" modifié et persisté en DB puis revert via PATCH ; programme du Latîf al-Kabîr (5 lignes) pré-rempli ✓
+- NOUVELLE FONCTIONNALITÉ — export CSV trésorier : exporterCSV() dans cotisation-section.tsx (BOM UTF-8, séparateur ; pour Excel FR, colonnes Date/Frère/Catégorie/Montant/Note/Enregistré par, totaux caisse+ziyara en fin, nom de fichier daté comptes-zawiya-nimes-YYYY-MM-DD.csv) ; bouton "Exporter les comptes (CSV)" doré réservé role==='TREASURER' + toast de confirmation. Testé : téléchargement 29 lignes, BOM présent, totaux 475/90 exacts
+- NOUVELLE FONCTIONNALITÉ — Annuaire de la communauté : annuaire-section.tsx (entre Sondages et Adhkâr) : carte résumé (frères / cotisants / % participation) sur fond pattern-khatim, recherche instantanée par prénom avec bouton effacer, cartes membres (avatar à initiale sur teinte HSL dérivée du prénom — hash stable, badge "moi" doré, stats caisse/ziyara/presences, badge Trésorier/Admin), liste bornée max-h-96. Testé : 18 frères / 17 cotisants / 94 %, recherche "mo" → Moaade, Mohamed, Monsef, Mostafa
+- STYLING DÉTAILLÉ (globals.css) : pattern-khatim (étoile 8 branches), bandeau-orne (séparateur doré pointillé du footer), defile-fin (scrollbar fine 5px pour toutes les listes internes : annuaire, historique cotisations, entrées ziyara, présentes réunion, membres réglages), :focus-visible anneau doré (accessibilité clavier), -webkit-tap-highlight-color + touch-action (polish mobile), prefers-reduced-motion (toutes animations neutralisées)
+- STYLING DÉTAILLÉ (composants) : Compteur en véritable décompte progressif (requestAnimationFrame + easeOutExpo 900 ms, ref pour reprendre depuis la valeur affichée — past setState-in-effect interdit par lint) ; footer enrichi (bandeau orné + ✦ doré) ; bouton export avec hover/shadow/active states
+- INCIDENT INFRA : le serveur dev s'est arrêté en cours de round (kill automatique des processus enfants entre invocations shell) → relance stable par double-fork (setsid bun run dev &) — le serveur survit désormais aux fins de session shell
+- Vérifications finales : 0 erreur console (hook console.error), scrollWidth=clientWidth (1280 desktop, 390 mobile iPhone — zéro débordement horizontal), lint 0 erreur, VLM confirme design "high quality, no overlapping/cut-off/misalignment" (desktop + mobile), FAB ne masque aucun contenu (pb-32, chevauche seulement le footer décoratif — pattern standard)
+
+Stage Summary:
+- État : application stable et enrichie — 7 sections (Annonces, Al-Ijtimâ' avec édition complète CRUD, Cotisations avec graphe 6 mois + export CSV, Ziyara trésorier-only, Sondages, Annuaire avec recherche, Adhkâr)
+- 3 nouvelles fonctionnalités livrées et testées bout-en-bout ce round : édition de réunions, export CSV comptes, annuaire communauté
+- Données DB inchangées (test revert : titre réunion restauré, total ziyara 90 €)
+- Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplir dans Réglages
+- Recommandations prochain round : édition inline des sondages, compteur de présence par réunion pour le Shaykh, notifications/son à la publication d'une annonce, mode impression des comptes (PDF), historique des modifications

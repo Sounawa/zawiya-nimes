@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { BadgeCheck, CalendarDays, Plus, Shield, UserRound, Wallet } from 'lucide-react'
+import { BadgeCheck, CalendarDays, MapPin, Plus, Shield, UserRound, Wallet } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, useMembers, useSaveSetting, useSettings } from '@/lib/api'
 import { useUser } from '@/lib/store'
@@ -47,6 +47,31 @@ export function SettingsDialog({
   const jours = joursEdites ?? joursDefaut
   const setJours = setJoursEdites
   const [nouveauNom, setNouveauNom] = useState('')
+
+  /* ─── Lieu des ijtima' ─── */
+  const configDefaut = settings?.app_config ?? { nom: 'Nimes', ville: 'Nîmes', lieu: '' }
+  const [lieuEdite, setLieuEdite] = useState<{ ville: string; adresse: string } | null>(null)
+  const lieu = lieuEdite ?? { ville: configDefaut.ville, adresse: configDefaut.lieu ?? '' }
+
+  const enregistrerLieu = () => {
+    saveSetting.mutate(
+      {
+        key: 'app_config',
+        value: {
+          nom: configDefaut.nom || 'Nimes',
+          ville: lieu.ville.trim() || 'Nîmes',
+          lieu: lieu.adresse.trim(),
+        },
+      },
+      {
+        onSuccess: () =>
+          toast({
+            title: 'Lieu enregistré',
+            description: 'Les nouvelles réunions utiliseront ce lieu par défaut.',
+          }),
+      }
+    )
+  }
 
   const majJour = (i: number, patch: Partial<{ actif: boolean; heure: string }>) =>
     setJours((js) => (js ?? joursDefaut).map((j, k) => (k === i ? { ...j, ...patch } : j)))
@@ -105,6 +130,43 @@ export function SettingsDialog({
             Jours d'ijtima, rôles et trésorerie — ouverts à toute la communauté.
           </DialogDescription>
         </DialogHeader>
+
+        {/* ─── Lieu des ijtima' ─── */}
+        <section aria-label="Lieu des ijtima" className="space-y-3">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+            <MapPin className="h-4 w-4" /> Lieu des ijtima'
+          </h3>
+          <div className="space-y-3 rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-[#5b6b60]">Ville</Label>
+                <Input
+                  value={lieu.ville}
+                  onChange={(e) => setLieuEdite({ ...lieu, ville: e.target.value })}
+                  placeholder="Nîmes"
+                  className="rounded-xl border-[#0b5d42]/25 bg-white"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs text-[#5b6b60]">Adresse</Label>
+                <Input
+                  value={lieu.adresse}
+                  onChange={(e) => setLieuEdite({ ...lieu, adresse: e.target.value })}
+                  placeholder="Rue, numéro, sonnette…"
+                  className="rounded-xl border-[#0b5d42]/25 bg-white"
+                />
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={enregistrerLieu}
+              disabled={saveSetting.isPending}
+              className="rounded-full bg-[#0b5d42] text-white hover:bg-[#0b3d2e]"
+            >
+              Enregistrer le lieu
+            </Button>
+          </div>
+        </section>
 
         {/* ─── Jours d'ijtima' ─── */}
         <section aria-label="Jours d'ijtima" className="space-y-3">
@@ -246,6 +308,17 @@ export function SettingsDialog({
               <Plus className="mr-1 h-4 w-4" /> Ajouter
             </Button>
           </div>
+        </section>
+
+        {/* ─── Trésorerie : note ─── */}
+        <section aria-label="Trésorerie" className="space-y-2">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+            <Wallet className="h-4 w-4" /> Trésorerie
+          </h3>
+          <p className="rounded-xl bg-[#fdf6e7] px-3 py-2 text-xs leading-relaxed text-[#7a5c15]">
+            La section <strong>Ziyara</strong> (montant donné au Shaykh) n'est visible et modifiable que par le trésorier —
+            c'est lui qui règle les montants depuis sa section dorée.
+          </p>
         </section>
       </DialogContent>
     </Dialog>

@@ -1,4 +1,4 @@
-// Types partagés de l'application Zaouia
+// Types partagés de l'application Zawiya Nimes
 
 export type Role = 'ADMIN' | 'TREASURER' | 'MEMBER'
 
@@ -108,21 +108,6 @@ export interface Poll {
   votes: PollVote[]
 }
 
-export interface Timings {
-  Fajr: string
-  Chourouq: string
-  Dohr: string
-  Asr: string
-  Maghreb: string
-  Icha: string
-}
-
-export interface PrayerDay {
-  date: string
-  timings?: Timings
-  days?: Record<string, Timings>
-}
-
 export interface IjtimaDay {
   label: string
   actif: boolean
@@ -134,17 +119,12 @@ export interface AppSettings {
   app_config?: { nom: string; ville: string; lieu: string }
 }
 
-export const PRIERES: { key: keyof Timings; label: string }[] = [
-  { key: 'Fajr', label: 'Fajr' },
-  { key: 'Chourouq', label: 'Chourouq' },
-  { key: 'Dohr', label: 'Dohr' },
-  { key: 'Asr', label: 'Asr' },
-  { key: 'Maghreb', label: 'Maghreb' },
-  { key: 'Icha', label: 'Icha' },
-]
-
 export const JOURS_SEMAINE = [
   'dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi',
+]
+
+export const JOURS_COMPLETS = [
+  'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche',
 ]
 
 export const JOURS_COURTS: Record<number, string> = {

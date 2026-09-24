@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, MapPin, Plus, Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,8 @@ import {
 } from '@/components/ui/select'
 import { useCreateMeeting, useSettings } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
-import type { ProgramLine } from '@/lib/types'
+import { JOURS_COMPLETS, type ProgramLine } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 const MODELES = [
   { nom: "Al-Ijtimâ' du samedi", icon: '🕌', duree: '19:30' },
@@ -34,6 +35,10 @@ const MODELES = [
 ]
 
 const ICONES = ['🕌', '✦', '📖', '🍽️', '🎵', '🌙', '🌿', '⭐', '💫', '🕊️']
+
+const NUM_JOUR: Record<string, number> = {
+  Dimanche: 0, Lundi: 1, Mardi: 2, Mercredi: 3, Jeudi: 4, Vendredi: 5, Samedi: 6,
+}
 
 interface Ligne {
   time: string
@@ -52,23 +57,62 @@ export function NewMeetingDialog({
   const { data: settings } = useSettings()
   const { toast } = useToast()
 
-  // Réglages des jours d'ijtima
+  // Réglages des jours d'ijtima + lieu par défaut
   const jours = settings?.ijtima_days?.jours ?? []
+  const lieuDefaut = settings?.app_config?.lieu ?? ''
+  const villeDefaut = settings?.app_config?.ville || 'Nîmes'
 
   const [modele, setModele] = useState<string>('— aucun —')
-  const [ville, setVille] = useState('Saint-Denis')
+  const [ville, setVille] = useState('')
   const [date, setDate] = useState('')
+  const [jourChoisi, setJourChoisi] = useState<string>('')
   const [titre, setTitre] = useState('')
   const [icon, setIcon] = useState('🕌')
-  const [adresse, setAdresse] = useState(
-    '28 rue Fontaine St Denis — Sonnette : El Fath'
-  )
+  const [adresse, setAdresse] = useState('')
   const [debut, setDebut] = useState('19:30')
   const [fin, setFin] = useState('22:15')
   const [annonce, setAnnonce] = useState('')
   const [mot, setMot] = useState('')
   const [invites, setInvites] = useState('')
   const [programme, setProgramme] = useState<Ligne[]>([])
+
+  /* Pré-remplir pendant le rendu (motif React officiel) :
+     jour d'ijtima actif le plus proche + lieu enregistré dans les réglages */
+  const [prerempli, setPrerempli] = useState(false)
+  if (open && !prerempli) {
+    setVille(villeDefaut)
+    setAdresse(lieuDefaut)
+    const prochains = jours
+      .filter((j) => j.actif && NUM_JOUR[j.label] !== undefined)
+      .map((j) => {
+        const d = new Date()
+        const diff = (NUM_JOUR[j.label] - d.getDay() + 7) % 7 || 7
+        d.setDate(d.getDate() + diff)
+        return { label: j.label, heure: j.heure, d }
+      })
+      .sort((a, b) => a.d.getTime() - b.d.getTime())
+    if (prochains[0]) {
+      const p = prochains[0]
+      const d = p.d
+      setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
+      setJourChoisi(p.label)
+      setDebut(p.heure || '19:30')
+    }
+    setPrerempli(true)
+  }
+
+  /** Choisir un jour de la semaine → prochaine date + heure des réglages */
+  const choisirJour = (label: string) => {
+    setJourChoisi(label)
+    const num = NUM_JOUR[label]
+    if (num === undefined) return
+    const d = new Date()
+    const diff = (num - d.getDay() + 7) % 7 || 7
+    d.setDate(d.getDate() + diff)
+    setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
+    const regl = jours.find((j) => j.label === label)
+    if (regl?.heure) setDebut(regl.heure)
+  }
 
   const appliquerModele = (nom: string) => {
     setModele(nom)
@@ -81,29 +125,6 @@ export function NewMeetingDialog({
     }
   }
 
-  // Pré-remplir pendant le rendu (motif React officiel) avec le prochain jour d'ijtima actif
-  const [datePréremplie, setDatePréremplie] = useState(false)
-  if (open && !datePréremplie && jours.length) {
-    const prochains = jours
-      .map((j) => {
-        const num = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'].indexOf(
-          j.label.toLowerCase()
-        )
-        if (num < 0 || !j.actif) return null
-        const d = new Date()
-        const diff = (num - d.getDay() + 7) % 7 || 7
-        d.setDate(d.getDate() + diff)
-        return d
-      })
-      .filter(Boolean)
-      .sort((a, b) => a!.getTime() - b!.getTime()) as Date[]
-    if (prochains[0]) {
-      const d = prochains[0]
-      setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
-    }
-    setDatePréremplie(true)
-  }
-
   const ajouterLigne = () => setProgramme((p) => [...p, { time: '', label: '', icon: '🕌' }])
   const majLigne = (i: number, patch: Partial<Ligne>) =>
     setProgramme((p) => p.map((l, j) => (j === i ? { ...l, ...patch } : l)))
@@ -114,7 +135,7 @@ export function NewMeetingDialog({
     if (!titre.trim() || !date) {
       toast({
         title: 'Champs manquants',
-        description: 'Le titre et la date sont nécessaires.',
+        description: 'Le titre et le jour (ou la date) sont nécessaires.',
         variant: 'destructive',
       })
       return
@@ -122,11 +143,6 @@ export function NewMeetingDialog({
     const programmePropre: ProgramLine[] = programme
       .filter((l) => l.label.trim())
       .map((l) => ({ time: l.time || '—', label: l.label.trim(), icon: l.icon }))
-    const inv = invites
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .join(' · ')
     create.mutate(
       {
         title: titre.trim(),
@@ -159,7 +175,16 @@ export function NewMeetingDialog({
     setMot('')
     setInvites('')
     setProgramme([])
+    setJourChoisi('')
+    setPrerempli(false)
   }
+
+  // Jours des réglages d'abord (actifs marqués), puis les autres
+  const joursReglages = jours.filter((j) => j.actif).map((j) => j.label)
+  const tousLesJours = [
+    ...joursReglages,
+    ...JOURS_COMPLETS.filter((j) => !joursReglages.includes(j)),
+  ]
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -169,7 +194,7 @@ export function NewMeetingDialog({
             Nouvelle réunion
           </DialogTitle>
           <DialogDescription>
-            Choisis un modèle pour tout préremplir.
+            Choisis le jour et le lieu — un modèle préremplit le reste.
           </DialogDescription>
         </DialogHeader>
 
@@ -194,15 +219,59 @@ export function NewMeetingDialog({
             </Select>
           </div>
 
+          {/* ─── Le jour : pastilles rapides ─── */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+              <CalendarDays className="h-3.5 w-3.5" /> Jour de l'ijtima
+            </Label>
+            <div className="flex flex-wrap gap-1.5">
+              {tousLesJours.map((j) => (
+                <button
+                  key={j}
+                  type="button"
+                  onClick={() => choisirJour(j)}
+                  className={cn(
+                    'rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all',
+                    jourChoisi === j
+                      ? 'bg-[#0b5d42] text-white shadow-md shadow-[#0b5d42]/25'
+                      : joursReglages.includes(j)
+                        ? 'bg-[#0b5d42]/8 text-[#0b5d42] ring-1 ring-[#0b5d42]/25 hover:bg-[#0b5d42]/15'
+                        : 'bg-white text-[#78877d] ring-1 ring-[#0b5d42]/12 hover:bg-[#0b5d42]/5'
+                  )}
+                  title={joursReglages.includes(j) ? 'Jour configuré dans les réglages' : undefined}
+                >
+                  {j}
+                  {joursReglages.includes(j) && jourChoisi !== j && ' ·'}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-[#b6b1a0]">
+              Les jours marqués «&nbsp;·&nbsp;» sont ceux des réglages — la date est calculée automatiquement.
+            </p>
+          </div>
+
+          {/* ─── Le lieu : ville + adresse ─── */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Ville</Label>
+              <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+                <MapPin className="h-3.5 w-3.5" /> Ville
+              </Label>
               <Input value={ville} onChange={(e) => setVille(e.target.value)} className="rounded-xl border-[#0b5d42]/25 bg-white" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Date</Label>
+              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Date précise</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl border-[#0b5d42]/25 bg-white" />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Adresse du lieu</Label>
+            <Input
+              value={adresse}
+              onChange={(e) => setAdresse(e.target.value)}
+              placeholder="Rue, numéro, sonnette…"
+              className="rounded-xl border-[#0b5d42]/25 bg-white"
+            />
           </div>
 
           {/* Objet */}
@@ -252,11 +321,6 @@ export function NewMeetingDialog({
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Adresse</Label>
-            <Input value={adresse} onChange={(e) => setAdresse(e.target.value)} className="rounded-xl border-[#0b5d42]/25 bg-white" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

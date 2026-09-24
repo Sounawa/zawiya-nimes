@@ -5,13 +5,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { CalendarPlus } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUser } from '@/lib/store'
-import { useMembers, usePrayerTimes } from '@/lib/api'
+import { useMembers } from '@/lib/api'
 import { WelcomeGate } from '@/components/zaouia/welcome-gate'
 import { HeaderBar } from '@/components/zaouia/header-bar'
 import { Annonces } from '@/components/zaouia/annonces'
 import { IjtimaSection } from '@/components/zaouia/ijtima-section'
 import { NewMeetingDialog } from '@/components/zaouia/new-meeting-dialog'
-import { SalatSection } from '@/components/zaouia/salat-section'
 import { ContentSections } from '@/components/zaouia/content-sections'
 import { CotisationSection } from '@/components/zaouia/cotisation-section'
 import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
@@ -22,7 +21,6 @@ export default function Page() {
   const name = useUser((s) => s.name)
   const memberId = useUser((s) => s.memberId)
   const setMember = useUser((s) => s.setMember)
-  const { data: timings } = usePrayerTimes('jour')
   const { data: membres } = useMembers()
   const qc = useQueryClient()
 
@@ -67,7 +65,6 @@ export default function Page() {
   return (
     <div className="flex min-h-screen flex-col bg-[#fbf9f4]">
       <HeaderBar
-        timings={timings?.timings}
         onOpenSettings={() => setReglagesOuverts(true)}
         onOpenProfile={() => setProfilOuvert(true)}
       />
@@ -75,7 +72,6 @@ export default function Page() {
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 pb-32 pt-5">
         <Annonces />
         <IjtimaSection />
-        <SalatSection />
         <CotisationSection />
         <ZiyaraSection />
         <SondagesSection />
@@ -85,7 +81,7 @@ export default function Page() {
       {/* ─── Pied de page ─── */}
       <footer className="mt-auto border-t border-[#0b5d42]/10 bg-white/70 backdrop-blur safe-bottom">
         <p className="mx-auto max-w-3xl px-4 py-4 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-[#b6b1a0]">
-          Zaouia St Denis — {new Date().getFullYear()}
+          Zawiya Nimes — {new Date().getFullYear()}
         </p>
       </footer>
 

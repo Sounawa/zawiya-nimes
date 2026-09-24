@@ -1,22 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { BookOpen, Headphones, GraduationCap, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useContent } from '@/lib/api'
 import type { ContentItem } from '@/lib/types'
 import { SectionShell } from './ijtima-section'
 
-const SECTIONS: {
-  key: ContentItem['section']
-  titre: string
-  icone: React.ElementType
-  defaut: string
-}[] = [
-  { key: 'ADHKAR', titre: 'Adhkâr', icone: Sparkles, defaut: '✦' },
-  { key: 'QURAN', titre: 'Qur\u2019ân', icone: BookOpen, defaut: '📖' },
-  { key: 'SAMA', titre: 'Samâ\u2018', icone: Headphones, defaut: '🎵' },
-  { key: 'DURUS', titre: 'Durûs', icone: GraduationCap, defaut: '🗣️' },
-]
+/* ═══════════════ Section ADHKÂR — seule section de contenu conservée ═══════════════ */
 
 function CarteContenu({ item, index }: { item: ContentItem; index: number }) {
   return (
@@ -60,30 +50,15 @@ function CarteContenu({ item, index }: { item: ContentItem; index: number }) {
 }
 
 export function ContentSections() {
-  return (
-    <>
-      {SECTIONS.map((s) => (
-        <ContentSection key={s.key} sectionKey={s.key} titre={s.titre} icone={s.icone} defaut={s.defaut} />
-      ))}
-    </>
-  )
-}
-
-function ContentSection({
-  sectionKey,
-  titre,
-  icone: Icone,
-  defaut,
-}: {
-  sectionKey: ContentItem['section']
-  titre: string
-  icone: React.ElementType
-  defaut: string
-}) {
-  const { data, isLoading } = useContent(sectionKey)
+  const { data, isLoading } = useContent('ADHKAR')
 
   return (
-    <SectionShell titre={titre} compteur={data ? `${data.length}` : undefined}>
+    <SectionShell
+      titre="Adhkâr"
+      compteur={data ? `${data.length}` : undefined}
+      defaultOpen
+      id="adhkar"
+    >
       {isLoading ? (
         <div className="space-y-3">
           {[0, 1].map((i) => (
@@ -97,8 +72,8 @@ function ContentSection({
           ))}
           {!data?.length && (
             <p className="rounded-2xl border border-dashed border-[#0b5d42]/20 p-6 text-center text-sm text-[#a09a87] sm:col-span-2">
-              <Icone className="mx-auto mb-2 h-5 w-5 text-[#b8923a]" />
-              Rien pour le moment {defaut}
+              <Sparkles className="mx-auto mb-2 h-5 w-5 text-[#b8923a]" />
+              Rien pour le moment ✦
             </p>
           )}
         </div>

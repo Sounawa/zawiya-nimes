@@ -49,6 +49,79 @@ function Particules() {
   )
 }
 
+/** Étoiles scintillantes dans le ciel de la page d'accueil */
+function Etoiles() {
+  const etoiles = Array.from({ length: 18 }, (_, i) => {
+    const rnd = mulberry32(7 + i * 13)
+    return {
+      id: i,
+      top: 4 + rnd() * 88,
+      left: 3 + rnd() * 94,
+      size: 1.5 + rnd() * 2.5,
+      delay: rnd() * 5,
+      duree: 2.4 + rnd() * 3.2,
+    }
+  })
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {etoiles.map((e) => (
+        <span
+          key={e.id}
+          className="etoile"
+          style={{
+            top: `${e.top}%`,
+            left: `${e.left}%`,
+            width: e.size,
+            height: e.size,
+            animationDelay: `${e.delay}s`,
+            animationDuration: `${e.duree}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** Rayons de lumière dorés qui tournent lentement derrière le sceau */
+function RayonsLumiere() {
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute -inset-16 sm:-inset-20"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+      style={{
+        background:
+          'conic-gradient(from 0deg, transparent 0deg, rgba(201,162,75,0.10) 12deg, transparent 24deg, transparent 60deg, rgba(201,162,75,0.07) 72deg, transparent 84deg, transparent 150deg, rgba(11,93,66,0.08) 162deg, transparent 174deg, transparent 240deg, rgba(201,162,75,0.09) 252deg, transparent 264deg, transparent 320deg, rgba(11,93,66,0.06) 332deg, transparent 344deg)',
+        borderRadius: '9999px',
+        WebkitMaskImage: 'radial-gradient(circle, black 30%, transparent 72%)',
+        maskImage: 'radial-gradient(circle, black 30%, transparent 72%)',
+      }}
+    />
+  )
+}
+
+/** Le titre « ZAWIYA » révélé lettre par lettre avec un reflet doré */
+function TitreLettres() {
+  const lettres = 'ZAWIYA'.split('')
+  return (
+    <span className="block font-display text-5xl font-semibold tracking-[0.18em] text-[#123c2d] sm:text-6xl" aria-label="Zawiya">
+      {lettres.map((l, i) => (
+        <motion.span
+          key={i}
+          className="text-shimmer inline-block"
+          initial={{ opacity: 0, y: 26, rotateX: -70, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, y: 0, rotateX: 0, filter: 'blur(0px)' }}
+          transition={{ delay: 0.55 + i * 0.09, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          aria-hidden
+        >
+          {l}
+        </motion.span>
+      ))}
+    </span>
+  )
+}
+
 export function WelcomeGate() {
   const setName = useUser((s) => s.setName)
   const [value, setValue] = useState('')
@@ -71,18 +144,19 @@ export function WelcomeGate() {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#fbf9f4] px-6"
+      className="fixed inset-0 z-50 flex min-h-screen flex-col items-center overflow-y-auto bg-[#fbf9f4] px-6 py-8"
       exit={{ opacity: 0, scale: 1.04 }}
       transition={{ duration: 0.6, ease: 'easeInOut' }}
     >
-      {/* Motif arabisant en fond */}
+      {/* Motif arabisant + ciel étoilé en fond */}
       <div className="pattern-arabesque absolute inset-0" aria-hidden />
+      <Etoiles />
       <div
         className="absolute inset-0"
         aria-hidden
         style={{
           background:
-            'radial-gradient(ellipse 70% 45% at 50% 32%, rgba(201,162,75,0.14), transparent 70%)',
+            'radial-gradient(ellipse 70% 45% at 50% 38%, rgba(201,162,75,0.14), transparent 70%)',
         }}
       />
 
@@ -104,8 +178,9 @@ export function WelcomeGate() {
         <circle cx="10" cy="54" r="3" fill="currentColor" />
       </svg>
 
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center">
-        {/* ─── Le logo animé ─── */}
+      {/* Le logo placé un peu plus bas dans la composition */}
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
+        {/* ─── Le sceau animé ─── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.6, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -113,6 +188,8 @@ export function WelcomeGate() {
           className="relative mb-8"
         >
           <Particules />
+          {/* Rayons de lumière tournants */}
+          <RayonsLumiere />
           {/* Anneaux concentriques */}
           <motion.div
             className="absolute -inset-8 rounded-full"
@@ -137,7 +214,7 @@ export function WelcomeGate() {
             >
               <Image
                 src="/tariqa.png"
-                alt="Sceau de la zaouia de Saint-Denis"
+                alt="Sceau de la zawiya de Nîmes"
                 fill
                 priority
                 sizes="192px"
@@ -165,20 +242,42 @@ export function WelcomeGate() {
           transition={{ delay: 0.35, duration: 0.7 }}
           className="text-center"
         >
-          <span className="block font-display text-5xl font-semibold tracking-[0.18em] text-[#123c2d] sm:text-6xl">
-            ZAOUIA
-          </span>
-          <span className="mt-1 block font-display text-2xl font-medium tracking-[0.42em] text-[#0b5d42] sm:text-3xl">
-            ST DENIS
-          </span>
+          <TitreLettres />
+          <motion.span
+            initial={{ opacity: 0, letterSpacing: '0.8em' }}
+            animate={{ opacity: 1, letterSpacing: '0.42em' }}
+            transition={{ delay: 1.25, duration: 0.9, ease: 'easeOut' }}
+            className="mt-1 block font-display text-2xl font-medium text-[#0b5d42] sm:text-3xl"
+          >
+            NIMES
+          </motion.span>
         </motion.h1>
+
+        {/* Séparateur orné */}
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 1.5, duration: 0.7 }}
+          aria-hidden
+          className="mt-5 flex items-center gap-3"
+        >
+          <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#c9a24b]/60" />
+          <motion.span
+            animate={{ rotate: [0, 180, 360] }}
+            transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+            className="text-[#b8923a]"
+          >
+            ✦
+          </motion.span>
+          <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#c9a24b]/60" />
+        </motion.div>
 
         {/* ─── Citation ─── */}
         <motion.blockquote
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.8 }}
-          className="mt-7 max-w-xs text-center"
+          className="mt-6 max-w-xs text-center"
         >
           <p className="font-display text-lg italic leading-relaxed text-[#5b6b60]">
             «&nbsp;Nous sommes tous issus de la même lumière.&nbsp;»
@@ -234,7 +333,7 @@ export function WelcomeGate() {
           transition={{ delay: 1.1 }}
           className="mt-8 text-xs tracking-widest text-[#a09a87]"
         >
-          {heure ? `${heure} · Saint-Denis` : 'Saint-Denis'}
+          {heure ? `${heure} · Nîmes` : 'Nîmes'}
         </motion.p>
       </div>
 

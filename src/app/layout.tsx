@@ -24,10 +24,10 @@ const arabic = Amiri({
 });
 
 export const metadata: Metadata = {
-  title: "Zaouia St Denis",
+  title: "Zawiya Nimes",
   description:
-    "L'application de la zaouia de Saint-Denis — ijtima', prières, cotisations, ziyara et vie de la communauté.",
-  applicationName: "Zaouia St Denis",
+    "L'application de la zawiya de Nîmes — ijtima', cotisations, ziyara et vie de la communauté.",
+  applicationName: "Zawiya Nimes",
   icons: { icon: "/logo.png", apple: "/logo.png" },
 };
 

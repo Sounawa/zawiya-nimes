@@ -2,14 +2,18 @@
 
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Gift, HeartHandshake, Sparkles } from 'lucide-react'
+import { Gift, HeartHandshake, Lock, Sparkles } from 'lucide-react'
 import { useContributions, useMembers } from '@/lib/api'
+import { useUser } from '@/lib/store'
 import { euros, dateCourte } from '@/lib/format'
 import { SectionShell } from './ijtima-section'
+import { FormulaireContribution, LigneContribution } from './contribution-shared'
 
-/* ═══════════════ Section ZIYARA — pour le Shaykh ═══════════════ */
+/* ═══════════════ Section ZIYARA — pour le Shaykh ═══════════════
+   Réservée au trésorier : lui seul peut voir et modifier les montants. */
 
 export function ZiyaraSection() {
+  const role = useUser((s) => s.role)
   const { data, isLoading } = useContributions()
   const { data: membres } = useMembers()
 
@@ -35,14 +39,18 @@ export function ZiyaraSection() {
     return Array.from(m.values()).sort((a, b) => b.total - a.total)
   }, [toutes])
 
+  const entreesZiyara = toutes.filter((c) => c.category === 'ZIYARA')
   const participants = parMembre.length
   const nbMembres = membres?.length ?? 0
   const moyenne = participants ? total / participants : 0
 
+  // Section invisible pour les non-trésoriers
+  if (role !== 'TREASURER') return null
+
   return (
     <SectionShell
       titre="Ziyara"
-      compteur={toutes.filter((c) => c.category === 'ZIYARA').length + ' entrées'}
+      compteur={`${entreesZiyara.length} entrées`}
       id="ziyara"
     >
       {isLoading ? (
@@ -80,8 +88,8 @@ export function ZiyaraSection() {
                 {euros(total)}
               </motion.p>
 
-              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#b6b1a0]">
-                calculé automatiquement · colonne ziyara
+              <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#b6b1a0]">
+                <Lock className="h-3 w-3" /> trésorier uniquement · calcul automatique
               </p>
 
               {/* Statistiques */}
@@ -114,11 +122,37 @@ export function ZiyaraSection() {
             </div>
           </div>
 
-          {/* ─── Par membre ─── */}
+          {/* ─── Ajouter / modifier : le formulaire du trésorier ─── */}
+          <FormulaireContribution categorieDefaut="ZIYARA" categories={['ZIYARA']} />
+
+          {/* ─── Toutes les entrées ziyara (modifier le montant ici) ─── */}
+          {entreesZiyara.length > 0 && (
+            <div className="rounded-2xl border border-[#c9a24b]/25 bg-white p-4 shadow-sm">
+              <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a3781f]">
+                <HeartHandshake className="h-3.5 w-3.5" /> Entrées ziyara — cliquer sur le crayon pour modifier un montant
+              </p>
+              <ul className="max-h-72 divide-y divide-[#f8f1dd] overflow-y-auto">
+                {entreesZiyara.map((c) => (
+                  <LigneContribution
+                    key={c.id}
+                    id={c.id}
+                    membre={c.member.name}
+                    montant={c.amount}
+                    categorie={c.category}
+                    note={c.note}
+                    date={c.date}
+                    onDeleted={() => {}}
+                  />
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* ─── Récapitulatif par membre ─── */}
           {parMembre.length > 0 && (
             <div className="rounded-2xl border border-[#c9a24b]/25 bg-white p-4 shadow-sm">
               <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a3781f]">
-                <HeartHandshake className="h-3.5 w-3.5" /> Contributions ziyara
+                <Gift className="h-3.5 w-3.5" /> Par frère
               </p>
               <ul className="divide-y divide-[#f8f1dd]">
                 {parMembre.map((p) => (

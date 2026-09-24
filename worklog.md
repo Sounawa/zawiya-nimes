@@ -43,3 +43,23 @@ Stage Summary:
 - Application complète vérifiée via agent-browser : entrée prénom → page principale, toutes sections dépliables, vote bascule (7→8 constant 10), ajout contribution ZIYARA → recalcul auto 75€→90€→8 participants, publication réunion (4 réunions), sauvegarde jours ijtima (Lundi désactivé), trésorier unique (Abde), footer sticky bottom 843.75/844, responsive OK, zéro erreur console/hydratation, lint 0 erreur
 - Logo : le fichier téléchargement.png de l'utilisateur n'est PAS arrivé dans /home/z/my-project/upload/ (dossier vide) → logo original tariqa.png utilisé en placeholder, remplacable dans /public/tariqa.png
 - Prochaines phases possibles : notifications push, mode sombre, édition/suppression annonces, statistiques graphiques, export PDF des comptes
+
+---
+Task ID: 3
+Agent: main (Z.ai Code)
+Task: Modifications demandées par l'utilisateur — Zawiya Nimes, animations, suppression sections, trésorerie ziyara, lieu/jour ijtima
+
+Work Log:
+- Renommage complet « Zaouia St Denis » → « Zawiya Nimes » : welcome gate (ZAWIYA/NIMES), header (ZAWIYA/Nimes), footer, metadata layout, DB (Meeting.city='Nîmes', app_config={nom:'Nimes',ville:'Nîmes',lieu:''}), seed.ts à jour, alt texts
+- Welcome gate : logo descendu (my-auto + pt-6/pt-10 au lieu de justify-center qui coupait le logo sur petits viewport — fix overflow), nouvelles animations : rayons de lumière dorés tournants (conic-gradient masqué), titre ZAWIYA lettre par lettre avec reflet doré + NIMES en tracking animé, 18 étoiles scintillantes (.etoile CSS), séparateur orné rotatif ✦
+- Calendrier des prières SUPPRIMÉ : section Salât effacée (salat-section.tsx + /api/prayer-times), bandeau header prière+countdown remplacé par date + Nîmes ; usePrayerTimes, Timings, PRIERES retirés de api.ts/types.ts
+- Sections Qur'ân, Samâ', Durûs SUPPRIMÉES — seule Adhkâr reste (content-sections.tsx), OUVERTE PAR DÉFAUT (defaultOpen) + affordance : badge « déplier » + chevron-pulse CSS + hover/active states sur SectionShell
+- Choix du lieu & jour d'ijtima : réglages → nouvelle section « Lieu des ijtima' » (ville + adresse, clé app_config) ; NewMeetingDialog → pastilles de jours (jours configurés marqués « · », clic = prochaine date + heure des réglages), ville/adresse pré-remplies depuis app_config, date manuelle conservée ; MeetingCard affiche la ville (MapPin)
+- Ziyara réservée au TRÉSORIER : ZiyaraSection return null si role!=='TREASURER' (hooks avant early return — lint rules-of-hooks) ; formulaire d'ajout ZIYARA intégré à la section ; liste complète des entrées avec bouton crayon → édition inline du montant (useUpdateContribution PATCH /api/contributions/[id]) ; colonne ZIYARA retirée du formulaire des Cotisations ; note explicative dans réglages ; badge « Trésorier » dans le header
+- contribution-shared.tsx créé : FormulaireContribution (categories en prop), LigneContribution (édition montant ✓/✕), Compteur, Progression — partagé Cotisations/Ziyara
+- Vérifications agent-browser : titre ZAWIYA NIMES + 18 étoiles, logo y=38px mobile/111px desktop (non coupé), Adam (non-trésorier) → Ziyara absente + formulaire cotisations sans colonne Ziyara, Abde (trésorier) → Ziyara visible, édition montant 15→25 € → total 90→100 € recalculé auto (revert 15), dialogue réunion : Samedi pré-choisi (prochain jour actif, date 2026-09-26), clic Jeudi → 2026-10-01 + 19:30, ville Nîmes, réglages lieu enregistré puis reset, cartes réunion « Nîmes », 0 erreur runtime (navigateur neuf), pas de scroll horizontal 390px, lint 0 erreur, VLM confirme design (rayons, étoiles, gradient or/vert)
+
+Stage Summary:
+- Toutes les demandes de l'utilisateur traitées : renommage Nîmes, logo plus bas + 3 nouvelles animations, calendrier prières supprimé, sections Sama'/Durûs/Qur'ân supprimées, adhkâr ouverts par défaut (le contenu était bien là — problème d'affordance des sections pliables), lieu+jour d'ijtima configurables, Ziyara trésorier-only avec édition des montants
+- Données : meetings city=Nîmes address=NULL, app_config lieu vide (à remplir par l'utilisateur dans Réglages), un doublon « Wadhifa du lundi » existe en DB (supprimable via corbeille)
+- Risques/pistes suivantes : logo utilisateur toujours absent (placeholder tariqa.png), animations supplémentaires proposables (parallaxe, bismillah calligraphié), export PDF comptes, mode sombre

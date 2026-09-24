@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useUser } from './store'
 import type {
   AppSettings,
   Announcement,
@@ -13,9 +14,25 @@ import type {
 } from './types'
 
 export function api<T>(url: string, init?: RequestInit): Promise<T> {
+  let body = init?.body
+  /* Le prénom courant est injecté comme « actor » dans les corps JSON —
+     le journal de la zawiya sait ainsi qui a fait quoi. */
+  if (typeof body === 'string') {
+    try {
+      const parsed = JSON.parse(body)
+      if (parsed && typeof parsed === 'object' && !('actor' in parsed)) {
+        const acteur = useUser.getState().name
+        if (acteur) (parsed as Record<string, unknown>).actor = acteur
+        body = JSON.stringify(parsed)
+      }
+    } catch {
+      /* corps non JSON — inchangé */
+    }
+  }
   return fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers: { 'Content-Type': 'application/json' },
+    body,
   }).then((r) => {
     if (!r.ok) throw new Error('Erreur réseau')
     return r.json()
@@ -46,6 +63,7 @@ export function useCreateMeeting() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['meetings'] })
       qc.invalidateQueries({ queryKey: ['polls'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
     },
   })
 }
@@ -58,6 +76,7 @@ export function useUpdateMeeting() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['meetings'] })
       qc.invalidateQueries({ queryKey: ['polls'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
     },
   })
 }
@@ -65,8 +84,11 @@ export function useUpdateMeeting() {
 export function useDeleteMeeting() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => api(`/api/meetings/${id}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['meetings'] }),
+    mutationFn: (id: string) => api(`/api/meetings/${id}`, { method: 'DELETE', body: JSON.stringify({}) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['meetings'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
@@ -76,7 +98,10 @@ export function useToggleAttendance() {
   return useMutation({
     mutationFn: (data: { meetingId: string; memberId: string; guests?: number }) =>
       api('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['meetings'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['meetings'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
@@ -94,7 +119,10 @@ export function useCreateContribution() {
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       api<Contribution>('/api/contributions', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['contributions'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contributions'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
@@ -103,15 +131,21 @@ export function useUpdateContribution() {
   return useMutation({
     mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
       api<Contribution>(`/api/contributions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['contributions'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contributions'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
 export function useDeleteContribution() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => api(`/api/contributions/${id}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['contributions'] }),
+    mutationFn: (id: string) => api(`/api/contributions/${id}`, { method: 'DELETE', body: JSON.stringify({}) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contributions'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
@@ -128,7 +162,10 @@ export function useCreatePoll() {
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       api<Poll>('/api/polls', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['polls'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['polls'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
@@ -140,7 +177,10 @@ export function useVote() {
         method: 'POST',
         body: JSON.stringify({ memberId: data.memberId, choice: data.choice }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['polls'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['polls'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
@@ -149,15 +189,21 @@ export function useUpdatePoll() {
   return useMutation({
     mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
       api<Poll>(`/api/polls/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['polls'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['polls'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
 export function useDeletePoll() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => api(`/api/polls/${id}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['polls'] }),
+    mutationFn: (id: string) => api(`/api/polls/${id}`, { method: 'DELETE', body: JSON.stringify({}) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['polls'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }
 
@@ -182,16 +228,37 @@ export function useSaveSetting() {
   return useMutation({
     mutationFn: (data: { key: string; value: unknown }) =>
       api('/api/settings', { method: 'PUT', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['settings'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['settings'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}
+
+/* ─── Journal de la zawiya ─── */
+export function useAudit() {
+  return useQuery({
+    queryKey: ['audit'],
+    queryFn: () => api<import('./types').AuditEntry[]>('/api/audit'),
   })
 }
 
 /* ─── Annonces ─── */
+export function useAnnouncements() {
+  return useQuery({
+    queryKey: ['announcements'],
+    queryFn: () => api<Announcement[]>('/api/announcements'),
+  })
+}
+
 export function useCreateAnnouncement() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: { title?: string; text: string; color?: string }) =>
       api<Announcement>('/api/announcements', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['announcements'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['announcements'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
   })
 }

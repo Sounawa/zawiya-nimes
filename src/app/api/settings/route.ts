@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { journaliser } from '@/lib/audit'
 
 // GET /api/settings — tous les réglages
 export async function GET() {
@@ -29,6 +30,16 @@ export async function PUT(req: Request) {
       where: { key: body.key },
       update: { value },
       create: { key: body.key, value },
+    })
+    const libelleReglage: Record<string, string> = {
+      ijtima_days: 'jours d’ijtima’',
+      app_config: 'lieu des ijtima’',
+    }
+    await journaliser({
+      kind: 'SETTING',
+      action: 'UPDATE',
+      label: `Réglage « ${libelleReglage[body.key] || body.key} » mis à jour`,
+      actor: body.actor || null,
     })
     return NextResponse.json(setting)
   } catch {

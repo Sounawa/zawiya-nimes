@@ -89,18 +89,18 @@ function GrapheMensuel({ cotisations }: { cotisations: { amount: number; categor
       : null
 
   return (
-    <div className="rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-primary/12 bg-card p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
-          <CalendarRange className="h-3.5 w-3.5 text-[#0b5d42]" /> Évolution — 6 mois
+        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+          <CalendarRange className="h-3.5 w-3.5 text-primary" /> Évolution — 6 mois
         </p>
         {tendance !== null && tendance !== 0 && (
           <span
             className={cn(
               'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold',
               tendance > 0
-                ? 'bg-[#0b5d42]/10 text-[#0b5d42]'
-                : 'bg-[#b3452f]/10 text-[#b3452f]'
+                ? 'bg-primary/10 text-primary'
+                : 'bg-destructive/10 text-destructive'
             )}
           >
             {tendance > 0 ? '▲' : '▼'} {Math.abs(tendance)}%
@@ -113,7 +113,7 @@ function GrapheMensuel({ cotisations }: { cotisations: { amount: number; categor
           const estCourant = i === mois.length - 1
           return (
             <div key={m.cle} className="flex flex-1 flex-col items-center gap-1.5">
-              <span className="text-[9px] font-bold tabular-nums text-[#a09a87]">
+              <span className="text-[9px] font-bold tabular-nums text-brouillard">
                 {m.total > 0 ? euros(m.total).replace('€', '').trim() : '—'}
               </span>
               <motion.div
@@ -123,15 +123,15 @@ function GrapheMensuel({ cotisations }: { cotisations: { amount: number; categor
                 className={cn(
                   'w-full max-w-10 rounded-t-lg',
                   estCourant
-                    ? 'bg-gradient-to-t from-[#0b5d42] to-[#4a7c6b] shadow-md shadow-[#0b5d42]/20'
-                    : 'bg-gradient-to-t from-[#c9a24b]/70 to-[#e2c98a]/80'
+                    ? 'bg-gradient-to-t from-primary to-sauge shadow-md shadow-primary/20'
+                    : 'bg-gradient-to-t from-accent/70 to-gold-clair/80'
                 )}
                 title={`${m.label} ${m.annee} — ${euros(m.total)}`}
               />
               <span
                 className={cn(
                   'text-[10px] font-semibold capitalize',
-                  estCourant ? 'text-[#0b5d42]' : 'text-[#b6b1a0]'
+                  estCourant ? 'text-primary' : 'text-brouillard-clair'
                 )}
               >
                 {m.label}
@@ -222,14 +222,14 @@ export function CotisationSection() {
       id="cotisations"
     >
       {isLoading ? (
-        <div className="h-40 animate-pulse rounded-2xl bg-[#efe9dc]/60" />
+        <div className="h-40 animate-pulse rounded-2xl bg-sand/60" />
       ) : (
         <div className="space-y-4">
           {/* Carte caisse */}
-          <div className="relative overflow-hidden rounded-2xl border border-[#0b5d42]/15 bg-gradient-to-br from-white via-[#f4f8f4] to-[#eef4ee] p-6 shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-card via-feuille to-feuille p-6 shadow-sm">
             <div className="pattern-lattice absolute inset-0" aria-hidden />
             <div className="relative">
-              <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+              <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
                 <Banknote className="h-4 w-4" /> La Caisse
               </p>
               <Compteur valeur={totals ? totals.COTISATION + totals.DON : 0} libelle="Cotisations & dons cumulés" />
@@ -250,30 +250,30 @@ export function CotisationSection() {
                           : `${cotisations.length} entrées — caisse ${euros(totals.COTISATION + totals.DON)}`,
                       })
                     }}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#b8923a]/45 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[#a3781f] transition-all hover:bg-[#fdf6e7] hover:shadow-md active:scale-[0.98]"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/45 bg-card/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gold-vif transition-all hover:bg-or-pale hover:shadow-md active:scale-[0.98]"
                   >
                     <Download className="h-3.5 w-3.5" /> CSV{periodeSelectionnee ? ' · période' : ''}
                   </button>
                   <button
                     onClick={() => imprimer({ kind: 'comptes' })}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0b5d42]/40 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[#0b5d42] transition-all hover:bg-[#f4f8f4] hover:shadow-md active:scale-[0.98]"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/40 bg-card/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-primary transition-all hover:bg-feuille hover:shadow-md active:scale-[0.98]"
                   >
                     <Printer className="h-3.5 w-3.5" /> Imprimer / PDF
                   </button>
                 </div>
               )}
               <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-white/80 p-3 text-center ring-1 ring-[#0b5d42]/10">
-                  <p className="font-display text-xl font-semibold tabular-nums text-[#0b5d42]">
+                <div className="rounded-xl bg-card/80 p-3 text-center ring-1 ring-primary/10">
+                  <p className="font-display text-xl font-semibold tabular-nums text-primary">
                     {totals ? euros(totals.COTISATION) : '—'}
                   </p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#a09a87]">Cotisations</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-brouillard">Cotisations</p>
                 </div>
-                <div className="rounded-xl bg-white/80 p-3 text-center ring-1 ring-[#0b5d42]/10">
-                  <p className="font-display text-xl font-semibold tabular-nums text-[#4a7c6b]">
+                <div className="rounded-xl bg-card/80 p-3 text-center ring-1 ring-primary/10">
+                  <p className="font-display text-xl font-semibold tabular-nums text-sauge">
                     {totals ? euros(totals.DON) : '—'}
                   </p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#a09a87]">Dons</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-brouillard">Dons</p>
                 </div>
               </div>
             </div>
@@ -286,21 +286,21 @@ export function CotisationSection() {
 
           {/* Classement des contributeurs */}
           {parMembre.length > 0 && (
-            <div className="rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm">
-              <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
-                <Users className="h-3.5 w-3.5 text-[#0b5d42]" /> Qui a donné
+            <div className="rounded-2xl border border-primary/12 bg-card p-4 shadow-sm">
+              <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                <Users className="h-3.5 w-3.5 text-primary" /> Qui a donné
               </p>
               <ul className="space-y-3">
                 {parMembre.map((p, i) => (
                   <li key={p.name}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="font-medium text-[#33453a]">
-                        <span className="mr-1.5 inline-grid h-5 w-5 place-items-center rounded-full bg-[#efe9dc] text-[10px] font-bold text-[#78877d]">
+                      <span className="font-medium text-secondary-foreground">
+                        <span className="mr-1.5 inline-grid h-5 w-5 place-items-center rounded-full bg-sand text-[10px] font-bold text-muted-foreground">
                           {i + 1}
                         </span>
                         Sidi {p.name}
                       </span>
-                      <span className="font-bold tabular-nums text-[#0b5d42]">{euros(p.total)}</span>
+                      <span className="font-bold tabular-nums text-primary">{euros(p.total)}</span>
                     </div>
                     <Progression valeur={p.total} max={maxMembre} />
                   </li>
@@ -310,11 +310,11 @@ export function CotisationSection() {
           )}
 
           {/* Historique — filtrable par catégorie et par mois */}
-          <div className="rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-primary/12 bg-card p-4 shadow-sm">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
-                <TrendingUp className="h-3.5 w-3.5 text-[#0b5d42]" /> Historique
-                <span className="rounded-full bg-[#efe9dc] px-2 py-0.5 text-[10px] font-bold tabular-nums text-[#5b6b60]">
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                <TrendingUp className="h-3.5 w-3.5 text-primary" /> Historique
+                <span className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
                   {cotisationsVisibles.length} · {euros(totalPeriode)}
                 </span>
               </p>
@@ -326,8 +326,8 @@ export function CotisationSection() {
                     className={cn(
                       'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
                       filtre === f
-                        ? 'bg-[#0b5d42] text-white'
-                        : 'bg-[#efe9dc] text-[#78877d] hover:bg-[#e4dcc8]'
+                        ? 'bg-primary text-white'
+                        : 'bg-sand text-muted-foreground hover:bg-sable-vif'
                     )}
                   >
                     {f === 'TOUS' ? 'Tous' : f === 'COTISATION' ? 'Cotis.' : 'Dons'}
@@ -339,15 +339,15 @@ export function CotisationSection() {
             {/* Pastilles de période — le CSV du trésorier suit la sélection */}
             {moisDisponibles.length > 0 && (
               <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#a09a87]" aria-hidden />
+                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-brouillard" aria-hidden />
                 <button
                   onClick={() => setPeriode('TOUTES')}
                   aria-pressed={periode === 'TOUTES'}
                   className={cn(
                     'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
                     periode === 'TOUTES'
-                      ? 'bg-[#b8923a] text-white shadow-sm'
-                      : 'bg-[#f2ede0] text-[#8a8574] hover:bg-[#e9e2cd]'
+                      ? 'bg-gold text-white shadow-sm dark:text-accent-foreground'
+                      : 'bg-sand text-brouillard hover:bg-sable-vif'
                   )}
                 >
                   Toutes
@@ -361,22 +361,22 @@ export function CotisationSection() {
                     className={cn(
                       'rounded-full px-2.5 py-1 text-[10px] font-bold capitalize tracking-wider transition-colors',
                       periode === m.cle
-                        ? 'bg-[#b8923a] text-white shadow-sm'
-                        : 'bg-[#f2ede0] text-[#8a8574] hover:bg-[#e9e2cd]'
+                        ? 'bg-gold text-white shadow-sm dark:text-accent-foreground'
+                        : 'bg-sand text-brouillard hover:bg-sable-vif'
                     )}
                   >
                     {m.court}
                   </button>
                 ))}
                 {role === 'TREASURER' && periodeSelectionnee && (
-                  <span className="ml-1 hidden text-[10px] italic text-[#a09a87] sm:inline">
+                  <span className="ml-1 hidden text-[10px] italic text-brouillard sm:inline">
                     l'export CSV suivra cette période
                   </span>
                 )}
               </div>
             )}
 
-            <ul className="defile-fin max-h-72 divide-y divide-[#f2ede0] overflow-y-auto">
+            <ul className="defile-fin max-h-72 divide-y divide-sand overflow-y-auto">
               <AnimatePresence initial={false}>
                 {listeFiltree.map((c, i) => (
                   <LigneContribution
@@ -393,7 +393,7 @@ export function CotisationSection() {
                 ))}
               </AnimatePresence>
               {listeFiltree.length === 0 && (
-                <li className="p-4 text-center text-sm text-[#a09a87]">Aucune entrée sur cette période.</li>
+                <li className="p-4 text-center text-sm text-brouillard">Aucune entrée sur cette période.</li>
               )}
             </ul>
           </div>

@@ -30,10 +30,10 @@ function teinteMembre(nom: string): number {
 
 /* ═══════════════ Régularité aux ijtima' — libellé + teinte ═══════════════ */
 function regularite(taux: number, presences: number) {
-  if (presences === 0) return { label: 'jamais inscrit', classe: 'bg-[#efe9dc] text-[#a09a87]' }
-  if (taux >= 80) return { label: 'assidu', classe: 'bg-[#0b5d42]/12 text-[#0b5d42]' }
-  if (taux >= 40) return { label: 'régulier', classe: 'bg-[#4a7c6b]/12 text-[#2f4d3e]' }
-  return { label: 'occasionnel', classe: 'bg-[#c9a24b]/18 text-[#a3781f]' }
+  if (presences === 0) return { label: 'jamais inscrit', classe: 'bg-sand text-brouillard' }
+  if (taux >= 80) return { label: 'assidu', classe: 'bg-primary/12 text-primary' }
+  if (taux >= 40) return { label: 'régulier', classe: 'bg-sauge/12 text-forest' }
+  return { label: 'occasionnel', classe: 'bg-accent/18 text-gold-vif' }
 }
 
 type Tri = 'NOM' | 'CAISSE' | 'PRESENCES'
@@ -75,8 +75,8 @@ function CarteMembre({
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.3) }}
       className={cn(
-        'group relative flex items-center gap-3 rounded-2xl border bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md',
-        estMoi ? 'border-[#b8923a]/45 ring-1 ring-[#c9a24b]/30' : 'border-[#0b5d42]/12 hover:border-[#0b5d42]/25'
+        'group relative flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md',
+        estMoi ? 'border-gold/45 ring-1 ring-accent/30' : 'border-primary/12 hover:border-primary/25'
       )}
     >
       {/* Avatar — initiale sur teinte dérivée du prénom */}
@@ -95,20 +95,20 @@ function CarteMembre({
           <span
             aria-hidden
             title="Assidu aux ijtima'"
-            className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-white shadow-sm ring-1 ring-[#0b5d42]/20"
+            className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-card shadow-sm ring-1 ring-primary/20"
           >
-            <Flame className="h-2.5 w-2.5 text-[#b8923a]" />
+            <Flame className="h-2.5 w-2.5 text-gold" />
           </span>
         )}
       </span>
 
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className="truncate text-sm font-semibold text-[#33453a]">
+          <span className="truncate text-sm font-semibold text-secondary-foreground">
             Sidi {membre.name}
           </span>
           {estMoi && (
-            <span className="rounded-full bg-[#c9a24b]/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#a3781f]">
+            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-vif">
               moi
             </span>
           )}
@@ -119,32 +119,32 @@ function CarteMembre({
           </span>
         </span>
 
-        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-[#a09a87]">
+        <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-brouillard">
           <span className="inline-flex items-center gap-1" title="Cotisations & dons">
-            <Coins className="h-3 w-3 text-[#0b5d42]/70" />
-            <span className="font-semibold tabular-nums text-[#0b5d42]">{euros(total)}</span>
+            <Coins className="h-3 w-3 text-primary/70" />
+            <span className="font-semibold tabular-nums text-primary">{euros(total)}</span>
           </span>
           {estTresorier && ziyara > 0 && (
             <span className="inline-flex items-center gap-1" title="Ziyara">
-              <Sparkles className="h-3 w-3 text-[#b8923a]" />
-              <span className="font-semibold tabular-nums text-[#a3781f]">{euros(ziyara)}</span>
+              <Sparkles className="h-3 w-3 text-gold" />
+              <span className="font-semibold tabular-nums text-gold-vif">{euros(ziyara)}</span>
             </span>
           )}
           <span className="inline-flex items-center gap-1" title="Inscriptions aux ijtima'">
-            <Users className="h-3 w-3 text-[#4a7c6b]" />
-            <span className="font-semibold tabular-nums text-[#4a7c6b]">{presences}</span>
+            <Users className="h-3 w-3 text-sauge" />
+            <span className="font-semibold tabular-nums text-sauge">{presences}</span>
             <span className="hidden sm:inline">ijtima{presences !== 1 ? "'s" : ''}</span>
           </span>
           {derniereActivite && (
             <span className="inline-flex items-center gap-1" title="Dernière contribution enregistrée">
-              <CalendarHeart className="h-3 w-3 text-[#b6b1a0]" />
+              <CalendarHeart className="h-3 w-3 text-brouillard-clair" />
               <span className="hidden sm:inline">dern.</span> {derniereActivite}
             </span>
           )}
         </span>
 
         {/* Mini-barre d'assiduité — proportionalité douce, dorée */}
-        <span className="mt-1.5 block h-1 w-full overflow-hidden rounded-full bg-[#f2ede0]">
+        <span className="mt-1.5 block h-1 w-full overflow-hidden rounded-full bg-sand">
           <motion.span
             initial={{ width: 0 }}
             animate={{ width: `${taux}%` }}
@@ -152,10 +152,10 @@ function CarteMembre({
             className={cn(
               'block h-full rounded-full',
               taux >= 80
-                ? 'bg-gradient-to-r from-[#0b5d42] to-[#4a7c6b]'
+                ? 'bg-gradient-to-r from-primary to-sauge'
                 : taux >= 40
-                  ? 'bg-gradient-to-r from-[#4a7c6b] to-[#7ba28f]'
-                  : 'bg-gradient-to-r from-[#c9a24b] to-[#e2c98a]'
+                  ? 'bg-gradient-to-r from-sauge to-sauge-clair'
+                  : 'bg-gradient-to-r from-accent to-gold-clair'
             )}
           />
         </span>
@@ -163,11 +163,11 @@ function CarteMembre({
 
       {/* Badge de rôle */}
       {membre.role === 'TREASURER' ? (
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#b8923a]/12 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#a3781f] ring-1 ring-[#b8923a]/30">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gold/12 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-gold-vif ring-1 ring-gold/30">
           <BadgeCheck className="h-3 w-3" /> Trésorier
         </span>
       ) : (
-        <span className="hidden shrink-0 rounded-full bg-[#0b5d42]/8 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#5b6b60] ring-1 ring-[#0b5d42]/15 sm:inline-block">
+        <span className="hidden shrink-0 rounded-full bg-primary/8 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground ring-1 ring-primary/15 sm:inline-block">
           Admin
         </span>
       )}
@@ -244,33 +244,33 @@ export function AnnuaireSection() {
     >
       {isLoading ? (
         <div className="space-y-2">
-          <div className="h-24 animate-pulse rounded-2xl bg-[#efe9dc]/60" />
-          <div className="h-12 animate-pulse rounded-2xl bg-[#efe9dc]/40" />
-          <div className="h-64 animate-pulse rounded-2xl bg-[#efe9dc]/30" />
+          <div className="h-24 animate-pulse rounded-2xl bg-sand/60" />
+          <div className="h-12 animate-pulse rounded-2xl bg-sand/40" />
+          <div className="h-64 animate-pulse rounded-2xl bg-sand/30" />
         </div>
       ) : (
         <div className="space-y-4">
           {/* Résumé de la communauté */}
-          <div className="relative overflow-hidden rounded-2xl border border-[#0b5d42]/12 bg-gradient-to-br from-white via-[#f6f9f5] to-[#eff5ef] p-4 shadow-sm">
+          <div className="relative overflow-hidden rounded-2xl border border-primary/12 bg-gradient-to-br from-card via-feuille to-feuille p-4 shadow-sm">
             <div className="pattern-khatim absolute inset-0" aria-hidden />
             <div className="relative grid grid-cols-2 items-center py-1 text-center sm:grid-cols-4">
               <div>
-                <p className="font-display text-2xl font-semibold tabular-nums text-[#123c2d]">{nbTotal}</p>
-                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#a09a87]">Frères</p>
+                <p className="font-display text-2xl font-semibold tabular-nums text-encre">{nbTotal}</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-brouillard">Frères</p>
               </div>
               <div>
-                <p className="font-display text-2xl font-semibold tabular-nums text-[#0b5d42]">{cotisants}</p>
-                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#a09a87]">Cotisants</p>
+                <p className="font-display text-2xl font-semibold tabular-nums text-primary">{cotisants}</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-brouillard">Cotisants</p>
               </div>
               <div>
-                <p className="font-display text-2xl font-semibold tabular-nums text-[#4a7c6b]">{inscrits}</p>
-                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#a09a87]">Inscrits</p>
+                <p className="font-display text-2xl font-semibold tabular-nums text-sauge">{inscrits}</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-brouillard">Inscrits</p>
               </div>
               <div>
-                <p className="font-display text-2xl font-semibold tabular-nums text-[#a3781f]">
+                <p className="font-display text-2xl font-semibold tabular-nums text-gold-vif">
                   {nbTotal ? Math.round((cotisants / nbTotal) * 100) : 0}%
                 </p>
-                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#a09a87]">Participation</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-brouillard">Participation</p>
               </div>
             </div>
           </div>
@@ -278,30 +278,30 @@ export function AnnuaireSection() {
           {/* Recherche + tri */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#b6b1a0]" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brouillard-clair" />
               <Input
                 value={recherche}
                 onChange={(e) => setRecherche(e.target.value)}
                 placeholder="Rechercher un frère…"
                 aria-label="Rechercher un frère"
-                className="rounded-full border-[#0b5d42]/20 bg-white pl-10 pr-10"
+                className="rounded-full border-primary/20 bg-card pl-10 pr-10"
               />
               {recherche && (
                 <button
                   onClick={() => setRecherche('')}
                   aria-label="Effacer la recherche"
-                  className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full bg-[#efe9dc] text-[#78877d] transition-colors hover:bg-[#e4dcc8]"
+                  className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full bg-sand text-muted-foreground transition-colors hover:bg-sable-vif"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
             <div
-              className="flex items-center gap-1.5 rounded-full border border-[#0b5d42]/15 bg-white p-1 shadow-sm"
+              className="flex items-center gap-1.5 rounded-full border border-primary/15 bg-card p-1 shadow-sm"
               role="group"
               aria-label="Trier l'annuaire"
             >
-              <ArrowDownWideNarrow className="ml-1.5 h-3.5 w-3.5 shrink-0 text-[#a09a87]" aria-hidden />
+              <ArrowDownWideNarrow className="ml-1.5 h-3.5 w-3.5 shrink-0 text-brouillard" aria-hidden />
               {TRIS.map((t) => (
                 <button
                   key={t.cle}
@@ -310,8 +310,8 @@ export function AnnuaireSection() {
                   className={cn(
                     'rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors',
                     tri === t.cle
-                      ? 'bg-[#0b5d42] text-white shadow-sm'
-                      : 'text-[#78877d] hover:bg-[#0b5d42]/8 hover:text-[#0b5d42]'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-muted-foreground hover:bg-primary/8 hover:text-primary'
                   )}
                 >
                   {t.label}
@@ -321,12 +321,12 @@ export function AnnuaireSection() {
           </div>
 
           {/* Légende de régularité */}
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[10px] text-[#a09a87]">
-            <span className="font-semibold uppercase tracking-[0.18em] text-[#b6b1a0]">Assiduité :</span>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[10px] text-brouillard">
+            <span className="font-semibold uppercase tracking-[0.18em] text-brouillard-clair">Assiduité :</span>
             {[
-              { label: 'assidu ≥ 80%', classe: 'bg-[#0b5d42]/12 text-[#0b5d42]' },
-              { label: 'régulier ≥ 40%', classe: 'bg-[#4a7c6b]/12 text-[#2f4d3e]' },
-              { label: 'occasionnel', classe: 'bg-[#c9a24b]/18 text-[#a3781f]' },
+              { label: 'assidu ≥ 80%', classe: 'bg-primary/12 text-primary' },
+              { label: 'régulier ≥ 40%', classe: 'bg-sauge/12 text-forest' },
+              { label: 'occasionnel', classe: 'bg-accent/18 text-gold-vif' },
             ].map((l) => (
               <span key={l.label} className={cn('rounded-full px-2 py-0.5 font-bold', l.classe)}>
                 {l.label}
@@ -361,7 +361,7 @@ export function AnnuaireSection() {
               })}
             </AnimatePresence>
             {liste.length === 0 && (
-              <li className="rounded-2xl border border-dashed border-[#0b5d42]/20 p-6 text-center text-sm text-[#a09a87]">
+              <li className="rounded-2xl border border-dashed border-primary/20 p-6 text-center text-sm text-brouillard">
                 Aucun frère ne correspond à «&nbsp;{recherche}&nbsp;».
               </li>
             )}

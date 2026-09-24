@@ -114,6 +114,33 @@ export interface IjtimaDay {
   heure: string
 }
 
+/* ─── Journal de la zawiya ─── */
+export type AuditKind =
+  | 'MEETING'
+  | 'CONTRIBUTION'
+  | 'ANNOUNCEMENT'
+  | 'POLL'
+  | 'MEMBER'
+  | 'ATTENDANCE'
+  | 'SETTING'
+
+export type AuditAction =
+  | 'CREATE'
+  | 'UPDATE'
+  | 'DELETE'
+  | 'INSCRIRE'
+  | 'DESINSCRIRE'
+  | 'VOTE'
+
+export interface AuditEntry {
+  id: string
+  kind: AuditKind
+  action: AuditAction
+  label: string
+  actor: string | null
+  createdAt: string
+}
+
 export interface AppSettings {
   ijtima_days?: { jours: IjtimaDay[] }
   app_config?: { nom: string; ville: string; lieu: string }

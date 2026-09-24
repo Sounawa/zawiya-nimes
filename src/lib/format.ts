@@ -70,3 +70,30 @@ export function dansXmin(h: string | null): string | null {
   const m = diff % 60
   return m ? `dans ${heures} h ${m}` : `dans ${heures} h`
 }
+
+/** « il y a 5 min » / « il y a 2 h » / « hier » / date — pour le journal */
+export function tempsRelatif(d: Date | string): string {
+  const date = typeof d === 'string' ? new Date(d) : d
+  const diff = Date.now() - date.getTime()
+  const min = Math.floor(diff / 60000)
+  if (min < 1) return "à l'instant"
+  if (min < 60) return `il y a ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `il y a ${h} h`
+  const jours = Math.floor(h / 24)
+  if (jours === 1) return 'hier'
+  if (jours < 7) return `il y a ${jours} j`
+  return dateCourte(date)
+}
+
+/** « Aujourd'hui » / « Hier » / « jeudi 24 septembre » — regroupement du journal */
+export function libelleJour(d: Date | string): string {
+  const date = typeof d === 'string' ? new Date(d) : d
+  const jour = new Date()
+  jour.setHours(0, 0, 0, 0)
+  const veille = new Date(jour)
+  veille.setDate(jour.getDate() - 1)
+  if (date >= jour) return "Aujourd'hui"
+  if (date >= veille) return 'Hier'
+  return dateLongue(date)
+}

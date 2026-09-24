@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { journaliser } from '@/lib/audit'
 
 // POST /api/attendance — basculer présence ("Je viendrai")
 export async function POST(req: Request) {
@@ -12,6 +13,9 @@ export async function POST(req: Request) {
       where: { meetingId_memberId: { meetingId, memberId } },
     })
 
+    const membre = await db.member.findUnique({ where: { id: memberId } })
+    const reunion = await db.meeting.findUnique({ where: { id: meetingId } })
+
     if (existing) {
       if (guests !== undefined) {
         const att = await db.attendance.update({
@@ -22,6 +26,12 @@ export async function POST(req: Request) {
         return NextResponse.json(att)
       }
       await db.attendance.delete({ where: { id: existing.id } })
+      await journaliser({
+        kind: 'ATTENDANCE',
+        action: 'DESINSCRIRE',
+        label: `${membre?.name ?? 'Un frère'} ne viendra plus à « ${reunion?.title ?? 'la réunion'} »`,
+        actor: membre?.name || null,
+      })
       return NextResponse.json({ removed: true })
     }
 
@@ -32,6 +42,12 @@ export async function POST(req: Request) {
         guests: guests ? Math.max(0, parseInt(guests, 10) || 0) : 0,
       },
       include: { member: true },
+    })
+    await journaliser({
+      kind: 'ATTENDANCE',
+      action: 'INSCRIRE',
+      label: `${membre?.name ?? 'Un frère'} viendra à « ${reunion?.title ?? 'la réunion'} »`,
+      actor: membre?.name || null,
     })
     return NextResponse.json(att, { status: 201 })
   } catch {

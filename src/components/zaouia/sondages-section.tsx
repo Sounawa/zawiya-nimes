@@ -70,20 +70,20 @@ function CarteSondage({ poll }: { poll: Poll }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'relative rounded-2xl border bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(11,93,66,0.2)]',
-        ferme ? 'border-[#b6b1a0]/30 opacity-80' : 'border-[#0b5d42]/12'
+        'relative rounded-2xl border bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(11,93,66,0.2)]',
+        ferme ? 'border-brouillard-clair/30 opacity-80' : 'border-primary/12'
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold leading-snug text-[#123c2d]">
+          <h3 className="text-[15px] font-semibold leading-snug text-encre">
             {poll.question}
           </h3>
-          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[#a09a87]">
+          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-brouillard">
             <span>{dateCourte(poll.createdAt)}</span>
             {poll.meeting && <span>· {poll.meeting.title}</span>}
             {ferme && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#efe9dc] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#78877d]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-sand px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 <Lock className="h-3 w-3" /> fermé
               </span>
             )}
@@ -94,14 +94,14 @@ function CarteSondage({ poll }: { poll: Poll }) {
             onClick={() => setEditionOuverte(true)}
             aria-label="Modifier le sondage"
             title="Modifier le sondage"
-            className="rounded-full p-1.5 text-[#b6b1a0] transition-colors hover:bg-[#b8923a]/10 hover:text-[#b8923a]"
+            className="rounded-full p-2 text-brouillard-clair transition-colors hover:bg-gold/10 hover:text-gold"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={() => del.mutate(poll.id)}
             aria-label="Supprimer le sondage"
-            className="rounded-full p-1.5 text-[#b6b1a0] transition-colors hover:bg-[#b3452f]/10 hover:text-[#b3452f]"
+            className="rounded-full p-2 text-brouillard-clair transition-colors hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -122,8 +122,8 @@ function CarteSondage({ poll }: { poll: Poll }) {
                 className={cn(
                   'relative w-full overflow-hidden rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition-all',
                   estMonVote
-                    ? 'border-[#0b5d42]/50 bg-[#0b5d42]/5 text-[#0b5d42]'
-                    : 'border-[#0b5d42]/15 bg-white text-[#33453a] hover:border-[#0b5d42]/40'
+                    ? 'border-primary/50 bg-primary/5 text-primary'
+                    : 'border-primary/15 bg-card text-secondary-foreground hover:border-primary/40'
                 )}
               >
                 {/* Barre de résultat */}
@@ -134,7 +134,7 @@ function CarteSondage({ poll }: { poll: Poll }) {
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   className={cn(
                     'absolute inset-y-0 left-0',
-                    estMonVote ? 'bg-[#0b5d42]/12' : 'bg-[#c9a24b]/12'
+                    estMonVote ? 'bg-primary/12' : 'bg-accent/12'
                   )}
                 />
                 <span className="relative flex items-center justify-between">
@@ -144,15 +144,15 @@ function CarteSondage({ poll }: { poll: Poll }) {
                     {opt === leader && (
                       <span
                         title="Option qui mène"
-                        className="text-[10px] text-[#b8923a]"
+                        className="text-[10px] text-gold"
                         aria-label="Option qui mène"
                       >
                         ✦
                       </span>
                     )}
                   </span>
-                  <span className="text-xs font-bold tabular-nums text-[#78877d]">
-                    {n} <span className="text-[#b6b1a0]">· {pct}%</span>
+                  <span className="text-xs font-bold tabular-nums text-muted-foreground">
+                    {n} <span className="text-brouillard-clair">· {pct}%</span>
                   </span>
                 </span>
               </button>
@@ -169,11 +169,11 @@ function CarteSondage({ poll }: { poll: Poll }) {
                     {poll.votes
                       .filter((v) => normChoix(v.choice) === normChoix(opt))
                       .map((v) => (
-                        <li key={v.id} className="py-0.5 text-xs text-[#78877d]">
+                        <li key={v.id} className="py-0.5 text-xs text-muted-foreground">
                           Sidi {v.member.name}
                         </li>
                       ))}
-                    {n === 0 && <li className="py-0.5 text-xs text-[#b6b1a0]">Personne…</li>}
+                    {n === 0 && <li className="py-0.5 text-xs text-brouillard-clair">Personne…</li>}
                   </motion.ul>
                 )}
               </AnimatePresence>
@@ -186,15 +186,15 @@ function CarteSondage({ poll }: { poll: Poll }) {
       <div className="mt-3 flex items-center justify-between gap-2 text-xs">
         <button
           onClick={() => setVoirVotants((v) => (v ? null : 'tous'))}
-          className="inline-flex shrink-0 items-center gap-1.5 text-[#78877d] transition-colors hover:text-[#0b5d42]"
+          className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
         >
           <Users className="h-3.5 w-3.5" />
           {totalVotes} vote{totalVotes > 1 ? 's' : ''}
-          <span className="text-[#b6b1a0]">· voir qui</span>
+          <span className="text-brouillard-clair">· voir qui</span>
         </button>
         <div className="flex items-center gap-1.5">
           {monVote && (
-            <span className="hidden rounded-full bg-[#0b5d42]/8 px-2.5 py-1 font-semibold text-[#0b5d42] sm:inline">
+            <span className="hidden rounded-full bg-primary/8 px-2.5 py-1 font-semibold text-primary sm:inline">
               ton vote : {monVote}
             </span>
           )}
@@ -202,7 +202,7 @@ function CarteSondage({ poll }: { poll: Poll }) {
             onClick={() =>
               maj.mutate({ id: poll.id, closesAt: ferme ? null : new Date().toISOString() })
             }
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold text-[#78877d] transition-colors hover:bg-[#efe9dc] hover:text-[#0b5d42]"
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold text-muted-foreground transition-colors hover:bg-sand hover:text-primary"
           >
             {ferme ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
             {ferme ? 'rouvrir' : 'fermer'}
@@ -235,7 +235,7 @@ export function SondagesSection() {
         id="sondages"
       >
         {isLoading ? (
-          <div className="h-32 animate-pulse rounded-2xl bg-[#efe9dc]/60" />
+          <div className="h-32 animate-pulse rounded-2xl bg-sand/60" />
         ) : (
           <div className="space-y-3">
             {(polls ?? []).map((p) => (
@@ -243,7 +243,7 @@ export function SondagesSection() {
             ))}
             <button
               onClick={() => setOuvert(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#0b5d42]/30 bg-white/50 p-4 text-sm font-semibold text-[#0b5d42] transition-colors hover:bg-[#0b5d42]/5"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/30 bg-card/50 p-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
             >
               <Plus className="h-4 w-4" /> Nouveau sondage — « qui vient ? »
             </button>
@@ -327,16 +327,16 @@ function NouveauSondageDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl border-[#0b5d42]/15 bg-[#fdfcf8]">
+      <DialogContent className="max-w-md rounded-3xl border-primary/15 bg-ivoire">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-display text-2xl text-[#123c2d]">
+          <DialogTitle className="flex items-center gap-2 font-display text-2xl text-encre">
             {edition ? (
               <>
-                <Pencil className="h-5 w-5 text-[#b8923a]" /> Modifier le sondage
+                <Pencil className="h-5 w-5 text-gold" /> Modifier le sondage
               </>
             ) : (
               <>
-                <Vote className="h-5 w-5 text-[#0b5d42]" /> Nouveau sondage
+                <Vote className="h-5 w-5 text-primary" /> Nouveau sondage
               </>
             )}
           </DialogTitle>
@@ -348,28 +348,28 @@ function NouveauSondageDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Question
             </Label>
             <Input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Qui vient à l'ijtima' de samedi ?"
-              className="rounded-xl border-[#0b5d42]/25 bg-white"
+              className="rounded-xl border-primary/25 bg-card"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Réponses (une par ligne)
             </Label>
             <Textarea
               value={options}
               onChange={(e) => setOptions(e.target.value)}
               rows={4}
-              className="rounded-xl border-[#0b5d42]/25 bg-white"
+              className="rounded-xl border-primary/25 bg-card"
             />
             {edition && votesPerdus > 0 && (
-              <p className="rounded-lg bg-[#fdf0e7] px-3 py-2 text-xs font-medium text-[#b3452f]">
+              <p className="rounded-lg bg-corail-pale px-3 py-2 text-xs font-medium text-destructive">
                 ⚠︎ {votesPerdus} vote{votesPerdus > 1 ? 's' : ''} ne correspond
                 {votesPerdus > 1 ? 'ent' : ''} plus à une réponse — il
                 {votesPerdus > 1 ? 's' : ''} sera{votesPerdus > 1 ? 'ont' : ''} supprimé
@@ -379,13 +379,13 @@ function NouveauSondageDialog({
           </div>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full text-[#78877d]">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full text-muted-foreground">
             Annuler
           </Button>
           <Button
             onClick={publier}
             disabled={create.isPending || maj.isPending}
-            className="rounded-full bg-[#0b5d42] px-8 text-white hover:bg-[#0b3d2e]"
+            className="rounded-full bg-primary px-8 text-white hover:bg-emerald-deep"
           >
             {create.isPending || maj.isPending
               ? 'Enregistrement…'

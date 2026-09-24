@@ -228,10 +228,10 @@ export function NewMeetingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto rounded-3xl border-[#0b5d42]/15 bg-[#fdfcf8] p-6">
+      <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto rounded-3xl border-primary/15 bg-ivoire p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-display text-2xl text-[#123c2d]">
-            {edition && <Pencil className="h-5 w-5 text-[#b8923a]" />}
+          <DialogTitle className="flex items-center gap-2 font-display text-2xl text-encre">
+            {edition && <Pencil className="h-5 w-5 text-gold" />}
             {edition ? 'Modifier la réunion' : 'Nouvelle réunion'}
           </DialogTitle>
           <DialogDescription>
@@ -245,11 +245,11 @@ export function NewMeetingDialog({
           {/* Modèle — création seule */}
           {!edition && (
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Modèle
             </Label>
             <Select value={modele} onValueChange={appliquerModele}>
-              <SelectTrigger className="rounded-xl border-[#0b5d42]/25 bg-white">
+              <SelectTrigger className="rounded-xl border-primary/25 bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -266,7 +266,7 @@ export function NewMeetingDialog({
 
           {/* ─── Le jour : pastilles rapides ─── */}
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+            <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               <CalendarDays className="h-3.5 w-3.5" /> Jour de l'ijtima
             </Label>
             <div className="flex flex-wrap gap-1.5">
@@ -278,10 +278,10 @@ export function NewMeetingDialog({
                   className={cn(
                     'rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all',
                     jourChoisi === j
-                      ? 'bg-[#0b5d42] text-white shadow-md shadow-[#0b5d42]/25'
+                      ? 'bg-primary text-white shadow-md shadow-primary/25'
                       : joursReglages.includes(j)
-                        ? 'bg-[#0b5d42]/8 text-[#0b5d42] ring-1 ring-[#0b5d42]/25 hover:bg-[#0b5d42]/15'
-                        : 'bg-white text-[#78877d] ring-1 ring-[#0b5d42]/12 hover:bg-[#0b5d42]/5'
+                        ? 'bg-primary/8 text-primary ring-1 ring-primary/25 hover:bg-primary/15'
+                        : 'bg-card text-muted-foreground ring-1 ring-primary/12 hover:bg-primary/5'
                   )}
                   title={joursReglages.includes(j) ? 'Jour configuré dans les réglages' : undefined}
                 >
@@ -290,7 +290,7 @@ export function NewMeetingDialog({
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-[#b6b1a0]">
+            <p className="text-[10px] text-brouillard-clair">
               Les jours marqués «&nbsp;·&nbsp;» sont ceux des réglages — la date est calculée automatiquement.
             </p>
           </div>
@@ -298,30 +298,30 @@ export function NewMeetingDialog({
           {/* ─── Le lieu : ville + adresse ─── */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+              <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5" /> Ville
               </Label>
-              <Input value={ville} onChange={(e) => setVille(e.target.value)} className="rounded-xl border-[#0b5d42]/25 bg-white" />
+              <Input value={ville} onChange={(e) => setVille(e.target.value)} className="rounded-xl border-primary/25 bg-card" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Date précise</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl border-[#0b5d42]/25 bg-white" />
+              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Date précise</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl border-primary/25 bg-card" />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Adresse du lieu</Label>
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Adresse du lieu</Label>
             <Input
               value={adresse}
               onChange={(e) => setAdresse(e.target.value)}
               placeholder="Rue, numéro, sonnette…"
-              className="rounded-xl border-[#0b5d42]/25 bg-white"
+              className="rounded-xl border-primary/25 bg-card"
             />
           </div>
 
           {/* Objet */}
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Objet de l'ishtima
             </Label>
             <div className="flex gap-2">
@@ -329,9 +329,9 @@ export function NewMeetingDialog({
                 value={titre}
                 onChange={(e) => setTitre(e.target.value)}
                 placeholder="Al-Ijtimâ' du samedi…"
-                className="rounded-xl border-[#0b5d42]/25 bg-white"
+                className="rounded-xl border-primary/25 bg-card"
               />
-              <div className="flex shrink-0 items-center gap-1 rounded-xl border border-[#0b5d42]/25 bg-white px-2">
+              <div className="flex shrink-0 items-center gap-1 rounded-xl border border-primary/25 bg-card px-2">
                 {ICONES.slice(0, 5).map((ic) => (
                   <button
                     key={ic}
@@ -340,7 +340,7 @@ export function NewMeetingDialog({
                     aria-label={`Icône ${ic}`}
                     className={
                       icon === ic
-                        ? 'rounded-lg bg-[#0b5d42]/12 p-1 text-lg'
+                        ? 'rounded-lg bg-primary/12 p-1 text-lg'
                         : 'rounded-lg p-1 text-lg opacity-50 transition-opacity hover:opacity-100'
                     }
                   >
@@ -358,7 +358,7 @@ export function NewMeetingDialog({
                   aria-label={`Icône ${ic}`}
                   className={
                     icon === ic
-                      ? 'rounded-lg bg-[#0b5d42]/12 p-1 text-lg'
+                      ? 'rounded-lg bg-primary/12 p-1 text-lg'
                       : 'rounded-lg p-1 text-lg opacity-50 transition-opacity hover:opacity-100'
                   }
                 >
@@ -370,64 +370,64 @@ export function NewMeetingDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Début</Label>
-              <Input type="time" value={debut} onChange={(e) => setDebut(e.target.value)} className="rounded-xl border-[#0b5d42]/25 bg-white" />
+              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Début</Label>
+              <Input type="time" value={debut} onChange={(e) => setDebut(e.target.value)} className="rounded-xl border-primary/25 bg-card" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Fin</Label>
-              <Input type="time" value={fin} onChange={(e) => setFin(e.target.value)} className="rounded-xl border-[#0b5d42]/25 bg-white" />
+              <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Fin</Label>
+              <Input type="time" value={fin} onChange={(e) => setFin(e.target.value)} className="rounded-xl border-primary/25 bg-card" />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
-              Annonce du jour <span className="normal-case text-[#b6b1a0]">(facultatif — corail)</span>
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Annonce du jour <span className="normal-case text-brouillard-clair">(facultatif — corail)</span>
             </Label>
-            <Textarea value={annonce} onChange={(e) => setAnnonce(e.target.value)} rows={2} className="rounded-xl border-[#c9a24b]/40 bg-[#fdfcf8]" />
+            <Textarea value={annonce} onChange={(e) => setAnnonce(e.target.value)} rows={2} className="rounded-xl border-accent/40 bg-ivoire" />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
-              Le mot <span className="normal-case text-[#b6b1a0]">(facultatif)</span>
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Le mot <span className="normal-case text-brouillard-clair">(facultatif)</span>
             </Label>
-            <Input value={mot} onChange={(e) => setMot(e.target.value)} className="rounded-xl border-[#0b5d42]/25 bg-white" />
+            <Input value={mot} onChange={(e) => setMot(e.target.value)} className="rounded-xl border-primary/25 bg-card" />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
-              Invités <span className="normal-case text-[#b6b1a0]">(un par ligne — « Lyon - 5 » = 5)</span>
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Invités <span className="normal-case text-brouillard-clair">(un par ligne — « Lyon - 5 » = 5)</span>
             </Label>
-            <Textarea value={invites} onChange={(e) => setInvites(e.target.value)} rows={2} placeholder={'Lyon - 5 foqaras\nSi Mustapha'} className="rounded-xl border-[#0b5d42]/25 bg-white" />
+            <Textarea value={invites} onChange={(e) => setInvites(e.target.value)} rows={2} placeholder={'Lyon - 5 foqaras\nSi Mustapha'} className="rounded-xl border-primary/25 bg-card" />
           </div>
 
           {/* Programme */}
           <div className="space-y-2">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">Programme</Label>
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Programme</Label>
             {programme.map((l, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
                 <Input
                   type="time"
                   value={l.time}
                   onChange={(e) => majLigne(i, { time: e.target.value })}
-                  className="w-28 rounded-xl border-[#0b5d42]/25 bg-white"
+                  className="w-28 rounded-xl border-primary/25 bg-card"
                 />
                 <Input
                   value={l.icon}
                   onChange={(e) => majLigne(i, { icon: e.target.value })}
-                  className="w-14 rounded-xl border-[#0b5d42]/25 bg-white text-center"
+                  className="w-14 rounded-xl border-primary/25 bg-card text-center"
                   aria-label="Icône"
                 />
                 <Input
                   value={l.label}
                   onChange={(e) => majLigne(i, { label: e.target.value })}
                   placeholder="Salât al-Maghreb…"
-                  className="flex-1 rounded-xl border-[#0b5d42]/25 bg-white"
+                  className="flex-1 rounded-xl border-primary/25 bg-card"
                 />
                 <button
                   type="button"
                   onClick={() => retirerLigne(i)}
                   aria-label="Retirer la ligne"
-                  className="rounded-full p-2 text-[#b3452f]/60 hover:bg-[#b3452f]/10"
+                  className="rounded-full p-2 text-destructive/60 hover:bg-destructive/10"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -438,7 +438,7 @@ export function NewMeetingDialog({
               variant="outline"
               size="sm"
               onClick={ajouterLigne}
-              className="gap-1.5 rounded-full border-dashed border-[#0b5d42]/40 text-[#0b5d42] hover:bg-[#0b5d42]/5"
+              className="gap-1.5 rounded-full border-dashed border-primary/40 text-primary hover:bg-primary/5"
             >
               <Plus className="h-3.5 w-3.5" /> Ajouter une ligne
             </Button>
@@ -446,13 +446,13 @@ export function NewMeetingDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full text-[#78877d]">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full text-muted-foreground">
             Annuler
           </Button>
           <Button
             onClick={publier}
             disabled={create.isPending || update.isPending}
-            className="rounded-full bg-[#0b5d42] px-8 text-white hover:bg-[#0b3d2e]"
+            className="rounded-full bg-primary px-8 text-white hover:bg-emerald-deep"
           >
             {edition
               ? update.isPending ? 'Enregistrement…' : 'Enregistrer les modifications'

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { journaliser } from '@/lib/audit'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -13,10 +14,24 @@ function normChoix(s: string): string {
 }
 
 // DELETE /api/polls/:id
-export async function DELETE(_req: Request, { params }: Params) {
+export async function DELETE(req: Request, { params }: Params) {
   try {
     const { id } = await params
+    let acteur: string | null = null
+    try {
+      const corps = await req.json()
+      acteur = corps?.actor || null
+    } catch {
+      /* pas de corps */
+    }
+    const sondage = await db.poll.findUnique({ where: { id } })
     await db.poll.delete({ where: { id } })
+    await journaliser({
+      kind: 'POLL',
+      action: 'DELETE',
+      label: `Sondage supprimé — « ${sondage?.question || id} »`,
+      actor: acteur,
+    })
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Sondage introuvable' }, { status: 404 })
@@ -66,6 +81,12 @@ export async function PATCH(req: Request, { params }: Params) {
       }
     }
 
+    await journaliser({
+      kind: 'POLL',
+      action: 'UPDATE',
+      label: `Sondage modifié — « ${poll.question} »`,
+      actor: body.actor || null,
+    })
     return NextResponse.json(poll)
   } catch {
     return NextResponse.json({ error: 'Sondage introuvable' }, { status: 404 })

@@ -10,7 +10,6 @@ import type {
   Meeting,
   Member,
   Poll,
-  PrayerDay,
 } from './types'
 
 export function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -87,6 +86,15 @@ export function useCreateContribution() {
   })
 }
 
+export function useUpdateContribution() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
+      api<Contribution>(`/api/contributions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['contributions'] }),
+  })
+}
+
 export function useDeleteContribution() {
   const qc = useQueryClient()
   return useMutation({
@@ -137,15 +145,6 @@ export function useContent(section: string) {
   return useQuery({
     queryKey: ['content', section],
     queryFn: () => api<ContentItem[]>(`/api/content?section=${section}`),
-  })
-}
-
-/* ─── Heures de prière ─── */
-export function usePrayerTimes(scope: 'jour' | 'semaine' | 'mois') {
-  return useQuery({
-    queryKey: ['prayer-times', scope],
-    queryFn: () => api<PrayerDay>(`/api/prayer-times?scope=${scope}`),
-    staleTime: 10 * 60 * 1000,
   })
 }
 

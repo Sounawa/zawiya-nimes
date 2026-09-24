@@ -6,6 +6,7 @@ import { ChevronDown, Clock, MapPin, Trash2, Users, UserPlus, CalendarPlus } fro
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useUser } from '@/lib/store'
+import { cn } from '@/lib/utils'
 import { JOURS_COURTS, parseProgram, type Meeting } from '@/lib/types'
 import { cleSemaine, libelleSemaine } from '@/lib/format'
 
@@ -72,6 +73,12 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
           </span>
           {!compact && (
             <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[#78877d]">
+              {meeting.city && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {meeting.city}
+                </span>
+              )}
               {meeting.startTime && (
                 <span className="inline-flex items-center gap-1">
                   <Clock className="h-3 w-3" />
@@ -347,11 +354,22 @@ export function SectionShell({
       <button
         onClick={() => setOuvert((o) => !o)}
         aria-expanded={ouvert}
-        className="mb-3 flex w-full items-center justify-between rounded-2xl border border-[#0b5d42]/12 bg-white px-4 py-3 shadow-sm transition-colors hover:bg-[#fbf9f4]"
+        className={cn(
+          'group mb-3 flex w-full items-center justify-between rounded-2xl border border-[#0b5d42]/12 bg-white px-4 py-3 shadow-sm transition-all hover:border-[#0b5d42]/25 hover:shadow-md active:scale-[0.995]',
+          ouvert && 'border-[#0b5d42]/25'
+        )}
       >
         <span className="flex items-center gap-2.5">
           <span className="sceau text-[15px] font-bold uppercase tracking-[0.18em] text-[#123c2d]">
             {titre}
+          </span>
+          <span
+            className={cn(
+              'hidden rounded-full bg-[#0b5d42]/6 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-[#78877d] transition-opacity group-hover:opacity-100 sm:inline-block',
+              ouvert ? 'opacity-0' : 'opacity-70'
+            )}
+          >
+            déplier
           </span>
         </span>
         <span className="flex items-center gap-2">
@@ -360,7 +378,10 @@ export function SectionShell({
               {compteur}
             </span>
           )}
-          <motion.span animate={{ rotate: ouvert ? 180 : 0 }} className="text-[#b6b1a0]">
+          <motion.span
+            animate={{ rotate: ouvert ? 180 : 0 }}
+            className={cn('text-[#b6b1a0] transition-colors group-hover:text-[#0b5d42]', !ouvert && 'chevron-pulse')}
+          >
             <ChevronDown className="h-5 w-5" />
           </motion.span>
         </span>

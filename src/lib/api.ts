@@ -144,6 +144,15 @@ export function useVote() {
   })
 }
 
+export function useUpdatePoll() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
+      api<Poll>(`/api/polls/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['polls'] }),
+  })
+}
+
 export function useDeletePoll() {
   const qc = useQueryClient()
   return useMutation({

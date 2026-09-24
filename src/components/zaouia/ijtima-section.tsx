@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Clock, MapPin, Pencil, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
+import { ChevronDown, Clock, MapPin, Pencil, Printer, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { useUser } from '@/lib/store'
+import { usePrint, useUser } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { JOURS_COURTS, parseProgram, type Meeting } from '@/lib/types'
 import { cleSemaine, libelleSemaine } from '@/lib/format'
@@ -19,6 +19,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
   const [voirInvites, setVoirInvites] = useState(false)
   const [editionOuverte, setEditionOuverte] = useState(false)
   const memberId = useUser((s) => s.memberId)
+  const imprimer = usePrint((s) => s.imprimer)
   const qc = useQueryClient()
 
   const d = new Date(meeting.date)
@@ -44,13 +45,17 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
 
   const jourCourt = JOURS_COURTS[d.getDay()]
   const jourNum = d.getDate()
+  const aujourdhui = new Date()
+  aujourdhui.setHours(0, 0, 0, 0)
+  const passee = d < aujourdhui
 
   return (
     <motion.article
       layout
       className={cn(
         'relative overflow-hidden rounded-2xl border bg-white shadow-[0_2px_12px_-4px_rgba(11,93,66,0.08)] transition-shadow hover:shadow-[0_6px_20px_-6px_rgba(11,93,66,0.18)]',
-        jeViens ? 'border-[#0b5d42]/30' : 'border-[#0b5d42]/12'
+        jeViens ? 'border-[#0b5d42]/30' : 'border-[#0b5d42]/12',
+        passee && 'opacity-60 saturate-50'
       )}
     >
       {/* Liseré doré si je suis inscrit */}
@@ -74,6 +79,11 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
             {jeViens && (
               <span className="rounded-full bg-[#0b5d42]/10 px-2 py-0.5 text-[10px] font-semibold text-[#0b5d42]">
                 ✓ inscrit
+              </span>
+            )}
+            {passee && (
+              <span className="rounded-full bg-[#efe9dc] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#a09a87]">
+                passée
               </span>
             )}
           </span>
@@ -184,6 +194,14 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                   className="grid h-11 w-11 place-items-center rounded-full border border-[#b8923a]/40 text-[#b8923a] transition-all hover:bg-[#b8923a]/10 hover:border-[#b8923a]/70"
                 >
                   <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => imprimer({ kind: 'presence', meetingId: meeting.id })}
+                  aria-label="Imprimer la feuille de présence"
+                  title="Imprimer la feuille de présence"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-[#0b5d42]/30 text-[#0b5d42] transition-all hover:bg-[#0b5d42]/10 hover:border-[#0b5d42]/60"
+                >
+                  <Printer className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => del.mutate()}

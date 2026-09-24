@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useSpring } from 'framer-motion'
 import { LogOut, Settings2, UserRound } from 'lucide-react'
 import { useUser } from '@/lib/store'
 import { dateLongue } from '@/lib/format'
@@ -16,6 +16,10 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
   const name = useUser((s) => s.name)
   const role = useUser((s) => s.role)
   const logout = useUser((s) => s.logout)
+
+  /* Fil d'or — progression de lecture sous le bandeau collant */
+  const { scrollYProgress } = useScroll()
+  const progression = useSpring(scrollYProgress, { stiffness: 120, damping: 26, mass: 0.4 })
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#0b5d42]/10 bg-[#fbf9f4]/85 backdrop-blur-lg">
@@ -92,6 +96,13 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           <span className="text-[#0b5d42]">Nîmes</span>
         </motion.p>
       </div>
+
+      {/* Fil d'or — suit la progression de la page */}
+      <motion.span
+        aria-hidden
+        style={{ scaleX: progression }}
+        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-[#0b5d42] via-[#c9a24b] to-[#e2c98a]"
+      />
     </header>
   )
 }

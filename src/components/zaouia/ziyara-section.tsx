@@ -132,10 +132,11 @@ export function ZiyaraSection() {
                 <HeartHandshake className="h-3.5 w-3.5" /> Entrées ziyara — cliquer sur le crayon pour modifier un montant
               </p>
               <ul className="defile-fin max-h-72 divide-y divide-[#f8f1dd] overflow-y-auto">
-                {entreesZiyara.map((c) => (
+                {entreesZiyara.map((c, i) => (
                   <LigneContribution
                     key={c.id}
                     id={c.id}
+                    index={i}
                     membre={c.member.name}
                     montant={c.amount}
                     categorie={c.category}

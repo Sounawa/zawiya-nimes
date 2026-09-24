@@ -54,9 +54,13 @@ export function FormulaireContribution({
     return moi ? [moi, ...membres.filter((m) => m.id !== moi.id)] : membres
   })()
 
+  // « Moi » présélectionné — la plupart des saisies concernent le frère qui enregistre
+  const moiId = membresPossibles[0]?.id
+  const membreEffectif = membre || moiId || ''
+
   const enregistrer = () => {
     const m = parseFloat(montant.replace(',', '.'))
-    if (!membre || !m || m <= 0) {
+    if (!membreEffectif || !m || m <= 0) {
       toast({
         title: 'Champs incomplets',
         description: 'Choisis un frère et un montant valide.',
@@ -66,7 +70,7 @@ export function FormulaireContribution({
     }
     create.mutate(
       {
-        memberId: membre,
+        memberId: membreEffectif,
         amount: m,
         category: categorie,
         note: note.trim() || null,
@@ -96,7 +100,7 @@ export function FormulaireContribution({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-[#5b6b60]">Frère</Label>
-          <Select value={membre} onValueChange={setMembre}>
+          <Select value={membreEffectif} onValueChange={setMembre}>
             <SelectTrigger className="rounded-xl border-[#0b5d42]/25 bg-white">
               <SelectValue placeholder="Choisir…" />
             </SelectTrigger>
@@ -117,6 +121,7 @@ export function FormulaireContribution({
             onChange={(e) => setMontant(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && enregistrer()}
             placeholder="20"
+            aria-label="Montant en euros"
             className="rounded-xl border-[#0b5d42]/25 bg-white"
           />
         </div>
@@ -176,6 +181,7 @@ export function LigneContribution({
   categorie,
   note,
   date,
+  index = 0,
   onDeleted,
 }: {
   id: string
@@ -184,6 +190,7 @@ export function LigneContribution({
   categorie: string
   note: string | null
   date: string
+  index?: number
   onDeleted: () => void
 }) {
   const del = useDeleteContribution()
@@ -212,9 +219,10 @@ export function LigneContribution({
   return (
     <motion.li
       layout
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, x: -14 }}
+      animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -30 }}
+      transition={{ duration: 0.28, delay: Math.min(index * 0.045, 0.6), ease: 'easeOut' }}
       className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#fbf9f4]"
     >
       <span

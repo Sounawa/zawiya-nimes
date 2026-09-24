@@ -80,7 +80,7 @@ export default function Page() {
         onOpenProfile={() => setProfilOuvert(true)}
       />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 pb-32 pt-5">
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 pb-40 pt-5">
         <Annonces />
         <IjtimaSection />
         <CotisationSection />
@@ -120,10 +120,10 @@ export default function Page() {
           whileTap={{ scale: 0.94 }}
           onClick={() => setNouvelleReunion(true)}
           aria-label="Nouvelle réunion"
-          className="relative flex h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-[#0b5d42] to-[#0b3d2e] pl-5 pr-6 text-white shadow-xl shadow-[#0b5d42]/35"
+          className="relative flex h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-[#0b5d42] to-[#0b3d2e] pl-5 pr-6 text-white shadow-xl shadow-[#0b5d42]/35 max-sm:h-13 max-sm:w-13 max-sm:justify-center max-sm:pl-0 max-sm:pr-0"
         >
-          <CalendarPlus className="h-5 w-5" />
-          <span className="text-sm font-semibold tracking-wide">Réunion</span>
+          <CalendarPlus className="h-5 w-5 max-sm:h-6 max-sm:w-6" />
+          <span className="text-sm font-semibold tracking-wide max-sm:hidden">Réunion</span>
         </motion.button>
       </div>
 

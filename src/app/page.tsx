@@ -15,6 +15,7 @@ import { ContentSections } from '@/components/zaouia/content-sections'
 import { CotisationSection } from '@/components/zaouia/cotisation-section'
 import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
 import { SondagesSection } from '@/components/zaouia/sondages-section'
+import { AnnuaireSection } from '@/components/zaouia/annuaire-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 
 export default function Page() {
@@ -75,14 +76,21 @@ export default function Page() {
         <CotisationSection />
         <ZiyaraSection />
         <SondagesSection />
+        <AnnuaireSection />
         <ContentSections />
       </main>
 
       {/* ─── Pied de page ─── */}
       <footer className="mt-auto border-t border-[#0b5d42]/10 bg-white/70 backdrop-blur safe-bottom">
-        <p className="mx-auto max-w-3xl px-4 py-4 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-[#b6b1a0]">
-          Zawiya Nimes — {new Date().getFullYear()}
-        </p>
+        <div className="mx-auto max-w-3xl px-4 py-4 text-center">
+          <div className="bandeau-orne mx-auto mb-3 w-24" aria-hidden />
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[#b6b1a0]">
+            Zawiya Nimes — {new Date().getFullYear()}
+          </p>
+          <p className="mt-1.5 text-[10px] text-[#c9a24b]/80" aria-hidden>
+            ✦
+          </p>
+        </div>
       </footer>
 
       {/* ─── Bouton flottant ＋ Réunion ─── */}

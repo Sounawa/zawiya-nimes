@@ -131,7 +131,7 @@ export function ZiyaraSection() {
               <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a3781f]">
                 <HeartHandshake className="h-3.5 w-3.5" /> Entrées ziyara — cliquer sur le crayon pour modifier un montant
               </p>
-              <ul className="max-h-72 divide-y divide-[#f8f1dd] overflow-y-auto">
+              <ul className="defile-fin max-h-72 divide-y divide-[#f8f1dd] overflow-y-auto">
                 {entreesZiyara.map((c) => (
                   <LigneContribution
                     key={c.id}

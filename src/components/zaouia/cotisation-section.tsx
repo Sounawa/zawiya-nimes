@@ -2,12 +2,48 @@
 
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Banknote, CalendarRange, TrendingUp, Users } from 'lucide-react'
+import { Banknote, CalendarRange, Download, TrendingUp, Users } from 'lucide-react'
 import { useContributions } from '@/lib/api'
+import { useUser } from '@/lib/store'
+import { useToast } from '@/hooks/use-toast'
 import { euros } from '@/lib/format'
 import { SectionShell } from './ijtima-section'
 import { FormulaireContribution, LigneContribution, Compteur, Progression } from './contribution-shared'
 import { cn } from '@/lib/utils'
+import type { Contribution } from '@/lib/types'
+
+/* ═══════════════ Export CSV — réservé au trésorier ═══════════════ */
+function exporterCSV(contributions: Contribution[], totalCaisse: number, totalZiyara: number) {
+  const lignes = [
+    'Date;Frère;Catégorie;Montant (€);Note;Enregistré par',
+    ...contributions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((c) =>
+        [
+          new Date(c.date).toLocaleDateString('fr-FR'),
+          c.member.name,
+          c.category === 'COTISATION' ? 'Cotisation' : c.category === 'ZIYARA' ? 'Ziyara' : 'Don',
+          String(c.amount).replace('.', ','),
+          (c.note ?? '').replace(/[;\n]/g, ' '),
+          c.recordedBy ?? '',
+        ].join(';')
+      ),
+    '',
+    `TOTAL CAISSE (cotisations & dons);;${String(totalCaisse).replace('.', ',')}`,
+    `TOTAL ZIYARA;;${String(totalZiyara).replace('.', ',')}`,
+  ]
+  // BOM UTF-8 pour qu'Excel affiche correctement les accents
+  const blob = new Blob(['\uFEFF' + lignes.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `comptes-zawiya-nimes-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
 
 /* ═══════════════ Graphe mensuel animé — évolution de la caisse ═══════════════ */
 function GrapheMensuel({ cotisations }: { cotisations: { amount: number; category: string; date: string }[] }) {
@@ -101,6 +137,8 @@ function GrapheMensuel({ cotisations }: { cotisations: { amount: number; categor
 /* ═══════════════ Section COTISATIONS — la caisse ═══════════════ */
 export function CotisationSection() {
   const { data, isLoading } = useContributions()
+  const role = useUser((s) => s.role)
+  const { toast } = useToast()
 
   const [filtre, setFiltre] = useState<'TOUS' | 'COTISATION' | 'DON'>('TOUS')
 
@@ -144,6 +182,20 @@ export function CotisationSection() {
                 <Banknote className="h-4 w-4" /> La Caisse
               </p>
               <Compteur valeur={totals ? totals.COTISATION + totals.DON : 0} libelle="Cotisations & dons cumulés" />
+              {role === 'TREASURER' && totals && (
+                <button
+                  onClick={() => {
+                    exporterCSV(cotisations, totals.COTISATION + totals.DON, totals.ZIYARA)
+                    toast({
+                      title: 'Export CSV prêt',
+                      description: `${cotisations.length} entrées — caisse ${euros(totals.COTISATION + totals.DON)}`,
+                    })
+                  }}
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#b8923a]/45 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[#a3781f] transition-all hover:bg-[#fdf6e7] hover:shadow-md active:scale-[0.98]"
+                >
+                  <Download className="h-3.5 w-3.5" /> Exporter les comptes (CSV)
+                </button>
+              )}
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-white/80 p-3 text-center ring-1 ring-[#0b5d42]/10">
                   <p className="font-display text-xl font-semibold tabular-nums text-[#0b5d42]">
@@ -214,7 +266,7 @@ export function CotisationSection() {
                 ))}
               </div>
             </div>
-            <ul className="max-h-72 divide-y divide-[#f2ede0] overflow-y-auto">
+            <ul className="defile-fin max-h-72 divide-y divide-[#f2ede0] overflow-y-auto">
               <AnimatePresence initial={false}>
                 {listeFiltree.map((c) => (
                   <LigneContribution

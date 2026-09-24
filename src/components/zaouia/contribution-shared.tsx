@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Coins, Gift, HandCoins, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useCreateContribution, useDeleteContribution, useMembers, useUpdateContribution } from '@/lib/api'
@@ -295,18 +295,34 @@ export function LigneContribution({
 
 /* ═══════════════ Compteur animé ═══════════════ */
 export function Compteur({ valeur, libelle }: { valeur: number; libelle: string }) {
-  const chiffres = euros(valeur)
+  const [affiche, setAffiche] = useState(0)
+  // Référentiel de la valeur affichée — sert de point de départ au décompte
+  const afficheRef = useRef(0)
+
+  useEffect(() => {
+    const depart = afficheRef.current
+    const arrivee = valeur
+    const duree = 900
+    const debut = performance.now()
+    let raf = 0
+    const pas = (t: number) => {
+      const p = Math.min(1, (t - debut) / duree)
+      // easeOutExpo — départ vif, arrivée douce
+      const e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p)
+      const v = Math.round((depart + (arrivee - depart) * e) * 100) / 100
+      afficheRef.current = v
+      setAffiche(v)
+      if (p < 1) raf = requestAnimationFrame(pas)
+    }
+    raf = requestAnimationFrame(pas)
+    return () => cancelAnimationFrame(raf)
+  }, [valeur])
+
   return (
     <div className="text-center">
-      <motion.p
-        key={chiffres}
-        initial={{ opacity: 0, y: 8, filter: 'blur(3px)' }}
-        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        transition={{ duration: 0.4 }}
-        className="font-display text-4xl font-semibold tabular-nums text-[#123c2d] sm:text-5xl"
-      >
-        {chiffres}
-      </motion.p>
+      <p className="font-display text-4xl font-semibold tabular-nums text-[#123c2d] sm:text-5xl">
+        {euros(affiche)}
+      </p>
       <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.3em] text-[#a09a87]">
         {libelle}
       </p>

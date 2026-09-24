@@ -236,7 +236,7 @@ export function SettingsDialog({
             Un seul frère peut porter le rôle de <strong className="text-[#8a6d2f]">trésorier</strong> —
             c'est lui qui gère l'argent (cotisations & ziyara).
           </p>
-          <div className="max-h-64 overflow-y-auto rounded-2xl border border-[#0b5d42]/12 bg-white p-2 shadow-sm">
+          <div className="defile-fin max-h-64 overflow-y-auto rounded-2xl border border-[#0b5d42]/12 bg-white p-2 shadow-sm">
             {(membres ?? []).map((m) => (
               <div
                 key={m.id}

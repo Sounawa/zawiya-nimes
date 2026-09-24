@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Clock, MapPin, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
+import { ChevronDown, Clock, MapPin, Pencil, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useUser } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { JOURS_COURTS, parseProgram, type Meeting } from '@/lib/types'
 import { cleSemaine, libelleSemaine } from '@/lib/format'
+import { NewMeetingDialog } from './new-meeting-dialog'
 
 /* ═══════════════ Carte d'une réunion ═══════════════ */
 
@@ -16,6 +17,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
   const [ouvert, setOuvert] = useState(false)
   const [voirListe, setVoirListe] = useState(false)
   const [voirInvites, setVoirInvites] = useState(false)
+  const [editionOuverte, setEditionOuverte] = useState(false)
   const memberId = useUser((s) => s.memberId)
   const qc = useQueryClient()
 
@@ -161,7 +163,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                 </div>
               )}
 
-              {/* Je viendrai */}
+              {/* Je viendrai + modifier + supprimer */}
               <div className="flex items-center gap-2">
                 <motion.button
                   whileTap={{ scale: 0.96 }}
@@ -176,8 +178,17 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                   {jeViens ? '✓ Je viendrai' : 'Je viendrai'}
                 </motion.button>
                 <button
+                  onClick={() => setEditionOuverte(true)}
+                  aria-label="Modifier la réunion"
+                  title="Modifier la réunion"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-[#b8923a]/40 text-[#b8923a] transition-all hover:bg-[#b8923a]/10 hover:border-[#b8923a]/70"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() => del.mutate()}
                   aria-label="Supprimer la réunion"
+                  title="Supprimer la réunion"
                   className="grid h-11 w-11 place-items-center rounded-full border border-[#b3452f]/25 text-[#b3452f]/70 transition-colors hover:bg-[#b3452f]/10"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -203,7 +214,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                       exit={{ height: 0 }}
                       className="overflow-hidden pl-2"
                     >
-                      <div className="max-h-60 overflow-y-auto rounded-xl border border-[#0b5d42]/10 p-2">
+                      <div className="defile-fin max-h-60 overflow-y-auto rounded-xl border border-[#0b5d42]/10 p-2">
                         {presents.length === 0 && (
                           <li className="px-3 py-2 text-sm text-[#a09a87]">Personne pour l'instant…</li>
                         )}
@@ -267,6 +278,9 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ─── Dialogue de modification ─── */}
+      <NewMeetingDialog open={editionOuverte} onOpenChange={setEditionOuverte} meeting={meeting} />
     </motion.article>
   )
 }

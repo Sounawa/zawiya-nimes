@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { CalendarDays, MapPin, Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -22,9 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useCreateMeeting, useSettings } from '@/lib/api'
+import { useCreateMeeting, useUpdateMeeting, useSettings } from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
-import { JOURS_COMPLETS, type ProgramLine } from '@/lib/types'
+import { JOURS_COMPLETS, parseProgram, type Meeting, type ProgramLine } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const MODELES = [
@@ -49,13 +49,19 @@ interface Ligne {
 export function NewMeetingDialog({
   open,
   onOpenChange,
+  meeting = null,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
+  /** Réunion à modifier — null = création */
+  meeting?: Meeting | null
 }) {
   const create = useCreateMeeting()
+  const update = useUpdateMeeting()
   const { data: settings } = useSettings()
   const { toast } = useToast()
+
+  const edition = meeting !== null
 
   // Réglages des jours d'ijtima + lieu par défaut
   const jours = settings?.ijtima_days?.jours ?? []
@@ -77,26 +83,44 @@ export function NewMeetingDialog({
   const [programme, setProgramme] = useState<Ligne[]>([])
 
   /* Pré-remplir pendant le rendu (motif React officiel) :
-     jour d'ijtima actif le plus proche + lieu enregistré dans les réglages */
+     — édition : champs depuis la réunion existante
+     — création : jour d'ijtima actif le plus proche + lieu enregistré dans les réglages */
   const [prerempli, setPrerempli] = useState(false)
   if (open && !prerempli) {
-    setVille(villeDefaut)
-    setAdresse(lieuDefaut)
-    const prochains = jours
-      .filter((j) => j.actif && NUM_JOUR[j.label] !== undefined)
-      .map((j) => {
-        const d = new Date()
-        const diff = (NUM_JOUR[j.label] - d.getDay() + 7) % 7 || 7
-        d.setDate(d.getDate() + diff)
-        return { label: j.label, heure: j.heure, d }
-      })
-      .sort((a, b) => a.d.getTime() - b.d.getTime())
-    if (prochains[0]) {
-      const p = prochains[0]
-      const d = p.d
-      setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
-      setJourChoisi(p.label)
-      setDebut(p.heure || '19:30')
+    if (edition && meeting) {
+      const d = new Date(meeting.date)
+      setVille(meeting.city ?? '')
+      setAdresse(meeting.address ?? '')
+      setDate(
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      )
+      setJourChoisi(JOURS_COMPLETS[(d.getDay() + 6) % 7])
+      setTitre(meeting.title)
+      setIcon(meeting.icon ?? '🕌')
+      setDebut(meeting.startTime ?? '19:30')
+      setFin(meeting.endTime ?? '22:15')
+      setAnnonce(meeting.announcement ?? '')
+      setMot(meeting.word ?? '')
+      setProgramme(parseProgram(meeting))
+    } else {
+      setVille(villeDefaut)
+      setAdresse(lieuDefaut)
+      const prochains = jours
+        .filter((j) => j.actif && NUM_JOUR[j.label] !== undefined)
+        .map((j) => {
+          const d = new Date()
+          const diff = (NUM_JOUR[j.label] - d.getDay() + 7) % 7 || 7
+          d.setDate(d.getDate() + diff)
+          return { label: j.label, heure: j.heure, d }
+        })
+        .sort((a, b) => a.d.getTime() - b.d.getTime())
+      if (prochains[0]) {
+        const p = prochains[0]
+        const d = p.d
+        setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
+        setJourChoisi(p.label)
+        setDebut(p.heure || '19:30')
+      }
     }
     setPrerempli(true)
   }
@@ -143,19 +167,35 @@ export function NewMeetingDialog({
     const programmePropre: ProgramLine[] = programme
       .filter((l) => l.label.trim())
       .map((l) => ({ time: l.time || '—', label: l.label.trim(), icon: l.icon }))
+    const payload = {
+      title: titre.trim(),
+      icon,
+      city: ville.trim() || null,
+      address: adresse.trim() || null,
+      date,
+      startTime: debut || null,
+      endTime: fin || null,
+      announcement: annonce.trim() || null,
+      word: mot.trim() || null,
+      program: programmePropre.length ? programmePropre : null,
+    }
+    if (edition && meeting) {
+      update.mutate(
+        { id: meeting.id, ...payload },
+        {
+          onSuccess: () => {
+            toast({ title: 'Réunion modifiée', description: `${titre} — ${date}` })
+            onOpenChange(false)
+            reset()
+          },
+          onError: () =>
+            toast({ title: 'Échec de la modification', variant: 'destructive' }),
+        }
+      )
+      return
+    }
     create.mutate(
-      {
-        title: titre.trim(),
-        icon,
-        city: ville.trim() || null,
-        address: adresse.trim() || null,
-        date,
-        startTime: debut || null,
-        endTime: fin || null,
-        announcement: annonce.trim() || null,
-        word: mot.trim() || null,
-        program: programmePropre.length ? programmePropre : null,
-      },
+      payload,
       {
         onSuccess: () => {
           toast({ title: 'Réunion publiée', description: `${titre} — ${date}` })
@@ -190,16 +230,20 @@ export function NewMeetingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto rounded-3xl border-[#0b5d42]/15 bg-[#fdfcf8] p-6">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-[#123c2d]">
-            Nouvelle réunion
+          <DialogTitle className="flex items-center gap-2 font-display text-2xl text-[#123c2d]">
+            {edition && <Pencil className="h-5 w-5 text-[#b8923a]" />}
+            {edition ? 'Modifier la réunion' : 'Nouvelle réunion'}
           </DialogTitle>
           <DialogDescription>
-            Choisis le jour et le lieu — un modèle préremplit le reste.
+            {edition
+              ? 'Ajuste le jour, le lieu, le programme — tout est modifiable.'
+              : 'Choisis le jour et le lieu — un modèle préremplit le reste.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Modèle */}
+          {/* Modèle — création seule */}
+          {!edition && (
           <div className="space-y-1.5">
             <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
               Modèle
@@ -218,6 +262,7 @@ export function NewMeetingDialog({
               </SelectContent>
             </Select>
           </div>
+          )}
 
           {/* ─── Le jour : pastilles rapides ─── */}
           <div className="space-y-1.5">
@@ -406,10 +451,12 @@ export function NewMeetingDialog({
           </Button>
           <Button
             onClick={publier}
-            disabled={create.isPending}
+            disabled={create.isPending || update.isPending}
             className="rounded-full bg-[#0b5d42] px-8 text-white hover:bg-[#0b3d2e]"
           >
-            {create.isPending ? 'Publication…' : 'Publier'}
+            {edition
+              ? update.isPending ? 'Enregistrement…' : 'Enregistrer les modifications'
+              : create.isPending ? 'Publication…' : 'Publier'}
           </Button>
         </DialogFooter>
       </DialogContent>

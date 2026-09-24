@@ -50,6 +50,18 @@ export function useCreateMeeting() {
   })
 }
 
+export function useUpdateMeeting() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
+      api<Meeting>(`/api/meetings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['meetings'] })
+      qc.invalidateQueries({ queryKey: ['polls'] })
+    },
+  })
+}
+
 export function useDeleteMeeting() {
   const qc = useQueryClient()
   return useMutation({

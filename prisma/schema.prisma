@@ -124,7 +124,7 @@ model Setting {
 // ─── Journal de la zawiya (historique des actions) ─────────────────
 model AuditLog {
   id        String   @id @default(cuid())
-  kind      String // MEETING | CONTRIBUTION | ANNOUNCEMENT | POLL | MEMBER | ATTENDANCE | SETTING
+  kind      String // MEETING | CONTRIBUTION | ANNOUNCEMENT | POLL | MEMBER | ATTENDANCE | SETTING | CONTENT
   action    String // CREATE | UPDATE | DELETE | INSCRIRE | DESINSCRIRE | VOTE
   label     String // « Latîf al-Kabîr du 24 sept. »
   actor     String? // prénom de l'auteur (si connu)

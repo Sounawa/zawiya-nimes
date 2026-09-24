@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useNav } from '@/lib/store'
 import {
   useAnnouncements,
@@ -10,6 +10,7 @@ import {
   usePolls,
 } from '@/lib/api'
 import { dateCourte, libelleSemaine } from '@/lib/format'
+import type { ContentItem } from '@/lib/types'
 import {
   CommandDialog,
   CommandEmpty,
@@ -23,9 +24,11 @@ import {
   BookOpenText,
   CalendarDays,
   Megaphone,
+  Music,
   Search,
   UserRound,
   Vote,
+  type LucideIcon,
 } from 'lucide-react'
 
 /** Recherche globale — ⌘K / Ctrl+K, ou le bouton loupe du bandeau.
@@ -39,6 +42,9 @@ export function RechercheGlobale() {
   const { data: membres } = useMembers()
   const { data: annonces } = useAnnouncements()
   const { data: adhkars } = useContent('ADHKAR')
+  const { data: quran } = useContent('QURAN')
+  const { data: sama } = useContent('SAMA')
+  const { data: durus } = useContent('DURUS')
   const { data: polls } = usePolls()
 
   /* Raccourci clavier ⌘K / Ctrl+K */
@@ -188,6 +194,38 @@ export function RechercheGlobale() {
                 ))}
               </CommandGroup>
             </>
+          )}
+
+          {/* ─── Autres contenus spirituels — Qur'ân, Samâ', Durûs ─── */}
+          {([
+            { titre: "Qur'ân", donnees: quran, cible: 'quran', icone: BookOpenText },
+            { titre: "Samâ'", donnees: sama, cible: 'sama', icone: Music },
+            { titre: 'Durûs', donnees: durus, cible: 'durus', icone: BookOpenText },
+          ] as { titre: string; donnees?: ContentItem[]; cible: string; icone: LucideIcon }[]).map(
+            ({ titre, donnees, cible, icone: Icone }) =>
+              (donnees?.length ?? 0) > 0 && (
+                <Fragment key={cible}>
+                  <CommandSeparator />
+                  <CommandGroup heading={titre}>
+                    {donnees!.map((c) => (
+                      <CommandItem
+                        key={c.id}
+                        value={`${c.title} ${c.subtitle ?? ''} ${c.body ?? ''}`}
+                        onSelect={() => allerA(cible)}
+                        className="gap-3"
+                      >
+                        <Icone className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="min-w-0 flex-1 truncate">
+                          <span className="font-medium">{c.title}</span>
+                          {c.time && (
+                            <span className="ml-1.5 text-xs text-muted-foreground">· {c.time}</span>
+                          )}
+                        </span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Fragment>
+              )
           )}
 
           {/* ─── Sondages ─── */}

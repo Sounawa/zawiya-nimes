@@ -216,6 +216,60 @@ export function useContent(section: string) {
   })
 }
 
+export function useCreateContent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) =>
+      api<ContentItem>('/api/content', { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['content'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}
+
+export function useUpdateContent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string } & Record<string, unknown>) =>
+      api<ContentItem>(`/api/content/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['content'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}
+
+export function useDeleteContent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      api(`/api/content/${id}`, { method: 'DELETE', body: JSON.stringify({}) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['content'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}
+
+/** Échange l'ordre de deux entrées (montée/descente) — deux PATCH successifs */
+export function useReorderContent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (paire: { id: string; order: number }[]) => {
+      for (const p of paire) {
+        await api(`/api/content/${p.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ order: p.order }),
+        })
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['content'] })
+    },
+  })
+}
+
 /* ─── Réglages ─── */
 export function useSettings() {
   return useQuery({

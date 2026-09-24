@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
+  BookOpen,
   CalendarDays,
   Coins,
   Download,
@@ -30,6 +31,7 @@ const LIBELLES: Record<AuditKind, string> = {
   MEMBER: 'Membres',
   ATTENDANCE: 'Présences',
   SETTING: 'Réglages',
+  CONTENT: 'Contenus',
 }
 
 /* ─── Icônes & teintes par nature d'action ─── */
@@ -41,6 +43,7 @@ const ICONES: Record<AuditKind, LucideIcon> = {
   MEMBER: UserRoundPlus,
   ATTENDANCE: Users,
   SETTING: Settings2,
+  CONTENT: BookOpen,
 }
 
 const TENUES: Record<
@@ -54,6 +57,7 @@ const TENUES: Record<
   MEMBER: { fond: 'bg-primary/10', icone: 'text-primary' },
   ATTENDANCE: { fond: 'bg-sauge/15', icone: 'text-sauge' },
   SETTING: { fond: 'bg-sand', icone: 'text-brouillard' },
+  CONTENT: { fond: 'bg-accent/10', icone: 'text-gold-vif' },
 }
 
 const VERBES: Record<AuditAction, string> = {

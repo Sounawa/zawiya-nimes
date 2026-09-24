@@ -28,11 +28,18 @@ export function BoutonInstallation() {
     /* Déjà refusée une fois : ne pas re-proposer */
     if (localStorage.getItem(CLE_REFUS) === '1') return
 
+    /* Discrétion : si l'invitation est ignorée, elle se retire
+       d'elle-même (pas de voile permanent sur le contenu). */
+    let minuterie: ReturnType<typeof setTimeout> | null = null
+
     const capter = (e: Event) => {
       e.preventDefault()
       setInvite(e as InviteAvantInstallation)
       /* Petite pause avant l'apparition — ne pas surprendre */
-      setTimeout(() => setVisible(true), 2500)
+      setTimeout(() => {
+        setVisible(true)
+        minuterie = setTimeout(() => setVisible(false), 20000)
+      }, 2500)
     }
     const installee = () => {
       setVisible(false)
@@ -47,6 +54,7 @@ export function BoutonInstallation() {
     return () => {
       window.removeEventListener('beforeinstallprompt', capter)
       window.removeEventListener('appinstalled', installee)
+      if (minuterie) clearTimeout(minuterie)
     }
   }, [toast])
 

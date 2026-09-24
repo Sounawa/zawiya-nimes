@@ -248,3 +248,51 @@ Stage Summary:
 - Fonctionnement de l'invitation PWA : n'apparaît que si le navigateur déclenche beforeinstallprompt (Chrome/Edge/Android) ; iOS passe par le menu Partager → Sur l'écran d'accueil (comportement attendu)
 - Non résiduel : app_config.lieu toujours vide à remplir dans Réglages (donnée utilisateur, non bloquant) ; service worker absent — notifications hors-ligne (app fermée) non couvertes, seules les notifications onglet-ouvert-en-fond le sont ; l'assiduité compte les inscriptions, pas la présence signée du jour (note explicative imprimée sur la feuille)
 - Recommandations prochain round : mini-service worker (cache app-shell + notification push via un mini-service dédié si le sandbox le permet), édition/ajout d'entrées Adhkâr par le Shaykh (CRUD ContentItem), statistiques de cotisations par mois dans la section Cotisations (graphique léger), champ « lieu » pré-rempli lors de la création de réunion depuis app_config
+
+---
+Task ID: round-crud-contenus-sw
+Agent: Z.ai Code (principal)
+Task: QA de l'état stable puis développement des recommandations restantes — CRUD complet des contenus spirituels (Adhkâr, Qur'ân, Samâ', Durûs), service worker app-shell, polissage des styles
+
+### 1. État du projet au démarrage
+
+- Lecture du worklog : les rounds précédents ont livré une application STABLE et riche — 8 sections, recherche globale ⌘K, journal d'audit filtrable + CSV, impressions A4 (présence/comptes/bilan/assiduité), notifications navigateur en fond, bandeau « Prochain ijtimâ' » avec décompte vivant, mini-calendrier mensuel, PWA installable (manifest + icônes générées + invitation), sceau tariqa définitif, bouton retour en haut, export CSV comptes + bilan
+- Recommandations restantes du dernier round : CRUD des contenus Adhkâr par le Shaykh (API GET/POST seule, AUCUNE UI d'édition), service worker (absent), stats mensuelles (déjà faites — GrapheMensuel présent dans cotisation-section.tsx), lieu pré-rempli (déjà fait — lieuDefaut dans new-meeting-dialog.tsx)
+- QA initial (session agent-browser qa14, Abde TREASURIER) : portail ✓, 8 sections ✓, vote sondage 8→7→8 restauré ✓, Ziyara trésorier 8 entrées ✓, 0 erreur console, tous les endpoints 200, dev.log propre
+
+### 2. Objectifs, modifications réalisées, résultats de vérification
+
+OBJECTIF 1 — CRUD complet des contenus spirituels (le Shaykh édite sans dépendre de personne) :
+- API : src/app/api/content/[id]/route.ts CRÉÉ (PATCH champs + order, DELETE) ; POST /api/content journalise désormais CREATE et calcule l'ordre (max+1) ; PATCH ne journalise PAS les réorganisations pures (order seul) pour éviter la pollution du journal — vérifié : reorder ne crée plus d'entrée, modification réelle oui
+- TYPE : AuditKind étendu de 'CONTENT' dans audit.ts, types.ts, schema.prisma (commentaire) — le journal Historique affiche « Contenus » avec icône BookOpen + tenue or (LIBELLES/ICONES/TENUES mis à jour), le filtre apparaît dynamiquement
+- HOOKS : useCreateContent, useUpdateContent, useDeleteContent, useReorderContent dans api.ts (reorder = ré-indexation complète côté client → PATCH des seuls ordres modifiés, robuste aux ordres seedés tous à 0)
+- UI : content-sections.tsx réécrit — ContentDialog (titre, sous-titre, sélecteur d'emoji 12 icônes, moment, description, lien YouTube « Écouter »), motif de pré-remplissage pendant le rendu + reset à la fermeture (changer() remet prerempli=false) ; CarteContenu avec 4 actions discrètes (Modifier/Supprimer/Monter/Descendre, opacité 60 %→100 % au survol, désactivées aux extrémités) ; bouton doré pointillé « AJOUTER » en tête de section
+- EXTENSION : ContentSections générique → 4 SECTIONS RENDUES (Adhkâr ouvert par défaut + Qur'ân 4 + Samâ' 3 + Durûs 4, fermées par défaut) — les données QURAN/SAMA/DURUS dormaient en base depuis le seed initial, la description du projet (« Adhkâr/Qur'ân/Samâ'/Durûs ») est enfin complète ; l'app passe de 8 à 11 sections
+- RECHERCHE GLOBALE : 3 nouveaux groupes (Qur'ân/Samâ'/Durûs) dans le ⌘K, navigation vers les sections (Fragment keyés) — vérifié : « TEST Qasida QA » trouvé au clavier → clic → section Samâ' ouverte
+- TESTS COMPLETS : création « TEST Dhikr QA » (6→7, toast) → modification titre v2 (pré-remplissage correct) → montée/descente (échange de positions vérifié) → suppression (retour à 6, toast) ; création dans Samâ' (3→4, entrée d'audit « Contenu ajouté ») ; ordres seedés restaurés exactement ; 11 entrées d'audit de test purgées, DB revenue propre
+
+OBJECTIF 2 — Service worker app-shell (l'application s'ouvre hors-ligne) :
+- public/sw.js : precache des éléments stables (logo, icônes 192/512, tariqa, manifest), navigation en réseau-d'abord avec coquille '/' en secours + page hors-ligne de repli, /api/* en réseau SEUL (données de communauté jamais en cache), statiques en stale-while-revalidate ; cache versionné zawiya-v1, purge à l'activation, skipWaiting+clients.claim
+- src/components/zaouia/enregistrement-sw.tsx : enregistrement silencieux 1,5 s après le chargement (échec non-bloquant), intégré à page.tsx
+- VÉRIFICATION OFFLINE COMPLÈTE : SW actif (navigator.serviceWorker.ready → sw.js), coquille '/' en cache (200), émulation Network.emulateNetworkConditions offline via CDP → rechargement → titre « Zawiya Nimes » servi depuis le cache, hydratation complète (identité « Abde TRÉSORIER » depuis localStorage, sections rendues), retour en ligne → tout refonctionne, 0 erreur
+
+OBJECTIF 3 — Polissage des styles (obligatoire) :
+- Cibles tactiles : actions des cartes en h-9 w-9 (36 px) sur mobile, h-7 w-7 compactes sur desktop sm: (retour VLM : « slightly small for touch » → corrigé)
+- focus-visible:ring-2 sur les 4 actions + bouton AJOUTER (accessibilité clavier, teintes assorties : primary/destructive/gold)
+- Invitation d'installation : auto-masquage après 20 s (minuterie nettoyée au démontage) — ne voile plus durablement le contenu (retour VLM)
+- VLM 8/10 sur les captures desktop + mobile jour/nuit (« subtle and well-integrated », « clean, professional, culturally harmonious ») ; contraste nuit vérifié par calcul : #adc0b3 sur #182b22 = 7,8:1 (AAA)
+
+### 3. Problèmes non résolus, risques et recommandations pour le prochain round
+
+Non résiduel :
+- app_config.lieu toujours vide (donnée à saisir dans Réglages — non bloquant, le pré-remplissage est prêt)
+- Les notifications push quand l'app est FERMÉE nécessitent un serveur push + VAPID : hors de portée sans service externe ; le SW actuel ne fait que cache app-shell
+- En mode dev, le SW met en cache les chunks turbopack (stale-while-revalidate les rafraîchit) — comportement accepté, un bump de VERSION suffit à purger en production
+- L'assiduité reste fondée sur les inscriptions (pas de signature le jour même — note déjà imprimée sur la feuille)
+- Poids des contenus : ContentItem ne gère pas de pièces jointes (PDF de dars, audio) — champ url YouTube seul
+
+Recommandations prioritaires prochain round :
+1. Suivi des cotisations mensuelles par frère (vue « qui est à jour pour le mois » + relance douce) — le trésorier gère 18 frères à la main aujourd'hui
+2. Zone d'administration des rôles (promouvoir/rétrograder trésorier, renommer un frère) — seul le DB peut le faire actuellement
+3. Export du calendrier mensuel en image/PDF pour partage WhatsApp (le Shaykh diffuse les dates hors de l'app)
+4. Icônes par section dans la recherche (Samâ' avec Music ✓ mais Durûs/Qur'ân partagent BookOpenText — cosmétique)

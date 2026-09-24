@@ -12,6 +12,7 @@ export type AuditKind =
   | 'MEMBER'
   | 'ATTENDANCE'
   | 'SETTING'
+  | 'CONTENT'
 
 export type AuditAction =
   | 'CREATE'

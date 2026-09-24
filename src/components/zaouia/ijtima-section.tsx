@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, Clock, MapPin, Pencil, Printer, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -388,16 +388,39 @@ export function SectionShell({
   id?: string
 }) {
   const [ouvert, setOuvert] = useState(defaultOpen)
+  const sectionRef = useRef<HTMLElement | null>(null)
+
+  /* Si l'en-tête de section se retrouve sous le bandeau collant (≈96 px),
+     on la fait glider pour qu'elle reste visible et cliquable. */
+  const basculer = () => {
+    const next = !ouvert
+    setOuvert(next)
+    if (next && sectionRef.current) {
+      const top = sectionRef.current.getBoundingClientRect().top
+      if (top < 96) {
+        sectionRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      }
+    }
+  }
+
   return (
-    <section id={id} aria-label={titre} className="scroll-mt-24">
+    <section id={id} aria-label={titre} ref={sectionRef} className="scroll-mt-24">
       <button
-        onClick={() => setOuvert((o) => !o)}
+        onClick={basculer}
         aria-expanded={ouvert}
         className={cn(
-          'group mb-3 flex w-full items-center justify-between rounded-2xl border border-[#0b5d42]/12 bg-white px-4 py-3 shadow-sm transition-all hover:border-[#0b5d42]/25 hover:shadow-md active:scale-[0.995]',
-          ouvert && 'border-[#0b5d42]/25'
+          'group relative mb-3 flex w-full items-center justify-between overflow-hidden rounded-2xl border border-[#0b5d42]/12 bg-white px-4 py-3 shadow-sm transition-all hover:border-[#0b5d42]/25 hover:shadow-md active:scale-[0.995]',
+          ouvert && 'border-[#0b5d42]/25 shadow-md'
         )}
       >
+        {/* Balayage doré sous le titre quand la section est ouverte */}
+        <motion.span
+          aria-hidden
+          initial={false}
+          animate={{ scaleX: ouvert ? 1 : 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute inset-x-4 bottom-1 h-px origin-left bg-gradient-to-r from-[#b8923a]/60 via-[#c9a24b]/45 to-transparent"
+        />
         <span className="flex items-center gap-2.5">
           <span className="sceau text-[15px] font-bold uppercase tracking-[0.18em] text-[#123c2d]">
             {titre}
@@ -434,7 +457,7 @@ export function SectionShell({
             transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="pt-1">{children}</div>
+            <div className="border-l-2 border-[#c9a24b]/25 pl-2.5 pt-1 sm:pl-3">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>

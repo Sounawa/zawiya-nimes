@@ -33,8 +33,10 @@ export function ZoneImpression() {
     >
       {cible.kind === 'presence' ? (
         <FeuillePresence meetingId={cible.meetingId} />
-      ) : (
+      ) : cible.kind === 'comptes' ? (
         <ComptesImprimables />
+      ) : (
+        <BilanAnnuel />
       )}
     </div>
   )
@@ -312,6 +314,218 @@ function ComptesImprimables() {
         <div className="w-56 text-center text-[10px] uppercase tracking-[0.2em] text-[#78877d]">
           <p>Le trésorier</p>
           <p className="mt-8 border-t border-[#b6b1a0] pt-1" />
+        </div>
+      </div>
+
+      <PiedFeuille />
+    </div>
+  )
+}
+
+/* ═══════════════ Bilan annuel — pour l'assemblée générale ═══════════════ */
+function BilanAnnuel() {
+  const { data } = useContributions()
+  const { data: meetings } = useMeetings()
+  const contributions = data?.contributions ?? []
+
+  if (!data?.totals) {
+    return <p className="p-8 text-center text-sm text-[#78877d]">Comptes indisponibles…</p>
+  }
+
+  /* Année du bilan : celle de l'entrée la plus récente */
+  const annee = contributions.length
+    ? new Date(contributions[0].date).getFullYear()
+    : new Date().getFullYear()
+
+  const deLAnnee = contributions.filter(
+    (c) => new Date(c.date).getFullYear() === annee
+  )
+  const meetingsAnnee = (meetings ?? []).filter(
+    (m) => new Date(m.date).getFullYear() === annee
+  )
+
+  /* Décomposition mensuelle */
+  const MOIS = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+  ]
+  const parMois = MOIS.map((label, i) => {
+    const duMois = deLAnnee.filter(
+      (c) => new Date(c.date).getMonth() === i
+    )
+    const cotisation = duMois
+      .filter((c) => c.category === 'COTISATION')
+      .reduce((s, c) => s + c.amount, 0)
+    const don = duMois
+      .filter((c) => c.category === 'DON')
+      .reduce((s, c) => s + c.amount, 0)
+    const ziyara = duMois
+      .filter((c) => c.category === 'ZIYARA')
+      .reduce((s, c) => s + c.amount, 0)
+    return { label, cotisation, don, ziyara, caisse: cotisation + don }
+  }).filter((m) => m.caisse > 0 || m.ziyara > 0)
+
+  const caisseAnnee = parMois.reduce((s, m) => s + m.caisse, 0)
+  const ziyaraAnnee = parMois.reduce((s, m) => s + m.ziyara, 0)
+  const meetingsAvecPresence = meetingsAnnee.filter((m) => m.attendances.length > 0)
+  const totalAttendus = meetingsAvecPresence.reduce(
+    (s, m) => s + m.attendances.length + m.attendances.reduce((s2, a) => s2 + a.guests, 0),
+    0
+  )
+  const moyennePresence = meetingsAvecPresence.length
+    ? Math.round(totalAttendus / meetingsAvecPresence.length)
+    : 0
+  const plusGrand = meetingsAvecPresence.slice().sort(
+    (a, b) =>
+      b.attendances.length +
+      b.attendances.reduce((s, x) => s + x.guests, 0) -
+      (a.attendances.length + a.attendances.reduce((s, x) => s + x.guests, 0))
+  )[0]
+
+  /* Top contributeurs de l'année (caisse) */
+  const parFrere = new Map<string, number>()
+  for (const c of deLAnnee) {
+    if (c.category === 'ZIYARA') continue
+    parFrere.set(c.member.name, (parFrere.get(c.member.name) ?? 0) + c.amount)
+  }
+  const top = Array.from(parFrere.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+  const maxTop = top[0]?.[1] ?? 1
+
+  return (
+    <div className="mx-auto max-w-[175mm]">
+      {EnteteFeuille(`Bilan annuel — ${annee}`)}
+
+      {/* Chiffres clés */}
+      <div className="mb-5 grid grid-cols-4 gap-2 text-center">
+        <div className="rounded border-2 border-[#0b5d42] p-2.5">
+          <p className="font-display text-xl font-bold tabular-nums text-[#0b5d42]">
+            {euros(caisseAnnee)}
+          </p>
+          <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#78877d]">
+            Caisse
+          </p>
+        </div>
+        <div className="rounded border-2 border-[#b8923a] p-2.5">
+          <p className="font-display text-xl font-bold tabular-nums text-[#8a6d2f]">
+            {euros(ziyaraAnnee)}
+          </p>
+          <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#78877d]">
+            Ziyara
+          </p>
+        </div>
+        <div className="rounded border-2 border-[#4a7c6b] p-2.5">
+          <p className="font-display text-xl font-bold tabular-nums text-[#4a7c6b]">
+            {meetingsAnnee.length}
+          </p>
+          <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#78877d]">
+            Ijtimâ'
+          </p>
+        </div>
+        <div className="rounded border-2 border-[#123c2d] bg-[#f4f8f4] p-2.5">
+          <p className="font-display text-xl font-bold tabular-nums text-[#123c2d]">
+            {moyennePresence}
+          </p>
+          <p className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#78877d]">
+            Présence moy.
+          </p>
+        </div>
+      </div>
+
+      {/* Tableau mensuel */}
+      <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.25em] text-[#a09a87]">
+        Trésorerie mois par mois
+      </p>
+      <table className="mb-5 w-full border-collapse text-xs">
+        <thead>
+          <tr className="bg-[#f4f8f4] text-left text-[10px] uppercase tracking-widest text-[#0b5d42]">
+            <th className="border border-[#c9d6cc] px-2 py-1.5 font-bold">Mois</th>
+            <th className="border border-[#c9d6cc] px-2 py-1.5 text-right font-bold">Cotisations</th>
+            <th className="border border-[#c9d6cc] px-2 py-1.5 text-right font-bold">Dons</th>
+            <th className="border border-[#c9d6cc] px-2 py-1.5 text-right font-bold">Caisse</th>
+            <th className="border border-[#c9d6cc] px-2 py-1.5 text-right font-bold">Ziyara</th>
+            <th className="border border-[#c9d6cc] px-2 py-1.5 text-right font-bold">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {parMois.map((m) => (
+            <tr key={m.label}>
+              <td className="border border-[#dde5de] px-2 py-1.5 font-medium capitalize">{m.label}</td>
+              <td className="border border-[#dde5de] px-2 py-1.5 text-right tabular-nums">
+                {m.cotisation ? euros(m.cotisation) : '—'}
+              </td>
+              <td className="border border-[#dde5de] px-2 py-1.5 text-right tabular-nums">
+                {m.don ? euros(m.don) : '—'}
+              </td>
+              <td className="border border-[#dde5de] px-2 py-1.5 text-right font-semibold tabular-nums">
+                {m.caisse ? euros(m.caisse) : '—'}
+              </td>
+              <td className="border border-[#dde5de] px-2 py-1.5 text-right tabular-nums text-[#8a6d2f]">
+                {m.ziyara ? euros(m.ziyara) : '—'}
+              </td>
+              <td className="border border-[#dde5de] px-2 py-1.5 text-right font-bold tabular-nums">
+                {euros(m.caisse + m.ziyara)}
+              </td>
+            </tr>
+          ))}
+          <tr className="bg-[#f4f8f4] font-bold">
+            <td className="border border-[#c9d6cc] px-2 py-2 uppercase tracking-wider">Total {annee}</td>
+            <td className="border border-[#c9d6cc] px-2 py-2 text-right tabular-nums" colSpan={2} />
+            <td className="border border-[#c9d6cc] px-2 py-2 text-right tabular-nums text-[#0b5d42]">
+              {euros(caisseAnnee)}
+            </td>
+            <td className="border border-[#c9d6cc] px-2 py-2 text-right tabular-nums text-[#8a6d2f]">
+              {euros(ziyaraAnnee)}
+            </td>
+            <td className="border border-[#c9d6cc] px-2 py-2 text-right tabular-nums">
+              {euros(caisseAnnee + ziyaraAnnee)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Vie de la communauté */}
+      <div className="mb-5 grid grid-cols-2 gap-3 print:[break-inside:avoid]">
+        <div className="rounded border border-[#e4ddcc] p-3">
+          <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.25em] text-[#a09a87]">
+            Vie de la communauté
+          </p>
+          <ul className="space-y-1 text-xs text-[#33453a]">
+            <li>
+              <span className="font-semibold">{meetingsAnnee.length}</span> ijtimâ' au calendrier
+            </li>
+            <li>
+              <span className="font-semibold">{totalAttendus}</span> présences cumulées (frères + invités)
+            </li>
+            {plusGrand && (
+              <li>
+                Plus suivi : <span className="font-semibold">{plusGrand.title}</span> (
+                {plusGrand.attendances.length + plusGrand.attendances.reduce((s, a) => s + a.guests, 0)}{' '}
+                personnes)
+              </li>
+            )}
+          </ul>
+        </div>
+        <div className="rounded border border-[#e4ddcc] p-3">
+          <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.25em] text-[#a09a87]">
+            Principaux contributeurs — caisse
+          </p>
+          <ul className="space-y-1">
+            {top.map(([nom, montant], i) => (
+              <li key={nom} className="flex items-center gap-2 text-xs">
+                <span className="w-4 text-right font-bold text-[#b8923a]">{i + 1}.</span>
+                <span className="w-28 shrink-0 truncate font-medium text-[#33453a]">{nom}</span>
+                <span
+                  className="h-2 rounded-full bg-[#0b5d42]"
+                  style={{ width: `${Math.max(6, Math.round((montant / maxTop) * 90))}px` }}
+                />
+                <span className="ml-auto font-semibold tabular-nums text-[#123c2d]">
+                  {euros(montant)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 

@@ -60,10 +60,21 @@ function CarteAnnonce({ a, index }: { a: Announcement; index: number }) {
       transition={{ delay: index * 0.08, duration: 0.45 }}
       className={
         a.color === 'VERT'
-          ? 'group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-card to-feuille p-5 shadow-sm'
-          : 'group relative overflow-hidden rounded-2xl border border-accent/35 bg-gradient-to-br from-card to-or-pale p-5 shadow-sm'
+          ? 'group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-card to-feuille p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-10px_rgba(11,93,66,0.28)]'
+          : 'group relative overflow-hidden rounded-2xl border border-accent/35 bg-gradient-to-br from-card to-or-pale p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-10px_rgba(184,146,58,0.32)]'
       }
     >
+      {/* Filigrane ornemental — étoile 8 branches en coin */}
+      <span
+        aria-hidden
+        className={
+          a.color === 'VERT'
+            ? 'pointer-events-none absolute -right-3 -top-3 select-none font-display text-6xl text-primary/6'
+            : 'pointer-events-none absolute -right-3 -top-3 select-none font-display text-6xl text-accent/10'
+        }
+      >
+        ✦
+      </span>
       {/* Liseré latéral */}
       <span
         aria-hidden

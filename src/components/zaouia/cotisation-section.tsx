@@ -262,6 +262,14 @@ export function CotisationSection() {
                   </button>
                 </div>
               )}
+              {role === 'TREASURER' && totals && (
+                <button
+                  onClick={() => imprimer({ kind: 'bilan' })}
+                  className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full border border-sauge/50 bg-card/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-sauge transition-all hover:bg-feuille hover:shadow-md active:scale-[0.98]"
+                >
+                  <CalendarRange className="h-3.5 w-3.5" /> Bilan annuel — assemblée générale
+                </button>
+              )}
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-card/80 p-3 text-center ring-1 ring-primary/10">
                   <p className="font-display text-xl font-semibold tabular-nums text-primary">

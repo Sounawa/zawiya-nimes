@@ -463,6 +463,13 @@ button, a, [role="button"] {
     height: auto !important;
     overflow: visible !important;
   }
+  /* Quand la zone d'impression est active (bouton Imprimer), tout le reste
+     disparaît : app, dialogues Radix (rendus hors [data-radix-portal] par
+     les versions récentes), toasts, tooltips… Un Ctrl+P sans cible active
+     n'est pas affecté — la zone n'existe alors pas dans le DOM. */
+  body:has(#zone-impression) > *:not(#zone-impression) {
+    display: none !important;
+  }
   [data-radix-portal],
   [data-radix-popper-content-wrapper] {
     display: none !important;

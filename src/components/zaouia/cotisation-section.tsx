@@ -55,6 +55,82 @@ function exporterCSV(
   URL.revokeObjectURL(url)
 }
 
+/* ═══════════════ Export CSV du bilan annuel — trésorier (assemblée) ═══════════════ */
+function exporterBilanCSV(contributions: Contribution[]) {
+  if (!contributions.length) return
+  const annee = new Date(contributions[0].date).getFullYear()
+  const deLAnnee = contributions.filter((c) => new Date(c.date).getFullYear() === annee)
+
+  /* Décomposition mensuelle */
+  const parMois = new Map<string, { cotisation: number; don: number; ziyara: number }>()
+  for (const c of deLAnnee) {
+    const cle = c.date.substring(0, 7)
+    const b = parMois.get(cle) ?? { cotisation: 0, don: 0, ziyara: 0 }
+    if (c.category === 'COTISATION') b.cotisation += c.amount
+    else if (c.category === 'DON') b.don += c.amount
+    else b.ziyara += c.amount
+    parMois.set(cle, b)
+  }
+
+  /* Top contributeurs — caisse */
+  const parFrere = new Map<string, number>()
+  for (const c of deLAnnee) {
+    if (c.category === 'ZIYARA') continue
+    parFrere.set(c.member.name, (parFrere.get(c.member.name) ?? 0) + c.amount)
+  }
+  const top = Array.from(parFrere.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10)
+
+  const caisse = deLAnnee
+    .filter((c) => c.category !== 'ZIYARA')
+    .reduce((s, c) => s + c.amount, 0)
+  const ziyara = deLAnnee
+    .filter((c) => c.category === 'ZIYARA')
+    .reduce((s, c) => s + c.amount, 0)
+
+  const e = (n: number) => String(n).replace('.', ',')
+  const lignes = [
+    `Bilan annuel de la Zawiya Nîmes — ${annee}`,
+    '',
+    'CHIFFRES CLÉS',
+    `Caisse (cotisations & dons);${e(caisse)}`,
+    `Ziyara (pour le Shaykh);${e(ziyara)}`,
+    `Total;${e(caisse + ziyara)}`,
+    `Entrées;${deLAnnee.length}`,
+    '',
+    'TRÉSORERIE MOIS PAR MOIS',
+    'Mois;Cotisations;Dons;Caisse;Ziyara;Total',
+    ...Array.from(parMois.entries())
+      .sort()
+      .map(([cle, b]) => {
+        const [a, m] = cle.split('-')
+        const d = new Date(Number(a), Number(m) - 1, 1)
+        const label = new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(d)
+        return [
+          label,
+          e(b.cotisation),
+          e(b.don),
+          e(b.cotisation + b.don),
+          e(b.ziyara),
+          e(b.cotisation + b.don + b.ziyara),
+        ].join(';')
+      }),
+    '',
+    'PRINCIPAUX CONTRIBUTEURS — CAISSE',
+    'Frère;Montant',
+    ...top.map(([nom, montant]) => `${nom};${e(montant)}`),
+  ]
+
+  const blob = new Blob(['\uFEFF' + lignes.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `bilan-annuel-zawiya-nimes-${annee}.csv`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
 /* ═══════════════ Graphe mensuel animé — évolution de la caisse ═══════════════ */
 function GrapheMensuel({ cotisations }: { cotisations: { amount: number; category: string; date: string }[] }) {
   // Regrouper par mois sur les 6 derniers mois (hors ziyara — trésorerie commune)
@@ -263,12 +339,26 @@ export function CotisationSection() {
                 </div>
               )}
               {role === 'TREASURER' && totals && (
-                <button
-                  onClick={() => imprimer({ kind: 'bilan' })}
-                  className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full border border-sauge/50 bg-card/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-sauge transition-all hover:bg-feuille hover:shadow-md active:scale-[0.98]"
-                >
-                  <CalendarRange className="h-3.5 w-3.5" /> Bilan annuel — assemblée générale
-                </button>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => imprimer({ kind: 'bilan' })}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-sauge/50 bg-card/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-sauge transition-all hover:bg-feuille hover:shadow-md active:scale-[0.98]"
+                  >
+                    <CalendarRange className="h-3.5 w-3.5" /> Bilan annuel
+                  </button>
+                  <button
+                    onClick={() => {
+                      exporterBilanCSV(cotisations)
+                      toast({
+                        title: 'Bilan annuel exporté',
+                        description: `CSV prêt pour l'assemblée générale`,
+                      })
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-sauge/50 bg-card/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-sauge transition-all hover:bg-feuille hover:shadow-md active:scale-[0.98]"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Bilan CSV
+                  </button>
+                </div>
               )}
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-card/80 p-3 text-center ring-1 ring-primary/10">

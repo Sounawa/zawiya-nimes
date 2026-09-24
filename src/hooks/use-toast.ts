@@ -152,6 +152,10 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
+  /* Conserver un éventuel onOpenChange du composant appelant
+     (ex. marqueur « ne plus demander ») tout en dismissant. */
+  const onOpenChangeAppelant = props.onOpenChange
+
   dispatch({
     type: "ADD_TOAST",
     toast: {
@@ -159,7 +163,10 @@ function toast({ ...props }: Toast) {
       id,
       open: true,
       onOpenChange: (open) => {
-        if (!open) dismiss()
+        if (!open) {
+          onOpenChangeAppelant?.(open)
+          dismiss()
+        }
       },
     },
   })

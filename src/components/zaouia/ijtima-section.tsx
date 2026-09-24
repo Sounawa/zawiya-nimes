@@ -1,11 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, Clock, MapPin, Pencil, Printer, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { usePrint, useUser } from '@/lib/store'
+import { useNav, usePrint, useUser } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { JOURS_COURTS, parseProgram, type Meeting } from '@/lib/types'
 import { cleSemaine, libelleSemaine } from '@/lib/format'
@@ -53,45 +53,45 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
     <motion.article
       layout
       className={cn(
-        'relative overflow-hidden rounded-2xl border bg-white shadow-[0_2px_12px_-4px_rgba(11,93,66,0.08)] transition-shadow hover:shadow-[0_6px_20px_-6px_rgba(11,93,66,0.18)]',
-        jeViens ? 'border-[#0b5d42]/30' : 'border-[#0b5d42]/12',
+        'relative overflow-hidden rounded-2xl border bg-card shadow-[0_2px_12px_-4px_rgba(11,93,66,0.08)] transition-shadow hover:shadow-[0_6px_20px_-6px_rgba(11,93,66,0.18)]',
+        jeViens ? 'border-primary/30' : 'border-primary/12',
         passee && 'opacity-60 saturate-50'
       )}
     >
       {/* Liseré doré si je suis inscrit */}
       {jeViens && (
-        <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#c9a24b] to-[#0b5d42]" />
+        <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-accent to-primary" />
       )}
       {/* ─── Ligne d'en-tête ─── */}
       <button
         onClick={() => setOuvert((o) => !o)}
         aria-expanded={ouvert}
-        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[#fbf9f4]"
+        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-background"
       >
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#0b5d42] to-[#0b3d2e] text-white shadow-md shadow-[#0b5d42]/20">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-emerald-deep text-white shadow-md shadow-primary/20">
           <span className="text-lg leading-none">{meeting.icon || '🕌'}</span>
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#b8923a]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gold">
               {jourCourt} {jourNum}
             </span>
             {jeViens && (
-              <span className="rounded-full bg-[#0b5d42]/10 px-2 py-0.5 text-[10px] font-semibold text-[#0b5d42]">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary dark:bg-sauge/15 dark:text-sauge">
                 ✓ inscrit
               </span>
             )}
             {passee && (
-              <span className="rounded-full bg-[#efe9dc] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#a09a87]">
+              <span className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brouillard">
                 passée
               </span>
             )}
           </span>
-          <span className="mt-0.5 block truncate text-[15px] font-semibold text-[#123c2d]">
+          <span className="mt-0.5 block truncate text-[15px] font-semibold text-encre">
             {meeting.title}
           </span>
           {!compact && (
-            <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[#78877d]">
+            <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
               {meeting.city && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
@@ -118,7 +118,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
             </span>
           )}
         </span>
-        <motion.span animate={{ rotate: ouvert ? 180 : 0 }} className="text-[#b6b1a0]">
+        <motion.span animate={{ rotate: ouvert ? 180 : 0 }} className="text-brouillard-clair">
           <ChevronDown className="h-5 w-5" />
         </motion.span>
       </button>
@@ -133,36 +133,36 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
             transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="space-y-4 border-t border-dashed border-[#0b5d42]/15 px-4 pb-5 pt-4">
+            <div className="space-y-4 border-t border-dashed border-primary/15 px-4 pb-5 pt-4">
               {meeting.announcement && (
-                <p className="rounded-xl border border-[#c9a24b]/40 bg-[#fdf6e7] px-4 py-3 text-sm leading-relaxed text-[#7a5c15]">
+                <p className="rounded-xl border border-accent/40 bg-or-pale px-4 py-3 text-sm leading-relaxed text-gold-vif">
                   {meeting.announcement}
                 </p>
               )}
 
               {meeting.address && (
-                <p className="flex items-start gap-2 text-sm text-[#5b6b60]">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#0b5d42]" />
+                <p className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   {meeting.address}
                 </p>
               )}
 
               {meeting.word && (
-                <p className="font-display text-lg italic text-[#0b5d42]">
+                <p className="font-display text-lg italic text-primary">
                   «&nbsp;{meeting.word}&nbsp;»
                 </p>
               )}
 
               {/* Programme */}
               {programme.length > 0 && (
-                <div className="rounded-xl bg-[#fbf9f4] p-3">
-                  <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#a09a87]">
+                <div className="rounded-xl bg-background p-3">
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-brouillard">
                     Programme
                   </p>
                   <ul className="space-y-1.5">
                     {programme.map((l, i) => (
-                      <li key={i} className="flex items-center gap-3 text-sm text-[#33453a]">
-                        <span className="w-12 shrink-0 text-right font-semibold tabular-nums text-[#0b5d42]">
+                      <li key={i} className="flex items-center gap-3 text-sm text-secondary-foreground">
+                        <span className="w-12 shrink-0 text-right font-semibold tabular-nums text-primary">
                           {l.time}
                         </span>
                         <span aria-hidden>{l.icon}</span>
@@ -181,8 +181,8 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                   disabled={!memberId}
                   className={
                     jeViens
-                      ? 'flex-1 rounded-full bg-[#0b5d42] py-3 text-sm font-semibold text-white shadow-md shadow-[#0b5d42]/25 transition-colors'
-                      : 'flex-1 rounded-full border-2 border-[#0b5d42]/70 py-3 text-sm font-semibold text-[#0b5d42] transition-colors hover:bg-[#0b5d42]/5'
+                      ? 'flex-1 rounded-full bg-primary py-3 text-sm font-semibold text-white shadow-md shadow-primary/25 transition-colors'
+                      : 'flex-1 rounded-full border-2 border-primary/70 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/5'
                   }
                 >
                   {jeViens ? '✓ Je viendrai' : 'Je viendrai'}
@@ -191,7 +191,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                   onClick={() => setEditionOuverte(true)}
                   aria-label="Modifier la réunion"
                   title="Modifier la réunion"
-                  className="grid h-11 w-11 place-items-center rounded-full border border-[#b8923a]/40 text-[#b8923a] transition-all hover:bg-[#b8923a]/10 hover:border-[#b8923a]/70"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-gold/40 text-gold transition-all hover:bg-gold/10 hover:border-gold/70"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -199,7 +199,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                   onClick={() => imprimer({ kind: 'presence', meetingId: meeting.id })}
                   aria-label="Imprimer la feuille de présence"
                   title="Imprimer la feuille de présence"
-                  className="grid h-11 w-11 place-items-center rounded-full border border-[#0b5d42]/30 text-[#0b5d42] transition-all hover:bg-[#0b5d42]/10 hover:border-[#0b5d42]/60"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-primary/30 text-primary transition-all hover:bg-primary/10 hover:border-primary/60"
                 >
                   <Printer className="h-4 w-4" />
                 </button>
@@ -207,7 +207,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                   onClick={() => del.mutate()}
                   aria-label="Supprimer la réunion"
                   title="Supprimer la réunion"
-                  className="grid h-11 w-11 place-items-center rounded-full border border-[#b3452f]/25 text-[#b3452f]/70 transition-colors hover:bg-[#b3452f]/10"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-destructive/25 text-destructive/70 transition-colors hover:bg-destructive/10"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -217,7 +217,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
               <div className="space-y-2">
                 <button
                   onClick={() => setVoirListe((v) => !v)}
-                  className="flex w-full items-center justify-between rounded-xl bg-[#fbf9f4] px-4 py-2.5 text-sm font-medium text-[#0b5d42] transition-colors hover:bg-[#f2f7f3]"
+                  className="flex w-full items-center justify-between rounded-xl bg-background px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-feuille"
                 >
                   <span className="inline-flex items-center gap-2">
                     <Users className="h-4 w-4" /> {presents.length} attendus
@@ -232,18 +232,18 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                       exit={{ height: 0 }}
                       className="overflow-hidden pl-2"
                     >
-                      <div className="defile-fin max-h-60 overflow-y-auto rounded-xl border border-[#0b5d42]/10 p-2">
+                      <div className="defile-fin max-h-60 overflow-y-auto rounded-xl border border-primary/10 p-2">
                         {presents.length === 0 && (
-                          <li className="px-3 py-2 text-sm text-[#a09a87]">Personne pour l'instant…</li>
+                          <li className="px-3 py-2 text-sm text-brouillard">Personne pour l'instant…</li>
                         )}
                         {presents.map((a) => (
                           <li
                             key={a.id}
-                            className="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm text-[#33453a] hover:bg-[#fbf9f4]"
+                            className="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm text-secondary-foreground hover:bg-background"
                           >
                             <span>Sidi {a.member.name}</span>
                             {a.guests > 0 && (
-                              <span className="rounded-full bg-[#c9a24b]/15 px-2 py-0.5 text-[11px] font-semibold text-[#8a6d2f]">
+                              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-gold-vif">
                                 +{a.guests} invité{a.guests > 1 ? 's' : ''}
                               </span>
                             )}
@@ -258,7 +258,7 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                   <>
                     <button
                       onClick={() => setVoirInvites((v) => !v)}
-                      className="flex w-full items-center justify-between rounded-xl bg-[#fdf6e7] px-4 py-2.5 text-sm font-medium text-[#a3781f] transition-colors hover:bg-[#f9edd2]"
+                      className="flex w-full items-center justify-between rounded-xl bg-or-pale px-4 py-2.5 text-sm font-medium text-gold-vif transition-colors hover:bg-or-pale/70"
                     >
                       <span className="inline-flex items-center gap-2">
                         <UserPlus className="h-4 w-4" /> {totalInvites} invités
@@ -273,13 +273,13 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
                           exit={{ height: 0 }}
                           className="overflow-hidden pl-2"
                         >
-                          <div className="rounded-xl border border-[#c9a24b]/20 p-2">
+                          <div className="rounded-xl border border-accent/20 p-2">
                             {presents
                               .filter((a) => a.guests > 0)
                               .map((a) => (
                                 <li
                                   key={a.id}
-                                  className="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm text-[#7a5c15]"
+                                  className="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm text-gold-vif"
                                 >
                                   <span>de Sidi {a.member.name}</span>
                                   <span className="font-semibold">{a.guests}</span>
@@ -315,7 +315,7 @@ export function IjtimaSection() {
       <SectionShell titre="Al-Ijtimâ'" compteur="…">
         <div className="space-y-3">
           {[0, 1].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-[#efe9dc]/60" />
+            <div key={i} className="h-20 animate-pulse rounded-2xl bg-sand/60" />
           ))}
         </div>
       </SectionShell>
@@ -344,15 +344,15 @@ export function IjtimaSection() {
   )
 
   return (
-    <SectionShell titre="Al-Ijtimâ'" compteur={`${meetings?.length ?? 0} réunion${(meetings?.length ?? 0) > 1 ? 's' : ''}`}>
+    <SectionShell titre="Al-Ijtimâ'" compteur={`${meetings?.length ?? 0} réunion${(meetings?.length ?? 0) > 1 ? 's' : ''}`} id="ijtima">
       <div className="space-y-5">
         {semaines.map((s) => (
           <div key={s.label}>
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#a09a87]">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.22em] text-brouillard">
                 {s.actuel ? 'Cette semaine' : s.label}
               </h3>
-              {s.actuel && <span className="h-1.5 w-1.5 rounded-full bg-[#0b5d42] animate-pulse" aria-hidden />}
+              {s.actuel && <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden />}
             </div>
             <div className="space-y-3">
               {s.items.map((m) => (
@@ -362,7 +362,7 @@ export function IjtimaSection() {
           </div>
         ))}
         {!meetings?.length && (
-          <p className="rounded-2xl border border-dashed border-[#0b5d42]/20 p-6 text-center text-sm text-[#a09a87]">
+          <p className="rounded-2xl border border-dashed border-primary/20 p-6 text-center text-sm text-brouillard">
             Aucune réunion programmée.
             <br />
             Utilise le bouton <CalendarPlus className="inline h-3.5 w-3.5" /> pour en créer une.
@@ -390,6 +390,22 @@ export function SectionShell({
   const [ouvert, setOuvert] = useState(defaultOpen)
   const sectionRef = useRef<HTMLElement | null>(null)
 
+  /* La recherche globale (⌘K) demande l'ouverture d'une section précise :
+     abonnement au magasin de navigation — setState appelé dans le rappel
+     d'abonnement (motif recommandé), jamais dans le corps d'un effet. */
+  useEffect(() => {
+    if (!id) return
+    return useNav.subscribe((etat) => {
+      if (etat.demande && etat.demande.id === id) {
+        setOuvert(true)
+        // Laisse le contenu s'ouvrir avant de défiler
+        requestAnimationFrame(() => {
+          sectionRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+        })
+      }
+    })
+  }, [id])
+
   /* Si l'en-tête de section se retrouve sous le bandeau collant (≈96 px),
      on la fait glider pour qu'elle reste visible et cliquable. */
   const basculer = () => {
@@ -409,8 +425,8 @@ export function SectionShell({
         onClick={basculer}
         aria-expanded={ouvert}
         className={cn(
-          'group relative mb-3 flex w-full items-center justify-between overflow-hidden rounded-2xl border border-[#0b5d42]/12 bg-white px-4 py-3 shadow-sm transition-all hover:border-[#0b5d42]/25 hover:shadow-md active:scale-[0.995]',
-          ouvert && 'border-[#0b5d42]/25 shadow-md'
+          'group relative mb-3 flex w-full items-center justify-between overflow-hidden rounded-2xl border border-primary/12 bg-card px-4 py-3 shadow-sm transition-all hover:border-primary/25 hover:shadow-md active:scale-[0.995]',
+          ouvert && 'border-primary/25 shadow-md'
         )}
       >
         {/* Balayage doré sous le titre quand la section est ouverte */}
@@ -419,15 +435,15 @@ export function SectionShell({
           initial={false}
           animate={{ scaleX: ouvert ? 1 : 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-x-4 bottom-1 h-px origin-left bg-gradient-to-r from-[#b8923a]/60 via-[#c9a24b]/45 to-transparent"
+          className="absolute inset-x-4 bottom-1 h-px origin-left bg-gradient-to-r from-gold/60 via-accent/45 to-transparent"
         />
         <span className="flex items-center gap-2.5">
-          <span className="sceau text-[15px] font-bold uppercase tracking-[0.18em] text-[#123c2d]">
+          <span className="sceau text-[15px] font-bold uppercase tracking-[0.18em] text-encre">
             {titre}
           </span>
           <span
             className={cn(
-              'hidden rounded-full bg-[#0b5d42]/6 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-[#78877d] transition-opacity group-hover:opacity-100 sm:inline-block',
+              'hidden rounded-full bg-primary/6 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground transition-opacity group-hover:opacity-100 sm:inline-block',
               ouvert ? 'opacity-0' : 'opacity-70'
             )}
           >
@@ -436,13 +452,13 @@ export function SectionShell({
         </span>
         <span className="flex items-center gap-2">
           {compteur && (
-            <span className="rounded-full bg-[#efe9dc] px-2.5 py-1 text-[11px] font-semibold text-[#78877d]">
+            <span className="rounded-full bg-sand px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
               {compteur}
             </span>
           )}
           <motion.span
             animate={{ rotate: ouvert ? 180 : 0 }}
-            className={cn('text-[#b6b1a0] transition-colors group-hover:text-[#0b5d42]', !ouvert && 'chevron-pulse')}
+            className={cn('text-brouillard-clair transition-colors group-hover:text-primary', !ouvert && 'chevron-pulse')}
           >
             <ChevronDown className="h-5 w-5" />
           </motion.span>
@@ -457,7 +473,7 @@ export function SectionShell({
             transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-l-2 border-[#c9a24b]/25 pl-2.5 pt-1 sm:pl-3">{children}</div>
+            <div className="border-l-2 border-accent/25 pl-2.5 pt-1 sm:pl-3">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>

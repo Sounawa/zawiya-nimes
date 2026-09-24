@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { useUser } from '@/lib/store'
+import { ThemeToggle } from '@/components/zaouia/theme-toggle'
 
 /** PRNG arithmétique pur (mulberry32) — strictement identique serveur/client,
  *  contrairement à Math.sin dont la précision varie selon le moteur JS. */
@@ -105,7 +106,7 @@ function RayonsLumiere() {
 function TitreLettres() {
   const lettres = 'ZAWIYA'.split('')
   return (
-    <span className="block font-display text-5xl font-semibold tracking-[0.18em] text-[#123c2d] sm:text-6xl" aria-label="Zawiya">
+    <span className="block font-display text-5xl font-semibold tracking-[0.18em] text-encre sm:text-6xl" aria-label="Zawiya">
       {lettres.map((l, i) => (
         <motion.span
           key={i}
@@ -144,13 +145,18 @@ export function WelcomeGate() {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex min-h-screen flex-col items-center overflow-y-auto bg-[#fbf9f4] px-6 py-8"
+      className="fixed inset-0 z-50 flex min-h-screen flex-col items-center overflow-y-auto bg-background px-6 py-8"
       exit={{ opacity: 0, scale: 1.04 }}
       transition={{ duration: 0.6, ease: 'easeInOut' }}
     >
       {/* Motif arabisant + ciel étoilé en fond */}
       <div className="pattern-arabesque absolute inset-0" aria-hidden />
       <Etoiles />
+
+      {/* Bascule jour / nuit — discrète, sous l'ornement d'angle */}
+      <div className="absolute right-3 top-24 z-20 sm:right-4">
+        <ThemeToggle />
+      </div>
       <div
         className="absolute inset-0"
         aria-hidden
@@ -161,19 +167,19 @@ export function WelcomeGate() {
       />
 
       {/* Ornements d'angle */}
-      <svg aria-hidden className="absolute left-4 top-4 h-16 w-16 text-[#0b5d42]/15" viewBox="0 0 64 64" fill="none">
+      <svg aria-hidden className="absolute left-4 top-4 h-16 w-16 text-primary/15" viewBox="0 0 64 64" fill="none">
         <path d="M2 62V22C2 10 10 2 22 2h40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
         <circle cx="10" cy="54" r="3" fill="currentColor" />
       </svg>
-      <svg aria-hidden className="absolute right-4 top-4 h-16 w-16 rotate-90 text-[#0b5d42]/15" viewBox="0 0 64 64" fill="none">
+      <svg aria-hidden className="absolute right-4 top-4 h-16 w-16 rotate-90 text-primary/15" viewBox="0 0 64 64" fill="none">
         <path d="M2 62V22C2 10 10 2 22 2h40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
         <circle cx="10" cy="54" r="3" fill="currentColor" />
       </svg>
-      <svg aria-hidden className="absolute bottom-4 left-4 h-16 w-16 -rotate-90 text-[#0b5d42]/15" viewBox="0 0 64 64" fill="none">
+      <svg aria-hidden className="absolute bottom-4 left-4 h-16 w-16 -rotate-90 text-primary/15" viewBox="0 0 64 64" fill="none">
         <path d="M2 62V22C2 10 10 2 22 2h40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
         <circle cx="10" cy="54" r="3" fill="currentColor" />
       </svg>
-      <svg aria-hidden className="absolute bottom-4 right-4 h-16 w-16 rotate-180 text-[#0b5d42]/15" viewBox="0 0 64 64" fill="none">
+      <svg aria-hidden className="absolute bottom-4 right-4 h-16 w-16 rotate-180 text-primary/15" viewBox="0 0 64 64" fill="none">
         <path d="M2 62V22C2 10 10 2 22 2h40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
         <circle cx="10" cy="54" r="3" fill="currentColor" />
       </svg>
@@ -192,21 +198,19 @@ export function WelcomeGate() {
           <RayonsLumiere />
           {/* Anneaux concentriques */}
           <motion.div
-            className="absolute -inset-8 rounded-full"
-            style={{ border: '1px solid rgba(11,93,66,0.18)' }}
+            className="absolute -inset-8 rounded-full border border-primary/25"
             animate={{ scale: [1, 1.12, 1], opacity: [0.5, 0.9, 0.5] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden
           />
           <motion.div
-            className="absolute -inset-14 rounded-full"
-            style={{ border: '1px dashed rgba(184,146,58,0.28)' }}
+            className="absolute -inset-14 rounded-full border border-dashed border-gold/40"
             animate={{ rotate: 360 }}
             transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
             aria-hidden
           />
           {/* Sceau du logo */}
-          <div className="halo-dore relative grid h-40 w-40 place-items-center rounded-full bg-white shadow-[0_20px_60px_-15px_rgba(11,93,66,0.35)] ring-1 ring-[#0b5d42]/10 sm:h-48 sm:w-48">
+          <div className="halo-dore relative grid h-40 w-40 place-items-center rounded-full bg-white shadow-[0_20px_60px_-15px_rgba(11,93,66,0.35)] ring-1 ring-primary/10 sm:h-48 sm:w-48">
             <motion.div
               animate={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
@@ -223,7 +227,7 @@ export function WelcomeGate() {
             </motion.div>
             {/* Étoile à 8 branches tournante */}
             <motion.svg
-              className="absolute -right-1 -top-1 h-8 w-8 text-[#b8923a]"
+              className="absolute -right-1 -top-1 h-8 w-8 text-gold"
               viewBox="0 0 24 24"
               fill="currentColor"
               animate={{ rotate: 360 }}
@@ -247,7 +251,7 @@ export function WelcomeGate() {
             initial={{ opacity: 0, letterSpacing: '0.8em' }}
             animate={{ opacity: 1, letterSpacing: '0.42em' }}
             transition={{ delay: 1.25, duration: 0.9, ease: 'easeOut' }}
-            className="mt-1 block font-display text-2xl font-medium text-[#0b5d42] sm:text-3xl"
+            className="mt-1 block font-display text-2xl font-medium text-primary sm:text-3xl"
           >
             NIMES
           </motion.span>
@@ -261,15 +265,15 @@ export function WelcomeGate() {
           aria-hidden
           className="mt-5 flex items-center gap-3"
         >
-          <span className="h-px w-16 bg-gradient-to-r from-transparent to-[#c9a24b]/60" />
+          <span className="h-px w-16 bg-gradient-to-r from-transparent to-accent/60" />
           <motion.span
             animate={{ rotate: [0, 180, 360] }}
             transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-            className="text-[#b8923a]"
+            className="text-gold"
           >
             ✦
           </motion.span>
-          <span className="h-px w-16 bg-gradient-to-l from-transparent to-[#c9a24b]/60" />
+          <span className="h-px w-16 bg-gradient-to-l from-transparent to-accent/60" />
         </motion.div>
 
         {/* ─── Citation ─── */}
@@ -279,10 +283,10 @@ export function WelcomeGate() {
           transition={{ delay: 0.6, duration: 0.8 }}
           className="mt-6 max-w-xs text-center"
         >
-          <p className="font-display text-lg italic leading-relaxed text-[#5b6b60]">
+          <p className="font-display text-lg italic leading-relaxed text-muted-foreground">
             «&nbsp;Nous sommes tous issus de la même lumière.&nbsp;»
           </p>
-          <cite className="mt-2 block text-[11px] font-semibold uppercase tracking-[0.3em] text-[#b8923a] not-italic">
+          <cite className="mt-2 block text-[11px] font-semibold uppercase tracking-[0.3em] text-gold not-italic">
             Sidi Hamza
           </cite>
         </motion.blockquote>
@@ -296,7 +300,7 @@ export function WelcomeGate() {
         >
           <label
             htmlFor="prenom"
-            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-[#78877d]"
+            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
           >
             Prénom
           </label>
@@ -309,7 +313,7 @@ export function WelcomeGate() {
               onKeyDown={(e) => e.key === 'Enter' && entrer()}
               placeholder="Ton prénom…"
               autoComplete="given-name"
-              className="w-full rounded-full border border-[#0b5d42]/25 bg-white/90 py-4 pl-6 pr-24 text-center text-lg text-[#123c2d] shadow-inner shadow-[#0b5d42]/5 outline-none backdrop-blur transition-all placeholder:text-[#b6b1a0] focus:border-[#0b5d42] focus:ring-4 focus:ring-[#0b5d42]/10"
+              className="w-full rounded-full border border-primary/25 bg-card/90 py-4 pl-6 pr-24 text-center text-lg text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:text-brouillard-clair focus:border-primary focus:ring-4 focus:ring-primary/10"
             />
             <motion.button
               onClick={entrer}
@@ -317,7 +321,7 @@ export function WelcomeGate() {
               whileTap={{ scale: 0.94 }}
               disabled={!value.trim()}
               aria-label="Entrer"
-              className="absolute right-1.5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-br from-[#0b5d42] to-[#0b3d2e] text-white shadow-lg shadow-[#0b5d42]/30 transition-opacity disabled:opacity-40"
+              className="absolute right-1.5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-br from-primary to-emerald-deep text-white shadow-lg shadow-primary/30 transition-opacity disabled:opacity-40"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M13 6l6 6-6 6" />
@@ -331,7 +335,7 @@ export function WelcomeGate() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.1 }}
-          className="mt-8 text-xs tracking-widest text-[#a09a87]"
+          className="mt-8 text-xs tracking-widest text-brouillard"
         >
           {heure ? `${heure} · Nîmes` : 'Nîmes'}
         </motion.p>
@@ -340,7 +344,7 @@ export function WelcomeGate() {
       {/* Vague décorative du bas */}
       <svg
         aria-hidden
-        className="pointer-events-none absolute bottom-0 left-0 w-full text-[#0b5d42]/[0.05]"
+        className="pointer-events-none absolute bottom-0 left-0 w-full text-primary/[0.05]"
         viewBox="0 0 1440 120"
         preserveAspectRatio="none"
       >

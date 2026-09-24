@@ -17,6 +17,7 @@ import { CotisationSection } from '@/components/zaouia/cotisation-section'
 import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
 import { SondagesSection } from '@/components/zaouia/sondages-section'
 import { AnnuaireSection } from '@/components/zaouia/annuaire-section'
+import { HistoriqueSection } from '@/components/zaouia/historique-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
 
@@ -71,7 +72,7 @@ export default function Page() {
     {/* L'app ne disparaît à l'impression que si une feuille précise est demandée */}
     <div
       className={cn(
-        'flex min-h-screen flex-col bg-[#fbf9f4]',
+        'flex min-h-screen flex-col bg-background',
         cibleImpression && 'print:hidden'
       )}
     >
@@ -87,17 +88,18 @@ export default function Page() {
         <ZiyaraSection />
         <SondagesSection />
         <AnnuaireSection />
+        <HistoriqueSection />
         <ContentSections />
       </main>
 
       {/* ─── Pied de page ─── */}
-      <footer className="mt-auto border-t border-[#0b5d42]/10 bg-white/70 backdrop-blur safe-bottom">
+      <footer className="mt-auto border-t border-primary/10 bg-card/70 backdrop-blur safe-bottom">
         <div className="mx-auto max-w-3xl px-4 py-4 text-center">
           <div className="bandeau-orne mx-auto mb-3 w-24" aria-hidden />
-          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[#b6b1a0]">
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard-clair">
             Zawiya Nimes — {new Date().getFullYear()}
           </p>
-          <p className="mt-1.5 text-[10px] text-[#c9a24b]/80" aria-hidden>
+          <p className="mt-1.5 text-[10px] text-accent/80" aria-hidden>
             ✦
           </p>
         </div>
@@ -120,7 +122,7 @@ export default function Page() {
           whileTap={{ scale: 0.94 }}
           onClick={() => setNouvelleReunion(true)}
           aria-label="Nouvelle réunion"
-          className="relative flex h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-[#0b5d42] to-[#0b3d2e] pl-5 pr-6 text-white shadow-xl shadow-[#0b5d42]/35 max-sm:h-13 max-sm:w-13 max-sm:justify-center max-sm:pl-0 max-sm:pr-0"
+          className="relative flex h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-primary to-emerald-deep pl-5 pr-6 text-white shadow-xl shadow-primary/35 max-sm:h-13 max-sm:w-13 max-sm:justify-center max-sm:pl-0 max-sm:pr-0"
         >
           <CalendarPlus className="h-5 w-5 max-sm:h-6 max-sm:w-6" />
           <span className="text-sm font-semibold tracking-wide max-sm:hidden">Réunion</span>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { journaliser } from '@/lib/audit'
 
 // GET /api/polls — tous les sondages
 export async function GET() {
@@ -41,6 +42,12 @@ export async function POST(req: Request) {
         meeting: true,
         creator: true,
       },
+    })
+    await journaliser({
+      kind: 'POLL',
+      action: 'CREATE',
+      label: `Sondage publié — « ${poll.question} »`,
+      actor: body.actor || null,
     })
     return NextResponse.json(poll, { status: 201 })
   } catch {

@@ -120,3 +120,15 @@ model Setting {
   key   String @id
   value String // JSON
 }
+
+// ─── Journal de la zawiya (historique des actions) ─────────────────
+model AuditLog {
+  id        String   @id @default(cuid())
+  kind      String // MEETING | CONTRIBUTION | ANNOUNCEMENT | POLL | MEMBER | ATTENDANCE | SETTING
+  action    String // CREATE | UPDATE | DELETE | INSCRIRE | DESINSCRIRE | VOTE
+  label     String // « Latîf al-Kabîr du 24 sept. »
+  actor     String? // prénom de l'auteur (si connu)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+}

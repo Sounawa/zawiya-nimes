@@ -6,6 +6,8 @@ import { LogOut, Settings2, UserRound } from 'lucide-react'
 import { useUser } from '@/lib/store'
 import { dateLongue } from '@/lib/format'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/zaouia/theme-toggle'
+import { RechercheGlobale } from '@/components/zaouia/recherche-globale'
 
 interface HeaderBarProps {
   onOpenSettings: () => void
@@ -22,24 +24,24 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
   const progression = useSpring(scrollYProgress, { stiffness: 120, damping: 26, mass: 0.4 })
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#0b5d42]/10 bg-[#fbf9f4]/85 backdrop-blur-lg">
-      <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
+    <header className="sticky top-0 z-40 border-b border-primary/10 bg-background/85 backdrop-blur-lg">
+      <div className="mx-auto flex max-w-3xl items-center gap-1.5 px-3 py-3 sm:gap-3 sm:px-4">
         {/* Logo + titre */}
         <button
           onClick={onOpenProfile}
-          className="flex items-center gap-3 rounded-2xl p-1 pr-3 transition-colors hover:bg-[#0b5d42]/5"
+          className="flex items-center gap-3 rounded-2xl p-1 pr-3 transition-colors hover:bg-primary/5"
           aria-label="Profil"
         >
           <motion.div
             whileHover={{ rotate: 6, scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-            className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-[#0b5d42]/15"
+            className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-primary/15"
           >
             <Image src="/tariqa.png" alt="Sceau de la zawiya" fill sizes="44px" className="object-contain p-0.5" />
           </motion.div>
           <span className="text-left leading-tight">
-            <span className="block text-[15px] font-bold tracking-wide text-[#123c2d]">ZAWIYA</span>
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-[#0b5d42]">
+            <span className="block text-[15px] font-bold tracking-wide text-encre">ZAWIYA</span>
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
               Nimes
             </span>
           </span>
@@ -52,23 +54,27 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           variant="ghost"
           size="sm"
           onClick={onOpenProfile}
-          className="h-10 max-w-[46vw] gap-2 rounded-full px-3 text-sm font-semibold text-[#123c2d] hover:bg-[#0b5d42]/8"
+          className="h-10 max-w-[30vw] gap-2 rounded-full px-2.5 text-sm font-semibold text-encre hover:bg-primary/8 sm:max-w-[46vw] sm:px-3"
         >
-          <UserRound className="h-4 w-4 shrink-0 text-[#0b5d42]" />
+          <UserRound className="h-4 w-4 shrink-0 text-primary" />
           <span className="max-w-24 truncate">{name}</span>
           {role === 'TREASURER' && (
-            <span className="hidden shrink-0 rounded-full bg-[#c9a24b]/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#a3781f] sm:inline-block">
+            <span className="hidden shrink-0 rounded-full bg-accent/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-vif sm:inline-block">
               Trésorier
             </span>
           )}
         </Button>
+
+        <RechercheGlobale />
+
+        <ThemeToggle />
 
         <Button
           variant="ghost"
           size="icon"
           onClick={onOpenSettings}
           aria-label="Réglages"
-          className="h-10 w-10 shrink-0 rounded-full text-[#0b5d42] hover:bg-[#0b5d42]/8"
+          className="h-9 w-9 shrink-0 rounded-full text-primary hover:bg-primary/8 sm:h-10 sm:w-10"
         >
           <Settings2 className="h-4.5 w-4.5" />
         </Button>
@@ -78,7 +84,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           size="icon"
           onClick={logout}
           aria-label="Changer d'identité"
-          className="hidden h-10 w-10 shrink-0 rounded-full text-[#78877d] hover:bg-[#0b5d42]/8 sm:inline-flex"
+          className="hidden h-10 w-10 shrink-0 rounded-full text-muted-foreground hover:bg-primary/8 sm:inline-flex"
         >
           <LogOut className="h-4 w-4" />
         </Button>
@@ -89,11 +95,11 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
         <motion.p
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center text-[11px] font-medium uppercase tracking-[0.22em] text-[#8a9188]"
+          className="text-center text-[11px] font-medium uppercase tracking-[0.22em] text-brouillard"
         >
           {dateLongue(new Date())}
-          <span className="mx-2 text-[#b8923a]">·</span>
-          <span className="text-[#0b5d42]">Nîmes</span>
+          <span className="mx-2 text-gold">·</span>
+          <span className="text-primary">Nîmes</span>
         </motion.p>
       </div>
 
@@ -101,7 +107,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
       <motion.span
         aria-hidden
         style={{ scaleX: progression }}
-        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-[#0b5d42] via-[#c9a24b] to-[#e2c98a]"
+        className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-primary via-accent to-gold-clair"
       />
     </header>
   )

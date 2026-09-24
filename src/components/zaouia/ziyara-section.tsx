@@ -54,11 +54,11 @@ export function ZiyaraSection() {
       id="ziyara"
     >
       {isLoading ? (
-        <div className="h-48 animate-pulse rounded-2xl bg-[#efe9dc]/60" />
+        <div className="h-48 animate-pulse rounded-2xl bg-sand/60" />
       ) : (
         <div className="space-y-4">
           {/* ─── La grande carte dorée : montant pour le Shaykh ─── */}
-          <div className="relative overflow-hidden rounded-2xl border border-[#c9a24b]/40 bg-gradient-to-br from-[#fdf8ec] via-white to-[#f6ecd4] p-6 text-center shadow-md shadow-[#c9a24b]/10">
+          <div className="relative overflow-hidden rounded-2xl border border-accent/40 bg-gradient-to-br from-or-pale via-card to-or-moyen p-6 text-center shadow-md shadow-accent/10">
             {/* Halo doré */}
             <div
               aria-hidden
@@ -70,10 +70,10 @@ export function ZiyaraSection() {
             <div className="pattern-arabesque absolute inset-0" aria-hidden />
 
             <div className="relative">
-              <p className="mb-1 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-[#a3781f]">
+              <p className="mb-1 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-gold-vif">
                 <Sparkles className="h-4 w-4" /> Ziyara
               </p>
-              <p className="mb-3 font-display text-sm italic text-[#7a5c15]">
+              <p className="mb-3 font-display text-sm italic text-gold-vif">
                 Ce qui sera donné au Shaykh
               </p>
 
@@ -88,33 +88,33 @@ export function ZiyaraSection() {
                 {euros(total)}
               </motion.p>
 
-              <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#b6b1a0]">
+              <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-brouillard-clair">
                 <Lock className="h-3 w-3" /> trésorier uniquement · calcul automatique
               </p>
 
               {/* Statistiques */}
               <div className="mt-5 grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-white/85 p-3 text-center ring-1 ring-[#c9a24b]/25">
-                  <p className="font-display text-xl font-semibold tabular-nums text-[#a3781f]">
+                <div className="rounded-xl bg-card/85 p-3 text-center ring-1 ring-accent/25">
+                  <p className="font-display text-xl font-semibold tabular-nums text-gold-vif">
                     {participants}
                   </p>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-[#b6b1a0]">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-brouillard-clair">
                     participants
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/85 p-3 text-center ring-1 ring-[#c9a24b]/25">
-                  <p className="font-display text-xl font-semibold tabular-nums text-[#a3781f]">
+                <div className="rounded-xl bg-card/85 p-3 text-center ring-1 ring-accent/25">
+                  <p className="font-display text-xl font-semibold tabular-nums text-gold-vif">
                     {euros(Math.round(moyenne))}
                   </p>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-[#b6b1a0]">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-brouillard-clair">
                     moyenne
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/85 p-3 text-center ring-1 ring-[#c9a24b]/25">
-                  <p className="font-display text-xl font-semibold tabular-nums text-[#a3781f]">
+                <div className="rounded-xl bg-card/85 p-3 text-center ring-1 ring-accent/25">
+                  <p className="font-display text-xl font-semibold tabular-nums text-gold-vif">
                     {nbMembres ? Math.round((participants / nbMembres) * 100) : 0}%
                   </p>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-[#b6b1a0]">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-brouillard-clair">
                     des frères
                   </p>
                 </div>
@@ -127,11 +127,11 @@ export function ZiyaraSection() {
 
           {/* ─── Toutes les entrées ziyara (modifier le montant ici) ─── */}
           {entreesZiyara.length > 0 && (
-            <div className="rounded-2xl border border-[#c9a24b]/25 bg-white p-4 shadow-sm">
-              <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a3781f]">
+            <div className="rounded-2xl border border-accent/25 bg-card p-4 shadow-sm">
+              <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-vif">
                 <HeartHandshake className="h-3.5 w-3.5" /> Entrées ziyara — cliquer sur le crayon pour modifier un montant
               </p>
-              <ul className="defile-fin max-h-72 divide-y divide-[#f8f1dd] overflow-y-auto">
+              <ul className="defile-fin max-h-72 divide-y divide-or-pale overflow-y-auto">
                 {entreesZiyara.map((c, i) => (
                   <LigneContribution
                     key={c.id}
@@ -151,20 +151,20 @@ export function ZiyaraSection() {
 
           {/* ─── Récapitulatif par membre ─── */}
           {parMembre.length > 0 && (
-            <div className="rounded-2xl border border-[#c9a24b]/25 bg-white p-4 shadow-sm">
-              <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a3781f]">
+            <div className="rounded-2xl border border-accent/25 bg-card p-4 shadow-sm">
+              <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-vif">
                 <Gift className="h-3.5 w-3.5" /> Par frère
               </p>
-              <ul className="divide-y divide-[#f8f1dd]">
+              <ul className="divide-y divide-or-pale">
                 {parMembre.map((p) => (
                   <li key={p.name} className="flex items-center justify-between py-2.5">
-                    <span className="text-sm font-medium text-[#33453a]">
+                    <span className="text-sm font-medium text-secondary-foreground">
                       Sidi {p.name}
-                      <span className="ml-2 text-xs text-[#b6b1a0]">
+                      <span className="ml-2 text-xs text-brouillard-clair">
                         {p.count} fois · dern. {dateCourte(p.derniere)}
                       </span>
                     </span>
-                    <span className="rounded-full bg-[#c9a24b]/12 px-3 py-1 text-sm font-bold tabular-nums text-[#a3781f]">
+                    <span className="rounded-full bg-accent/12 px-3 py-1 text-sm font-bold tabular-nums text-gold-vif">
                       {euros(p.total)}
                     </span>
                   </li>
@@ -174,11 +174,11 @@ export function ZiyaraSection() {
           )}
 
           {parMembre.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-[#c9a24b]/40 bg-white/60 p-6 text-center text-sm leading-relaxed text-[#a09a87]">
-              <Gift className="mx-auto mb-2 h-5 w-5 text-[#c9a24b]" />
+            <p className="rounded-2xl border border-dashed border-accent/40 bg-card/60 p-6 text-center text-sm leading-relaxed text-brouillard">
+              <Gift className="mx-auto mb-2 h-5 w-5 text-accent" />
               Aucune ziyara pour l'instant.
               <br />
-              Dès qu'une contribution entre dans la <strong className="text-[#a3781f]">colonne ziyara</strong>,
+              Dès qu'une contribution entre dans la <strong className="text-gold-vif">colonne ziyara</strong>,
               le montant pour le Shaykh se calcule tout seul.
             </p>
           )}

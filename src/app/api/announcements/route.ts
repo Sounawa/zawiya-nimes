@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { journaliser } from '@/lib/audit'
 
 // GET /api/announcements
 export async function GET() {
@@ -24,6 +25,12 @@ export async function POST(req: Request) {
         text: body.text,
         color: body.color === 'CORAIL' ? 'CORAIL' : 'VERT',
       },
+    })
+    await journaliser({
+      kind: 'ANNOUNCEMENT',
+      action: 'CREATE',
+      label: `Annonce publiée — « ${announcement.title || announcement.text.slice(0, 60)} »`,
+      actor: body.actor || null,
     })
     return NextResponse.json(announcement, { status: 201 })
   } catch {

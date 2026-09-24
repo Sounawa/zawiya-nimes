@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { journaliser } from '@/lib/audit'
 
 type Params = { params: Promise<{ id: string }> }
+
+function libelleCategorie(c: string): string {
+  return c === 'ZIYARA' ? 'Ziyara' : c === 'DON' ? 'Don' : 'Cotisation'
+}
 
 // PATCH /api/contributions/:id
 export async function PATCH(req: Request, { params }: Params) {
@@ -23,6 +28,12 @@ export async function PATCH(req: Request, { params }: Params) {
       data,
       include: { member: true },
     })
+    await journaliser({
+      kind: 'CONTRIBUTION',
+      action: 'UPDATE',
+      label: `${libelleCategorie(contribution.category)} de ${contribution.member.name} corrigée`,
+      actor: body.actor || null,
+    })
     return NextResponse.json(contribution)
   } catch {
     return NextResponse.json({ error: 'Contribution introuvable' }, { status: 404 })
@@ -30,10 +41,27 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 // DELETE /api/contributions/:id
-export async function DELETE(_req: Request, { params }: Params) {
+export async function DELETE(req: Request, { params }: Params) {
   try {
     const { id } = await params
+    let acteur: string | null = null
+    try {
+      const body = await req.json()
+      acteur = body?.actor || null
+    } catch {
+      /* pas de corps */
+    }
+    const contribution = await db.contribution.findUnique({
+      where: { id },
+      include: { member: true },
+    })
     await db.contribution.delete({ where: { id } })
+    await journaliser({
+      kind: 'CONTRIBUTION',
+      action: 'DELETE',
+      label: `${libelleCategorie(contribution?.category ?? 'COTISATION')} de ${contribution?.member.name ?? 'un frère'} supprimée`,
+      actor: acteur,
+    })
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Contribution introuvable' }, { status: 404 })

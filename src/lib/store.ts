@@ -34,6 +34,21 @@ export const useUser = create<UserState>()(
   )
 )
 
+/* ─── Navigation inter-sections (recherche globale ⌘K) ─── */
+interface NavState {
+  /** Section demandée { id, horodatage } — consommée par SectionShell */
+  demande: { id: string; horodatage: number } | null
+  /** Ouvre (et fait défiler vers) une section de la page */
+  ouvrir: (id: string) => void
+  effacer: () => void
+}
+
+export const useNav = create<NavState>((set) => ({
+  demande: null,
+  ouvrir: (id) => set({ demande: { id, horodatage: Date.now() } }),
+  effacer: () => set({ demande: null }),
+}))
+
 /* ─── Zone d'impression (feuille de présence / comptes) ─── */
 export type CibleImpression =
   | { kind: 'presence'; meetingId: string }

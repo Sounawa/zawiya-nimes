@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { journaliser } from '@/lib/audit'
 
 // GET /api/contributions — toutes les contributions (avec totaux)
 export async function GET(req: Request) {
@@ -53,6 +54,14 @@ export async function POST(req: Request) {
         recordedBy: body.recordedBy || null,
       },
       include: { member: true },
+    })
+    const libelle =
+      category === 'ZIYARA' ? 'Ziyara' : category === 'DON' ? 'Don' : 'Cotisation'
+    await journaliser({
+      kind: 'CONTRIBUTION',
+      action: 'CREATE',
+      label: `${libelle} de ${contribution.member.name} enregistrée`,
+      actor: body.actor || body.recordedBy || null,
     })
     return NextResponse.json(contribution, { status: 201 })
   } catch {

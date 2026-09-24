@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { journaliser } from '@/lib/audit'
 
 // GET /api/meetings — toutes les réunions (avec présences & membres)
 export async function GET() {
@@ -36,6 +37,12 @@ export async function POST(req: Request) {
         word: body.word || null,
         program: body.program ? JSON.stringify(body.program) : null,
       },
+    })
+    await journaliser({
+      kind: 'MEETING',
+      action: 'CREATE',
+      label: `Réunion « ${meeting.title} » publiée`,
+      actor: body.actor || null,
     })
     return NextResponse.json(meeting, { status: 201 })
   } catch {

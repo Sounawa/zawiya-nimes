@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Outfit, Amiri } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 
 const display = Cormorant_Garamond({
   variable: "--font-display",
@@ -48,7 +49,9 @@ export default function RootLayout({
       <body
         className={`${display.variable} ${sans.variable} ${arabic.variable} font-sans antialiased bg-background text-foreground`}
       >
-        <QueryProvider>{children}</QueryProvider>
+        <ThemeProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>

@@ -121,9 +121,9 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto rounded-3xl border-[#0b5d42]/15 bg-[#fdfcf8] p-6">
+      <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto rounded-3xl border-primary/15 bg-ivoire p-6">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-[#123c2d]">
+          <DialogTitle className="font-display text-2xl text-encre">
             Réglages de la zaouia
           </DialogTitle>
           <DialogDescription>
@@ -133,27 +133,27 @@ export function SettingsDialog({
 
         {/* ─── Lieu des ijtima' ─── */}
         <section aria-label="Lieu des ijtima" className="space-y-3">
-          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
             <MapPin className="h-4 w-4" /> Lieu des ijtima'
           </h3>
-          <div className="space-y-3 rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm">
+          <div className="space-y-3 rounded-2xl border border-primary/12 bg-card p-4 shadow-sm">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label className="text-xs text-[#5b6b60]">Ville</Label>
+                <Label className="text-xs text-muted-foreground">Ville</Label>
                 <Input
                   value={lieu.ville}
                   onChange={(e) => setLieuEdite({ ...lieu, ville: e.target.value })}
                   placeholder="Nîmes"
-                  className="rounded-xl border-[#0b5d42]/25 bg-white"
+                  className="rounded-xl border-primary/25 bg-card"
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs text-[#5b6b60]">Adresse</Label>
+                <Label className="text-xs text-muted-foreground">Adresse</Label>
                 <Input
                   value={lieu.adresse}
                   onChange={(e) => setLieuEdite({ ...lieu, adresse: e.target.value })}
                   placeholder="Rue, numéro, sonnette…"
-                  className="rounded-xl border-[#0b5d42]/25 bg-white"
+                  className="rounded-xl border-primary/25 bg-card"
                 />
               </div>
             </div>
@@ -161,7 +161,7 @@ export function SettingsDialog({
               size="sm"
               onClick={enregistrerLieu}
               disabled={saveSetting.isPending}
-              className="rounded-full bg-[#0b5d42] text-white hover:bg-[#0b3d2e]"
+              className="rounded-full bg-primary text-white hover:bg-emerald-deep"
             >
               Enregistrer le lieu
             </Button>
@@ -170,35 +170,35 @@ export function SettingsDialog({
 
         {/* ─── Jours d'ijtima' ─── */}
         <section aria-label="Jours d'ijtima" className="space-y-3">
-          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
             <CalendarDays className="h-4 w-4" /> Jours des ijtima'
           </h3>
-          <div className="rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-primary/12 bg-card p-4 shadow-sm">
             <ul className="space-y-2.5">
               {jours.map((j, i) => (
                 <motion.li
                   layout
                   key={j.label}
-                  className="flex items-center gap-3 rounded-xl bg-[#fbf9f4] px-3 py-2"
+                  className="flex items-center gap-3 rounded-xl bg-background px-3 py-2"
                 >
                   <Switch
                     checked={j.actif}
                     onCheckedChange={(v) => majJour(i, { actif: v })}
                     aria-label={`${j.label} ${j.actif ? 'actif' : 'inactif'}`}
                   />
-                  <span className={cn('flex-1 text-sm font-medium', j.actif ? 'text-[#33453a]' : 'text-[#b6b1a0] line-through')}>
+                  <span className={cn('flex-1 text-sm font-medium', j.actif ? 'text-secondary-foreground' : 'text-brouillard-clair line-through')}>
                     {j.label}
                   </span>
                   <Input
                     type="time"
                     value={j.heure}
                     onChange={(e) => majJour(i, { heure: e.target.value })}
-                    className="w-28 rounded-lg border-[#0b5d42]/25 bg-white text-sm"
+                    className="w-28 rounded-lg border-primary/25 bg-card text-sm"
                   />
                   <button
                     onClick={() => retirerJour(i)}
                     aria-label={`Retirer ${j.label}`}
-                    className="rounded-full p-1.5 text-[#b6b1a0] hover:bg-[#b3452f]/10 hover:text-[#b3452f]"
+                    className="rounded-full p-2 text-brouillard-clair hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Plus className="h-3.5 w-3.5 rotate-45" />
                   </button>
@@ -210,7 +210,7 @@ export function SettingsDialog({
                 variant="outline"
                 size="sm"
                 onClick={ajouterJour}
-                className="gap-1.5 rounded-full border-dashed border-[#0b5d42]/40 text-[#0b5d42]"
+                className="gap-1.5 rounded-full border-dashed border-primary/40 text-primary"
               >
                 <Plus className="h-3.5 w-3.5" /> Jour
               </Button>
@@ -218,7 +218,7 @@ export function SettingsDialog({
                 size="sm"
                 onClick={enregistrerJours}
                 disabled={saveSetting.isPending}
-                className="ml-auto rounded-full bg-[#0b5d42] text-white hover:bg-[#0b3d2e]"
+                className="ml-auto rounded-full bg-primary text-white hover:bg-emerald-deep"
               >
                 Enregistrer
               </Button>
@@ -228,25 +228,25 @@ export function SettingsDialog({
 
         {/* ─── Rôles ─── */}
         <section aria-label="Rôles" className="space-y-3">
-          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
             <Shield className="h-4 w-4" /> Rôles de la communauté
           </h3>
-          <p className="rounded-xl bg-[#efe9dc]/60 px-3 py-2 text-xs leading-relaxed text-[#78877d]">
+          <p className="rounded-xl bg-sand/60 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
             Tout le monde a les droits d'administration par défaut.
-            Un seul frère peut porter le rôle de <strong className="text-[#8a6d2f]">trésorier</strong> —
+            Un seul frère peut porter le rôle de <strong className="text-gold-vif">trésorier</strong> —
             c'est lui qui gère l'argent (cotisations & ziyara).
           </p>
-          <div className="defile-fin max-h-64 overflow-y-auto rounded-2xl border border-[#0b5d42]/12 bg-white p-2 shadow-sm">
+          <div className="defile-fin max-h-64 overflow-y-auto rounded-2xl border border-primary/12 bg-card p-2 shadow-sm">
             {(membres ?? []).map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 hover:bg-[#fbf9f4]"
+                className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 hover:bg-background"
               >
-                <span className="flex items-center gap-2 text-sm font-medium text-[#33453a]">
-                  <UserRound className="h-3.5 w-3.5 text-[#0b5d42]/50" />
+                <span className="flex items-center gap-2 text-sm font-medium text-secondary-foreground">
+                  <UserRound className="h-3.5 w-3.5 text-primary/50" />
                   Sidi {m.name}
                   {m.role === 'TREASURER' && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#c9a24b]/15 px-2 py-0.5 text-[10px] font-bold text-[#a3781f]">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-gold-vif">
                       <Wallet className="h-3 w-3" /> Trésorier
                     </span>
                   )}
@@ -262,8 +262,8 @@ export function SettingsDialog({
                     className={cn(
                       'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
                       m.role === 'TREASURER'
-                        ? 'bg-[#c9a24b] text-white'
-                        : 'bg-[#efe9dc] text-[#78877d] hover:bg-[#c9a24b]/20 hover:text-[#a3781f]'
+                        ? 'bg-accent text-white dark:text-accent-foreground'
+                        : 'bg-sand text-muted-foreground hover:bg-accent/20 hover:text-gold-vif'
                     )}
                     title={
                       tresorier && m.role !== 'TREASURER'
@@ -279,8 +279,8 @@ export function SettingsDialog({
                     className={cn(
                       'inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
                       m.role === 'ADMIN'
-                        ? 'bg-[#0b5d42]/10 text-[#0b5d42]'
-                        : 'bg-[#efe9dc] text-[#78877d] hover:bg-[#0b5d42]/10 hover:text-[#0b5d42]'
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-sand text-muted-foreground hover:bg-primary/10 hover:text-primary'
                     )}
                   >
                     <BadgeCheck className="h-3 w-3" /> Admin
@@ -298,12 +298,12 @@ export function SettingsDialog({
                 if (e.key === 'Enter' && nouveauNom.trim()) ajouterMembre.mutate(nouveauNom.trim())
               }}
               placeholder="Nouveau frère…"
-              className="rounded-xl border-[#0b5d42]/25 bg-white"
+              className="rounded-xl border-primary/25 bg-card"
             />
             <Button
               onClick={() => nouveauNom.trim() && ajouterMembre.mutate(nouveauNom.trim())}
               disabled={ajouterMembre.isPending}
-              className="shrink-0 rounded-xl bg-[#0b5d42] text-white hover:bg-[#0b3d2e]"
+              className="shrink-0 rounded-xl bg-primary text-white hover:bg-emerald-deep"
             >
               <Plus className="mr-1 h-4 w-4" /> Ajouter
             </Button>
@@ -312,10 +312,10 @@ export function SettingsDialog({
 
         {/* ─── Trésorerie : note ─── */}
         <section aria-label="Trésorerie" className="space-y-2">
-          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
             <Wallet className="h-4 w-4" /> Trésorerie
           </h3>
-          <p className="rounded-xl bg-[#fdf6e7] px-3 py-2 text-xs leading-relaxed text-[#7a5c15]">
+          <p className="rounded-xl bg-or-pale px-3 py-2 text-xs leading-relaxed text-gold-vif">
             La section <strong>Ziyara</strong> (montant donné au Shaykh) n'est visible et modifiable que par le trésorier —
             c'est lui qui règle les montants depuis sa section dorée.
           </p>
@@ -376,9 +376,9 @@ export function ProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm rounded-3xl border-[#0b5d42]/15 bg-[#fdfcf8] p-6">
+      <DialogContent className="max-w-sm rounded-3xl border-primary/15 bg-ivoire p-6">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-[#123c2d]">Je suis…</DialogTitle>
+          <DialogTitle className="font-display text-2xl text-encre">Je suis…</DialogTitle>
           <DialogDescription>
             {monMembre
               ? `Sidi ${monMembre.name} — ${monMembre.role === 'TREASURER' ? 'trésorier de la zaouia' : 'administrateur'}`
@@ -388,7 +388,7 @@ export function ProfileDialog({
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#78877d]">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
               Prénom
             </Label>
             <div className="relative">
@@ -398,7 +398,7 @@ export function ProfileDialog({
                 onKeyDown={(e) => e.key === 'Enter' && valider()}
                 list="prenoms-zaouia"
                 placeholder="Ton prénom…"
-                className="w-full rounded-full border border-[#0b5d42]/25 bg-white py-3 pl-5 pr-5 text-center text-lg text-[#123c2d] outline-none transition-all focus:border-[#0b5d42] focus:ring-4 focus:ring-[#0b5d42]/10"
+                className="w-full rounded-full border border-primary/25 bg-card py-3 pl-5 pr-5 text-center text-lg text-encre outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10"
               />
               <datalist id="prenoms-zaouia">
                 {(membres ?? []).map((m) => (
@@ -419,8 +419,8 @@ export function ProfileDialog({
                   className={cn(
                     'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
                     choix === m.name
-                      ? 'bg-[#0b5d42] text-white'
-                      : 'bg-white text-[#0b5d42] ring-1 ring-[#0b5d42]/15 hover:bg-[#0b5d42]/5'
+                      ? 'bg-primary text-white'
+                      : 'bg-card text-primary ring-1 ring-primary/15 hover:bg-primary/5'
                   )}
                 >
                   Sidi {m.name}
@@ -430,7 +430,7 @@ export function ProfileDialog({
 
           <Button
             onClick={valider}
-            className="w-full rounded-full bg-[#0b5d42] py-3 text-white hover:bg-[#0b3d2e]"
+            className="w-full rounded-full bg-primary py-3 text-white hover:bg-emerald-deep"
           >
             {monMembre ? 'Mettre à jour' : 'Entrer'}
           </Button>
@@ -442,7 +442,7 @@ export function ProfileDialog({
                 logout()
                 onOpenChange(false)
               }}
-              className="w-full rounded-full text-[#b3452f] hover:bg-[#b3452f]/10 hover:text-[#b3452f]"
+              className="w-full rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
               Changer d'identité
             </Button>

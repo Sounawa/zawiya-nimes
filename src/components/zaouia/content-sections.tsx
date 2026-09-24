@@ -14,10 +14,11 @@ function CarteContenu({ item, index }: { item: ContentItem; index: number }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="group rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+      whileHover={{ y: -3 }}
+      className="group rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm transition-all duration-300 hover:border-[#0b5d42]/25 hover:shadow-lg"
     >
       <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#fbf9f4] text-xl ring-1 ring-[#0b5d42]/10">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#fbf9f4] text-xl ring-1 ring-[#0b5d42]/10 transition-all duration-300 group-hover:scale-110 group-hover:bg-[#0b5d42]/6">
           {item.icon || '✦'}
         </span>
         <div className="min-w-0 flex-1">

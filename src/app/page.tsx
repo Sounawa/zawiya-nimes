@@ -86,19 +86,28 @@ export default function Page() {
       </footer>
 
       {/* ─── Bouton flottant ＋ Réunion ─── */}
-      <motion.button
-        initial={{ scale: 0, rotate: -90 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.4 }}
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.94 }}
-        onClick={() => setNouvelleReunion(true)}
-        aria-label="Nouvelle réunion"
-        className="fixed bottom-6 right-6 z-40 flex h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-[#0b5d42] to-[#0b3d2e] pl-5 pr-6 text-white shadow-xl shadow-[#0b5d42]/35"
-      >
-        <CalendarPlus className="h-5 w-5" />
-        <span className="text-sm font-semibold tracking-wide">Réunion</span>
-      </motion.button>
+      <div className="fixed bottom-6 right-6 z-40">
+        {/* Anneau pulsé */}
+        <motion.span
+          aria-hidden
+          className="fab-ring absolute inset-0 rounded-full"
+          animate={{ scale: [1, 1.35], opacity: [0.5, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
+        />
+        <motion.button
+          initial={{ scale: 0, rotate: -90 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.4 }}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.94 }}
+          onClick={() => setNouvelleReunion(true)}
+          aria-label="Nouvelle réunion"
+          className="relative flex h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-[#0b5d42] to-[#0b3d2e] pl-5 pr-6 text-white shadow-xl shadow-[#0b5d42]/35"
+        >
+          <CalendarPlus className="h-5 w-5" />
+          <span className="text-sm font-semibold tracking-wide">Réunion</span>
+        </motion.button>
+      </div>
 
       {/* ─── Dialogues ─── */}
       <NewMeetingDialog open={nouvelleReunion} onOpenChange={setNouvelleReunion} />

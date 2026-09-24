@@ -266,6 +266,12 @@
   animation: chevron-pulse 2.2s ease-in-out infinite;
 }
 
+/* Anneau pulsé du bouton flottant */
+.fab-ring {
+  background: rgba(11, 93, 66, 0.28);
+  pointer-events: none;
+}
+
 /* Défilement élégant */
 ::-webkit-scrollbar {
   width: 10px;

@@ -181,7 +181,7 @@ async function main() {
       data: {
         pollId: poll.id,
         memberId: members[i].id,
-        choice: i < 7 ? 'Je viens' : 'Inch\u2019Allah',
+        choice: i < 7 ? 'Je viens' : "Inch'Allah",
       },
     })
   }

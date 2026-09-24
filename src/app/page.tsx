@@ -21,6 +21,8 @@ import { HistoriqueSection } from '@/components/zaouia/historique-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
 import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
+import { BandeauProchainIjtima } from '@/components/zaouia/bandeau-prochain-ijtima'
+import { BoutonHautDePage } from '@/components/zaouia/bouton-haut-de-page'
 
 export default function Page() {
   const name = useUser((s) => s.name)
@@ -83,6 +85,7 @@ export default function Page() {
       />
 
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 pb-40 pt-5">
+        <BandeauProchainIjtima />
         <Annonces />
         <IjtimaSection />
         <CotisationSection />
@@ -137,6 +140,9 @@ export default function Page() {
 
       {/* Veille — notifications des nouvelles annonces & réunions */}
       <VeilleCommunaute />
+
+      {/* Retour en haut — apparaît après défilement */}
+      <BoutonHautDePage />
 
       {/* Voile d'entrée — transition douce après le splash */}
       <AnimatePresence>{!memberId && null}</AnimatePresence>

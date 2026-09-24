@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Banknote, CalendarRange, Download, TrendingUp, Users } from 'lucide-react'
+import { Banknote, CalendarRange, Download, Printer, TrendingUp, Users } from 'lucide-react'
 import { useContributions } from '@/lib/api'
-import { useUser } from '@/lib/store'
+import { usePrint, useUser } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 import { euros } from '@/lib/format'
 import { SectionShell } from './ijtima-section'
@@ -138,6 +138,7 @@ function GrapheMensuel({ cotisations }: { cotisations: { amount: number; categor
 export function CotisationSection() {
   const { data, isLoading } = useContributions()
   const role = useUser((s) => s.role)
+  const imprimer = usePrint((s) => s.imprimer)
   const { toast } = useToast()
 
   const [filtre, setFiltre] = useState<'TOUS' | 'COTISATION' | 'DON'>('TOUS')
@@ -183,18 +184,26 @@ export function CotisationSection() {
               </p>
               <Compteur valeur={totals ? totals.COTISATION + totals.DON : 0} libelle="Cotisations & dons cumulés" />
               {role === 'TREASURER' && totals && (
-                <button
-                  onClick={() => {
-                    exporterCSV(cotisations, totals.COTISATION + totals.DON, totals.ZIYARA)
-                    toast({
-                      title: 'Export CSV prêt',
-                      description: `${cotisations.length} entrées — caisse ${euros(totals.COTISATION + totals.DON)}`,
-                    })
-                  }}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#b8923a]/45 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[#a3781f] transition-all hover:bg-[#fdf6e7] hover:shadow-md active:scale-[0.98]"
-                >
-                  <Download className="h-3.5 w-3.5" /> Exporter les comptes (CSV)
-                </button>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      exporterCSV(cotisations, totals.COTISATION + totals.DON, totals.ZIYARA)
+                      toast({
+                        title: 'Export CSV prêt',
+                        description: `${cotisations.length} entrées — caisse ${euros(totals.COTISATION + totals.DON)}`,
+                      })
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#b8923a]/45 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[#a3781f] transition-all hover:bg-[#fdf6e7] hover:shadow-md active:scale-[0.98]"
+                  >
+                    <Download className="h-3.5 w-3.5" /> CSV
+                  </button>
+                  <button
+                    onClick={() => imprimer({ kind: 'comptes' })}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0b5d42]/40 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[#0b5d42] transition-all hover:bg-[#f4f8f4] hover:shadow-md active:scale-[0.98]"
+                  >
+                    <Printer className="h-3.5 w-3.5" /> Imprimer / PDF
+                  </button>
+                </div>
               )}
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-white/80 p-3 text-center ring-1 ring-[#0b5d42]/10">

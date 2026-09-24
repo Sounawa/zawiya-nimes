@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CalendarPlus } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useUser } from '@/lib/store'
+import { cn } from '@/lib/utils'
+import { usePrint, useUser } from '@/lib/store'
 import { useMembers } from '@/lib/api'
 import { WelcomeGate } from '@/components/zaouia/welcome-gate'
 import { HeaderBar } from '@/components/zaouia/header-bar'
@@ -17,11 +18,13 @@ import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
 import { SondagesSection } from '@/components/zaouia/sondages-section'
 import { AnnuaireSection } from '@/components/zaouia/annuaire-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
+import { ZoneImpression } from '@/components/zaouia/print-sheet'
 
 export default function Page() {
   const name = useUser((s) => s.name)
   const memberId = useUser((s) => s.memberId)
   const setMember = useUser((s) => s.setMember)
+  const cibleImpression = usePrint((s) => s.cible)
   const { data: membres } = useMembers()
   const qc = useQueryClient()
 
@@ -64,7 +67,14 @@ export default function Page() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fbf9f4]">
+    <>
+    {/* L'app ne disparaît à l'impression que si une feuille précise est demandée */}
+    <div
+      className={cn(
+        'flex min-h-screen flex-col bg-[#fbf9f4]',
+        cibleImpression && 'print:hidden'
+      )}
+    >
       <HeaderBar
         onOpenSettings={() => setReglagesOuverts(true)}
         onOpenProfile={() => setProfilOuvert(true)}
@@ -125,5 +135,9 @@ export default function Page() {
       {/* Voile d'entrée — transition douce après le splash */}
       <AnimatePresence>{!memberId && null}</AnimatePresence>
     </div>
+
+    {/* ─── Zone d'impression — seule visible à l'impression ─── */}
+    <ZoneImpression />
+    </>
   )
 }

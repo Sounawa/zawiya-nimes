@@ -355,3 +355,35 @@ button, a, [role="button"] {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ─── Impression — feuilles propres sur fond blanc ───
+   L'application porte « print:hidden » (page.tsx), la zone d'impression
+   « hidden print:block » (print-sheet.tsx). On force ici les marges,
+   le fond blanc et on masque les éventuels portails Radix ouverts. */
+@media print {
+  @page {
+    margin: 14mm 12mm;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  [data-radix-portal],
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+  #zone-impression {
+    position: absolute !important;
+    inset: 0 auto auto 0;
+    width: 100%;
+  }
+  /* Les tableaux de feuilles se coupent proprement entre les pages */
+  #zone-impression table {
+    page-break-inside: auto;
+  }
+  #zone-impression tr {
+    page-break-inside: avoid;
+  }
+}

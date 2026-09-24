@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Based on the image provided, here is the concise assessment of the printed attendance sheet:\n\n1.  **Layout Clean and Print-Appropriate?** **Yes.** The layout is very clean, well-structured, and perfectly suited for printing. It uses a clear hierarchy with a distinct header, a summary section, a program schedule, and a large, legible table for data entry.\n2.  **Any Overlapping, Cut-off, or Misaligned Text?** **No.** There are no visual errors. All text is fully visible, properly aligned within its containers, and the table grid lines are straight and consistent.\n3.  **Professional Look?** **Yes.** The design looks professional and organized. The use of a cohesive color scheme (dark green/teal), clear typography, and ample white space gives it a polished and official appearance suitable for community administration.\n\n**Summary:** The document is a high-quality, print-ready attendance sheet that meets all the expected criteria without any technical or aesthetic flaws.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1790273642,
+  "id": "20260925021355a62e37d13ba54183",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "20260925021355a62e37d13ba54183",
+  "usage": {
+    "completion_tokens": 208,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 912,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 1120
+  }
+}

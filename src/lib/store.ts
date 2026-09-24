@@ -33,3 +33,34 @@ export const useUser = create<UserState>()(
     { name: 'zaouia-user' }
   )
 )
+
+/* ─── Zone d'impression (feuille de présence / comptes) ─── */
+export type CibleImpression =
+  | { kind: 'presence'; meetingId: string }
+  | { kind: 'comptes' }
+
+interface PrintState {
+  cible: CibleImpression | null
+  /** Affiche la feuille puis ouvre le dialogue d'impression du navigateur */
+  imprimer: (c: CibleImpression) => void
+  effacer: () => void
+}
+
+export const usePrint = create<PrintState>((set) => ({
+  cible: null,
+  imprimer: (cible) => {
+    set({ cible })
+    // Double requestAnimationFrame : laisser React peindre la feuille cachée
+    // avant que window.print() ne fige le rendu.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        try {
+          window.print()
+        } catch {
+          /* certains navigateurs bloquent print() programmatique */
+        }
+      })
+    )
+  },
+  effacer: () => set({ cible: null }),
+}))

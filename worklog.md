@@ -106,3 +106,26 @@ Stage Summary:
 - Données DB inchangées (test revert : titre réunion restauré, total ziyara 90 €)
 - Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplir dans Réglages
 - Recommandations prochain round : édition inline des sondages, compteur de présence par réunion pour le Shaykh, notifications/son à la publication d'une annonce, mode impression des comptes (PDF), historique des modifications
+
+---
+Task ID: 6
+Agent: main (Z.ai Code) — revue continue
+Task: QA complète + correction bug votes + 3 nouvelles fonctionnalités (édition sondages, feuille de présence imprimable, comptes imprimables) + polish visuel
+
+Work Log:
+- QA initiale agent-browser (session vierge) : gate animé ✓ → entrée Abde (trésorier) ✓ → 7 sections présentes ✓ → vote bascule 8↔7 ✓ → Ziyara 90 € / 8 participants ✓ → Cotisations 475 € + graphe 6 mois + CSV ✓ → réglages jours persistés en DB (Lundi OFF vérifié via /api/settings) ✓ → dialogue réunion : clic Jeudi → date auto 2026-10-01 + heure 19:30 + ville Nîmes ✓ → 0 erreur console, 0 débordement 1280px
+- BUG CORRIGÉ (comptage « voir qui ») : le bouton « N votes · voir qui » des sondages ne dépliait JAMAIS les votants — le toggle `setVoirVotants(v => v ? null : '')` assignait '' (falsy, jamais égal à une option) au lieu d'une valeur véridique. Fix : toggle sur 'tous' + condition de rendu `voirVotants !== null` (les 3 listes de votants s'ouvrent d'un coup). Vérifié : 3 ul visibles avec les noms
+- NOUVELLE FONCTIONNALITÉ — édition des sondages : useUpdatePoll (PATCH) dans api.ts ; PATCH /api/polls/[id] accepte options[] (≥ 2 requises) et supprime les votes orphelins (choice ne correspondant plus à aucune option, normalisation apostrophes serveur) ; NouveauSondageDialog supporte poll? (mode édition : titre « Modifier le sondage », pré-remplissage question+options, bouton « Enregistrer », avertissement ⚠︎ en direct « N votes ne correspondent plus à une réponse — ils seront supprimés ») ; crayon doré sur chaque carte sondage. Testé : édition sans changement → 10 votes conservés ; création poll TEST QA → vote Jeudi → suppression option Jeudi → 1 vote orphelin supprimé (0 votes restants) → poll de test supprimé (DB propre : 1 poll, 10 votes)
+- NOUVELLE FONCTIONNALITÉ — fermer/rouvrir un sondage : bouton Lock/LockOpen dans le pied de carte → PATCH closesAt ; état fermé = badge cadenas + options disabled + carte estompée. Testé : fermer → 3 boutons disabled + « rouvrir » → réouvert
+- NOUVELLE FONCTIONNALITÉ — feuille de présence imprimable (pour le Shaykh) : store usePrint (zustand, imprimer() → setState + double requestAnimationFrame + window.print()) ; composant print-sheet.tsx ZoneImpression (hidden print:block, écoute afterprint pour se vider) ; FeuillePresence = en-tête ZAWIYA NIMES, titre+date longue+horaire+lieu, résumé (17 frères / 3 invités / 20 personnes), programme, tableau # / Nom / Invités / Signature avec rangées vides à remplir à la main + ligne total ; bouton imprimante sur chaque carte réunion. VLM sur PDF généré : « clean, no overlapping, professional »
+- NOUVELLE FONCTIONNALITÉ — comptes imprimables (pour le trésorier) : ComptesImprimables = 3 encadrés totaux (Caisse 475 € / Ziyara 90 € / Total 565 €), journal complet trié par date (26 entrées, catégorie colorée), lignes totaux, zone signature « Le trésorier » ; bouton « Imprimer / PDF » vert à côté du CSV doré (grille 2 colonnes). VLM sur PDF : « very clean, professional »
+- CSS impression (globals.css) : @page marges 14mm, fond blanc forcé, portails Radix masqués, #zone-impression positionné, saut de page propre sur les <tr> ; page.tsx : l'app ne porte print:hidden QUE si une cible d'impression est active (Ctrl+P normal n'imprime pas une page blanche)
+- STYLING : carte sondage hover lift + ombre verte, étoile d'or ✦ sur l'option qui mène, état fermé estompé, boutons d'action (crayon/fermer) au style existant ; badge « passée » + opacité 60% sur les réunions passées ; variable morte `membres` retirée de CarteSondage
+- Responsive : 390px vérifié — boutons fermer/rouvrir visibles, rangée d'actions réunion (Je viendrai 168px + 3×44px) sans débordement, scrollWidth=390 exact
+- Vérifications finales : lint 0 erreur, navigateur vierge 0 erreur runtime, dev.log que des 200, DB inchangée (1 poll / 10 votes / 26 contributions / 475 € + 90 €)
+
+Stage Summary:
+- État : application stable et enrichie — 7 sections, sondages désormais pleinement CRUD (créer/voter/éditer/fermer/supprimer), impression professionnelle de la feuille de présence (Shaykh) et des comptes (trésorier)
+- Bugs résolus ce round : « voir qui » des sondages jamais dépliable (toggle falsy)
+- Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplacer dans Réglages, badge « passée » non visible avec les données actuelles (toutes les réunions sont aujourd'hui/à venir — logique vérifiée par comparaison de dates)
+- Recommandations prochain round : notifications (son/toast) à la publication d'une annonce, export CSV filtré par période, statistiques de présence par frère dans l'annuaire, mode sombre, logo utilisateur à récupérer

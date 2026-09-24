@@ -30,6 +30,13 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 /* ═══════════════ Un sondage ═══════════════ */
+
+/** Normalise les apostrophes typographiques (’ U+2019) en apostrophes droites —
+ *  évite que des votes « Inch’Allah » ne comptent pas face à l’option « Inch'Allah ». */
+function normChoix(s: string): string {
+  return s.replace(/[\u2018\u2019']/g, "'")
+}
+
 function CarteSondage({ poll }: { poll: Poll }) {
   const options = useMemo(() => parsePollOptions(poll), [poll])
   const membres = useMembers().data
@@ -39,10 +46,12 @@ function CarteSondage({ poll }: { poll: Poll }) {
   const [voirVotants, setVoirVotants] = useState<string | null>(null)
 
   const monVote = poll.votes.find((v) => v.memberId === memberId)?.choice
+  const monVoteNormalise = monVote ? normChoix(monVote) : null
   const totalVotes = poll.votes.length
   const ferme = poll.closesAt && new Date(poll.closesAt) < new Date()
 
-  const compteur = (opt: string) => poll.votes.filter((v) => v.choice === opt).length
+  const compteur = (opt: string) =>
+    poll.votes.filter((v) => normChoix(v.choice) === normChoix(opt)).length
 
   const voter = (opt: string) => {
     if (!memberId || ferme) return
@@ -81,7 +90,7 @@ function CarteSondage({ poll }: { poll: Poll }) {
         {options.map((opt) => {
           const n = compteur(opt)
           const pct = totalVotes ? Math.round((n / totalVotes) * 100) : 0
-          const estMonVote = monVote === opt
+          const estMonVote = monVoteNormalise === normChoix(opt)
           return (
             <div key={opt}>
               <button
@@ -126,7 +135,7 @@ function CarteSondage({ poll }: { poll: Poll }) {
                     className="overflow-hidden pl-4 pt-1"
                   >
                     {poll.votes
-                      .filter((v) => v.choice === opt)
+                      .filter((v) => normChoix(v.choice) === normChoix(opt))
                       .map((v) => (
                         <li key={v.id} className="py-0.5 text-xs text-[#78877d]">
                           Sidi {v.member.name}

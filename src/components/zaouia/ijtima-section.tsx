@@ -46,8 +46,15 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
   return (
     <motion.article
       layout
-      className="overflow-hidden rounded-2xl border border-[#0b5d42]/12 bg-white shadow-[0_2px_12px_-4px_rgba(11,93,66,0.08)]"
+      className={cn(
+        'relative overflow-hidden rounded-2xl border bg-white shadow-[0_2px_12px_-4px_rgba(11,93,66,0.08)] transition-shadow hover:shadow-[0_6px_20px_-6px_rgba(11,93,66,0.18)]',
+        jeViens ? 'border-[#0b5d42]/30' : 'border-[#0b5d42]/12'
+      )}
     >
+      {/* Liseré doré si je suis inscrit */}
+      {jeViens && (
+        <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#c9a24b] to-[#0b5d42]" />
+      )}
       {/* ─── Ligne d'en-tête ─── */}
       <button
         onClick={() => setOuvert((o) => !o)}

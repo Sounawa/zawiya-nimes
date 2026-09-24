@@ -48,12 +48,12 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           variant="ghost"
           size="sm"
           onClick={onOpenProfile}
-          className="h-10 gap-2 rounded-full px-3 text-sm font-semibold text-[#123c2d] hover:bg-[#0b5d42]/8"
+          className="h-10 max-w-[46vw] gap-2 rounded-full px-3 text-sm font-semibold text-[#123c2d] hover:bg-[#0b5d42]/8"
         >
-          <UserRound className="h-4 w-4 text-[#0b5d42]" />
-          <span className="max-w-28 truncate">{name}</span>
+          <UserRound className="h-4 w-4 shrink-0 text-[#0b5d42]" />
+          <span className="max-w-24 truncate">{name}</span>
           {role === 'TREASURER' && (
-            <span className="rounded-full bg-[#c9a24b]/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#a3781f]">
+            <span className="hidden shrink-0 rounded-full bg-[#c9a24b]/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#a3781f] sm:inline-block">
               Trésorier
             </span>
           )}
@@ -64,7 +64,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           size="icon"
           onClick={onOpenSettings}
           aria-label="Réglages"
-          className="h-10 w-10 rounded-full text-[#0b5d42] hover:bg-[#0b5d42]/8"
+          className="h-10 w-10 shrink-0 rounded-full text-[#0b5d42] hover:bg-[#0b5d42]/8"
         >
           <Settings2 className="h-4.5 w-4.5" />
         </Button>
@@ -74,7 +74,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           size="icon"
           onClick={logout}
           aria-label="Changer d'identité"
-          className="h-10 w-10 rounded-full text-[#78877d] hover:bg-[#0b5d42]/8"
+          className="hidden h-10 w-10 shrink-0 rounded-full text-[#78877d] hover:bg-[#0b5d42]/8 sm:inline-flex"
         >
           <LogOut className="h-4 w-4" />
         </Button>

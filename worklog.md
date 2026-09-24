@@ -63,3 +63,24 @@ Stage Summary:
 - Toutes les demandes de l'utilisateur traitées : renommage Nîmes, logo plus bas + 3 nouvelles animations, calendrier prières supprimé, sections Sama'/Durûs/Qur'ân supprimées, adhkâr ouverts par défaut (le contenu était bien là — problème d'affordance des sections pliables), lieu+jour d'ijtima configurables, Ziyara trésorier-only avec édition des montants
 - Données : meetings city=Nîmes address=NULL, app_config lieu vide (à remplir par l'utilisateur dans Réglages), un doublon « Wadhifa du lundi » existe en DB (supprimable via corbeille)
 - Risques/pistes suivantes : logo utilisateur toujours absent (placeholder tariqa.png), animations supplémentaires proposables (parallaxe, bismillah calligraphié), export PDF comptes, mode sombre
+
+---
+Task ID: 4
+Agent: main (Z.ai Code) — revue continue
+Task: QA approfondie + correction de bugs + nouvelles fonctionnalités (annonces, statistiques) + polish responsive
+
+Work Log:
+- QA agent-browser : gate → entrée Abde (trésorier) → toutes sections → vote bascule (8→7→8 ✓) → 0 erreur runtime
+- BUG CORRIGÉ (comptage sondages) : votes « Inch’Allah » (apostrophe typographique U+2019 du seed) ne comptaient pas face à l'option « Inch'Allah » (apostrophe droite) → 2 votes invisibles (somme options 8 ≠ total 10). Fix : normChoix() normalisant \u2018/\u2019/' dans compteur, monVote et liste votants + données DB corrigées (2 votes) + seed.ts harmonisé
+- Nettoyage DB : ziyara de test restaurée 25→15 € (total 90 €, 8 entrées), réunion dupliquée « Wadhifa du lundi » du 26/09 supprimée (3 réunions), entrée Fotana 30 € « juijn » conservée (donnée utilisateur)
+- NOUVELLE FONCTIONNALITÉ — création d'annonces : en-tête de section avec bouton « ＋ Annonce » (avant : suppression seule, useCreateAnnouncement resté sans UI), dialogue complet (titre facultatif, message, sélecteur couleur VERT/CORAIL avec libellés explicites), APERÇU EN DIRECT de la carte avant publication, état vide avec CTA, date d'affichage ajoutée sur les cartes, exit animations. Testé : création « TEST QA — Nîmes » couleur or → apparition en tête → suppression ✓
+- NOUVELLE FONCTIONNALITÉ — statistiques mensuelles : GrapheMensuel dans Cotisations (6 derniers mois, hors ziyara), barres animées en cascade (mois courant vert, autres or), badge de tendance ▲/▼ % vs mois précédent, tooltips € par mois. Vérifié : 6 barres rendues
+- STYLING : cartes Adhkâr avec lift au survol (y:-3) + icône qui grossit + bordure foncée ; MeetingCard avec liseré doré vertical quand « ✓ inscrit » + ombre au survol renforcée + bordure verte ; FAB Réunion avec anneau pulsé (fab-ring) ; boutons header avec shrink-0
+- BUG RESPONSIVE CORRIGÉ : header débordait à 390px (scrollWidth 452 — badge Trésorier + bouton déconnexion) → badge trésorier masqué sous sm, bouton LogOut masqué sous sm (déconnexion reste via ProfileDialog), max-w-[46vw] sur le bouton utilisateur → 390px exact, plus de scroll horizontal
+- Vérifications finales : lint 0 erreur, session navigateur vierge → 0 erreur runtime, sections toutes présentes, VLM juge le design « high-quality, professional, thematically cohesive », aucun défaut visuel signalé
+
+Stage Summary:
+- État : application stable et complète (gate animé, annonces CRUD complet, ijtima avec lieu/jour, cotisations + graphe 6 mois, ziyara trésorier-only avec édition, sondages fiables, adhkâr, réglages lieu/jours/rôles)
+- Bugs résolus ce round : comptage votes apostrophes, débordement header mobile
+- Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplir dans Réglages
+- Recommandations prochain round : édition/suppression en douceur des meetings existants (dialogue modifier), export PDF des comptes pour le trésorier, mode sombre, recherche de membre, notifications push

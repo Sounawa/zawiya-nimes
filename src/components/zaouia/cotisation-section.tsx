@@ -1,13 +1,102 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { AnimatePresence } from 'framer-motion'
-import { Banknote, TrendingUp, Users } from 'lucide-react'
-import { useContributions, useMembers } from '@/lib/api'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Banknote, CalendarRange, TrendingUp, Users } from 'lucide-react'
+import { useContributions } from '@/lib/api'
 import { euros } from '@/lib/format'
 import { SectionShell } from './ijtima-section'
 import { FormulaireContribution, LigneContribution, Compteur, Progression } from './contribution-shared'
 import { cn } from '@/lib/utils'
+
+/* ═══════════════ Graphe mensuel animé — évolution de la caisse ═══════════════ */
+function GrapheMensuel({ cotisations }: { cotisations: { amount: number; category: string; date: string }[] }) {
+  // Regrouper par mois sur les 6 derniers mois (hors ziyara — trésorerie commune)
+  const mois = useMemo(() => {
+    const maintenant = new Date()
+    const buckets: { cle: string; label: string; annee: number; total: number }[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(maintenant.getFullYear(), maintenant.getMonth() - i, 1)
+      buckets.push({
+        cle: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(d),
+        annee: d.getFullYear(),
+        total: 0,
+      })
+    }
+    const index = new Map(buckets.map((b) => [b.cle, b]))
+    for (const c of cotisations) {
+      if (c.category === 'ZIYARA') continue
+      const cle = c.date.substring(0, 7)
+      const b = index.get(cle)
+      if (b) b.total += c.amount
+    }
+    return buckets
+  }, [cotisations])
+
+  const max = Math.max(0, ...mois.map((m) => m.total))
+  const dernier = mois[mois.length - 1]
+  const precedent = mois[mois.length - 2]
+  const tendance =
+    dernier && precedent && precedent.total > 0
+      ? Math.round(((dernier.total - precedent.total) / precedent.total) * 100)
+      : null
+
+  return (
+    <div className="rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#78877d]">
+          <CalendarRange className="h-3.5 w-3.5 text-[#0b5d42]" /> Évolution — 6 mois
+        </p>
+        {tendance !== null && tendance !== 0 && (
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold',
+              tendance > 0
+                ? 'bg-[#0b5d42]/10 text-[#0b5d42]'
+                : 'bg-[#b3452f]/10 text-[#b3452f]'
+            )}
+          >
+            {tendance > 0 ? '▲' : '▼'} {Math.abs(tendance)}%
+          </span>
+        )}
+      </div>
+      <div className="flex h-28 items-end justify-between gap-2">
+        {mois.map((m, i) => {
+          const pct = max > 0 ? Math.max(4, Math.round((m.total / max) * 100)) : 4
+          const estCourant = i === mois.length - 1
+          return (
+            <div key={m.cle} className="flex flex-1 flex-col items-center gap-1.5">
+              <span className="text-[9px] font-bold tabular-nums text-[#a09a87]">
+                {m.total > 0 ? euros(m.total).replace('€', '').trim() : '—'}
+              </span>
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: `${pct}%` }}
+                transition={{ delay: i * 0.07, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className={cn(
+                  'w-full max-w-10 rounded-t-lg',
+                  estCourant
+                    ? 'bg-gradient-to-t from-[#0b5d42] to-[#4a7c6b] shadow-md shadow-[#0b5d42]/20'
+                    : 'bg-gradient-to-t from-[#c9a24b]/70 to-[#e2c98a]/80'
+                )}
+                title={`${m.label} ${m.annee} — ${euros(m.total)}`}
+              />
+              <span
+                className={cn(
+                  'text-[10px] font-semibold capitalize',
+                  estCourant ? 'text-[#0b5d42]' : 'text-[#b6b1a0]'
+                )}
+              >
+                {m.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 /* ═══════════════ Section COTISATIONS — la caisse ═══════════════ */
 export function CotisationSection() {
@@ -73,6 +162,9 @@ export function CotisationSection() {
           </div>
 
           <FormulaireContribution categorieDefaut="COTISATION" categories={['COTISATION', 'DON']} />
+
+          {/* Évolution mensuelle de la caisse */}
+          {cotisations.length > 0 && <GrapheMensuel cotisations={cotisations} />}
 
           {/* Classement des contributeurs */}
           {parMembre.length > 0 && (

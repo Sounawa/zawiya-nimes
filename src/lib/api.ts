@@ -60,7 +60,8 @@ export function useCreateMeeting() {
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       api<Meeting>('/api/meetings', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onSuccess: (cree) => {
+      if (cree?.id) creationsLocales.reunions.add(cree.id)
       qc.invalidateQueries({ queryKey: ['meetings'] })
       qc.invalidateQueries({ queryKey: ['polls'] })
       qc.invalidateQueries({ queryKey: ['audit'] })
@@ -251,12 +252,19 @@ export function useAnnouncements() {
   })
 }
 
+/* IDs créés localement (cet onglet) — la veille ne les annonce pas en toast */
+export const creationsLocales = {
+  annonces: new Set<string>(),
+  reunions: new Set<string>(),
+}
+
 export function useCreateAnnouncement() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: { title?: string; text: string; color?: string }) =>
       api<Announcement>('/api/announcements', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onSuccess: (cree) => {
+      if (cree?.id) creationsLocales.annonces.add(cree.id)
       qc.invalidateQueries({ queryKey: ['announcements'] })
       qc.invalidateQueries({ queryKey: ['audit'] })
     },

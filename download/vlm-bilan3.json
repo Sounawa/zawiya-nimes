@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1. **Clean report visibility**: Yes, the image shows only the clean \"Bilan annuel 2026\" for Zawiya Nîmes. There is no settings dialog, modal, or overlay visible.\n2. **Overlapping/cut-off elements**: No. All text, tables, and charts are fully visible and properly aligned within their containers.\n3. **Score: 10/10**",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1790278931,
+  "id": "20260925034209541c70e8dca242e7",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "20260925034209541c70e8dca242e7",
+  "usage": {
+    "completion_tokens": 84,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 852,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 936
+  }
+}

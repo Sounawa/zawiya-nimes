@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "**Verdict:** Yes, the rendering is clean, professional, and well-structured with no UI overlays, featuring perfectly aligned summary boxes, a full journal table, and a clear layout ready for a signature area.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1790279556,
+  "id": "2026092503523440a6d588856047b5",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "2026092503523440a6d588856047b5",
+  "usage": {
+    "completion_tokens": 44,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 622,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 666
+  }
+}

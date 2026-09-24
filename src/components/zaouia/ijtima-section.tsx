@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Clock, MapPin, Pencil, Printer, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
+import { ChevronDown, Clock, MapPin, Pencil, Printer, Sparkles, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useNav, usePrint, useUser } from '@/lib/store'
@@ -13,7 +13,7 @@ import { NewMeetingDialog } from './new-meeting-dialog'
 
 /* ═══════════════ Carte d'une réunion ═══════════════ */
 
-export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: boolean }) {
+export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting; compact?: boolean; prochaine?: boolean }) {
   const [ouvert, setOuvert] = useState(false)
   const [voirListe, setVoirListe] = useState(false)
   const [voirInvites, setVoirInvites] = useState(false)
@@ -55,9 +55,14 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
       className={cn(
         'relative overflow-hidden rounded-2xl border bg-card shadow-[0_2px_12px_-4px_rgba(11,93,66,0.08)] transition-shadow hover:shadow-[0_6px_20px_-6px_rgba(11,93,66,0.18)]',
         jeViens ? 'border-primary/30' : 'border-primary/12',
+        prochaine && 'border-gold/40 ring-1 ring-gold/25',
         passee && 'opacity-60 saturate-50'
       )}
     >
+      {/* Halo doré discret pour la prochaine réunion */}
+      {prochaine && (
+        <span aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gold/10 blur-2xl" />
+      )}
       {/* Liseré doré si je suis inscrit */}
       {jeViens && (
         <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-accent to-primary" />
@@ -79,6 +84,11 @@ export function MeetingCard({ meeting, compact }: { meeting: Meeting; compact?: 
             {jeViens && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary dark:bg-sauge/15 dark:text-sauge">
                 ✓ inscrit
+              </span>
+            )}
+            {prochaine && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold-vif">
+                <Sparkles className="h-3 w-3" aria-hidden /> prochaine
               </span>
             )}
             {passee && (
@@ -343,6 +353,12 @@ export function IjtimaSection() {
     a.actuel ? -1 : b.actuel ? 1 : a.items[0].date.localeCompare(b.items[0].date)
   )
 
+  /* La prochaine réunion à venir (plus proche d'aujourd'hui) — mise en avant dorée */
+  const aVenir = (meetings ?? [])
+    .filter((m) => new Date(m.date) >= now)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  const idProchaine = aVenir[0]?.id
+
   return (
     <SectionShell titre="Al-Ijtimâ'" compteur={`${meetings?.length ?? 0} réunion${(meetings?.length ?? 0) > 1 ? 's' : ''}`} id="ijtima">
       <div className="space-y-5">
@@ -356,7 +372,7 @@ export function IjtimaSection() {
             </div>
             <div className="space-y-3">
               {s.items.map((m) => (
-                <MeetingCard key={m.id} meeting={m} />
+                <MeetingCard key={m.id} meeting={m} prochaine={m.id === idProchaine} />
               ))}
             </div>
           </div>

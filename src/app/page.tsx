@@ -20,6 +20,7 @@ import { AnnuaireSection } from '@/components/zaouia/annuaire-section'
 import { HistoriqueSection } from '@/components/zaouia/historique-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
+import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
 
 export default function Page() {
   const name = useUser((s) => s.name)
@@ -133,6 +134,9 @@ export default function Page() {
       <NewMeetingDialog open={nouvelleReunion} onOpenChange={setNouvelleReunion} />
       <SettingsDialog open={reglagesOuverts} onOpenChange={setReglagesOuverts} />
       <ProfileDialog open={profilOuvert} onOpenChange={setProfilOuvert} />
+
+      {/* Veille — notifications des nouvelles annonces & réunions */}
+      <VeilleCommunaute />
 
       {/* Voile d'entrée — transition douce après le splash */}
       <AnimatePresence>{!memberId && null}</AnimatePresence>

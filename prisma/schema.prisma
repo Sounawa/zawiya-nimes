@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Membres de la zaouia ────────────────────────────────────────────
+model Member {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  role          String         @default("ADMIN") // ADMIN (tous) | TREASURER | MEMBER
+  createdAt     DateTime       @default(now())
+  attendances   Attendance[]
+  contributions Contribution[]
+  pollVotes     PollVote[]
+  createdPolls  Poll[]         @relation("PollCreator")
+}
+
+// ─── Réunions (Ijtima') ─────────────────────────────────────────────
+model Meeting {
+  id           String        @id @default(cuid())
+  title        String // "Al-Ijtimâ' - Sadaqa"
+  icon         String? // emoji / nom d'icône
+  city         String?
+  address      String?
+  date         DateTime
+  startTime    String? // "19:30"
+  endTime      String? // "22:15"
+  announcement String? // annonce du jour (corail)
+  word         String? // "le mot"
+  program      String? // JSON [{time,label,icon}]
+  createdAt    DateTime      @default(now())
+  attendances  Attendance[]
+  polls        Poll[]
+}
+
+// ─── Présences (Je viendrai / invités) ──────────────────────────────
+model Attendance {
+  id        String   @id @default(cuid())
+  meetingId String
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  guests    Int      @default(0)
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([meetingId, memberId])
+}
+
+// ─── Contributions (cotisations & ziyara) ───────────────────────────
+model Contribution {
+  id         String   @id @default(cuid())
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount     Float
+  category   String   @default("COTISATION") // COTISATION | ZIYARA | DON
+  date       DateTime @default(now())
+  note       String?
+  recordedBy String?
+  createdAt  DateTime @default(now())
+}
+
+// ─── Sondages (qui vient ?) ────────────────────────────────────────
+model Poll {
+  id        String     @id @default(cuid())
+  question  String
+  meetingId String? // optionnel : lié à une réunion
+  meeting   Meeting?  @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  options   String? // JSON ["Oui","Non","Inch'Allah"]
+  multiple  Boolean   @default(false)
+  closesAt  DateTime?
+  createdBy String?
+  creator   Member?  @relation("PollCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  createdAt DateTime  @default(now())
+  votes     PollVote[]
+}
+
+model PollVote {
+  id        String   @id @default(cuid())
+  pollId    String
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  choice    String
+  createdAt DateTime @default(now())
+
+  @@unique([pollId, memberId])
+}
+
+// ─── Annonces affichées en tête ────────────────────────────────────
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String? // "-JEUDI- LATÎF AL-KABÎR"
+  text      String
+  color     String   @default("VERT") // VERT | CORAIL
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+// ─── Contenus (Adhkâr, Qur'ân, Samâ', Durûs) ───────────────────────
+model ContentItem {
+  id        String   @id @default(cuid())
+  section   String // ADHKAR | QURAN | SAMA | DURUS
+  title     String
+  subtitle  String?
+  body      String?
+  url       String? // lien youtube pour samâ'
+  icon      String?
+  time      String? // "Après Maghreb"
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// ─── Réglages partagés (jours d'ijtima', etc.) ──────────────────────
+model Setting {
+  key   String @id
+  value String // JSON
+}

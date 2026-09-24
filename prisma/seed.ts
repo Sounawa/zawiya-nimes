@@ -1,0 +1,264 @@
+import { PrismaClient } from '@prisma/client'
+
+const db = new PrismaClient()
+
+const MEMBRES = [
+  'Abde', 'Adam', 'Ayoub', 'Badr', 'BRAHIM', 'El Hadji', 'Fotana',
+  'Ghafir', 'Moaade', 'Mohamed', 'Monsef', 'Mostafa', 'Mustafa',
+  'Nabil', 'Rahhal', 'Samy', 'Sidi Youssef',
+]
+
+function jour(date: Date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function dansJours(n: number) {
+  const d = jour(new Date())
+  d.setDate(d.getDate() + n)
+  return d
+}
+
+async function main() {
+  console.log('→ Nettoyage…')
+  await db.pollVote.deleteMany()
+  await db.poll.deleteMany()
+  await db.attendance.deleteMany()
+  await db.contribution.deleteMany()
+  await db.meeting.deleteMany()
+  await db.announcement.deleteMany()
+  await db.contentItem.deleteMany()
+  await db.member.deleteMany()
+  await db.setting.deleteMany()
+
+  console.log('→ Membres…')
+  const members = [] as { id: string; name: string }[]
+  for (const name of MEMBRES) {
+    const m = await db.member.create({ data: { name, role: 'ADMIN' } })
+    members.push(m)
+  }
+
+  console.log('→ Annonces…')
+  await db.announcement.create({
+    data: {
+      title: '-JEUDI- LATÎF AL-KABÎR',
+      text: '« Si les foqaras savaient la valeur de ce Latif, ils traverseraient les mers à la nage pour venir le faire » Sidi Hamza',
+      color: 'VERT',
+    },
+  })
+  await db.announcement.create({
+    data: {
+      title: 'ANNONCE',
+      text: "Samedi prochain - Sadaqa exceptionnelle honorée par la présence de Sidi Abd Al Haq ainsi que nos frères de Lyon et de Bruxelles. N'oubliez pas de vous inscrire !",
+      color: 'CORAIL',
+    },
+  })
+
+  console.log('→ Réunions…')
+  const jeudi = await db.meeting.create({
+    data: {
+      title: 'Latîf al-Kabîr',
+      icon: '✦',
+      city: 'Saint-Denis',
+      address: '28 rue Fontaine St Denis — Sonnette : El Fath',
+      date: dansJours(0),
+      startTime: '19:30',
+      endTime: '22:15',
+      word: 'Latîf al-Kabîr',
+      program: JSON.stringify([
+        { time: '19:30', label: 'Salât al-Maghreb', icon: '🕌' },
+        { time: '20:00', label: 'Wadhifa', icon: '📖' },
+        { time: '20:30', label: 'Latîf al-Kabîr', icon: '🎧' },
+        { time: '21:30', label: 'Salât al-Ichâ', icon: '🕌' },
+        { time: '22:00', label: 'Repas', icon: '🍽️' },
+      ]),
+    },
+  })
+  const samedi = await db.meeting.create({
+    data: {
+      title: "Al-Ijtimâ' - Sadaqa",
+      icon: '🕌',
+      city: 'Saint-Denis',
+      address: '28 rue Fontaine St Denis — Sonnette : El Fath',
+      date: dansJours(2),
+      startTime: '19:30',
+      endTime: '00:00',
+      announcement: "Sadaqa exceptionnelle honorée par la présence de Sidi Abd Al Haq ainsi que nos frères de Lyon et de Bruxelles.",
+      program: JSON.stringify([
+        { time: '19:30', label: 'Salât al-Maghreb', icon: '🕌' },
+        { time: '20:15', label: "Samâ'", icon: '🎶' },
+        { time: '21:30', label: 'Salât al-Ichâ', icon: '🕌' },
+        { time: '22:00', label: 'Sadaqa - Repas', icon: '🍽️' },
+      ]),
+    },
+  })
+  const lundi = await db.meeting.create({
+    data: {
+      title: 'Wadhifa du lundi',
+      icon: '📖',
+      city: 'Saint-Denis',
+      date: dansJours(4),
+      startTime: '20:00',
+      endTime: '21:30',
+      program: JSON.stringify([
+        { time: '20:00', label: 'Wadhifa', icon: '📖' },
+        { time: '21:00', label: 'Dou\u2019our', icon: '🗣️' },
+      ]),
+    },
+  })
+
+  console.log('→ Présences…')
+  const presentsJeudi = members.slice(0, 17)
+  for (let i = 0; i < presentsJeudi.length; i++) {
+    await db.attendance.create({
+      data: {
+        meetingId: jeudi.id,
+        memberId: presentsJeudi[i].id,
+        guests: i % 6 === 0 ? 1 : 0,
+      },
+    })
+  }
+  const presentsSamedi = members.slice(0, 15)
+  for (let i = 0; i < presentsSamedi.length; i++) {
+    await db.attendance.create({
+      data: {
+        meetingId: samedi.id,
+        memberId: presentsSamedi[i].id,
+        guests: i % 4 === 0 ? 2 : 0,
+      },
+    })
+  }
+  for (let i = 0; i < 8; i++) {
+    await db.attendance.create({
+      data: { meetingId: lundi.id, memberId: members[i].id },
+    })
+  }
+
+  console.log('→ Contributions…')
+  const cotisations = [
+    [0, 30], [1, 25], [2, 20], [3, 50], [4, 30], [5, 25], [6, 20],
+    [7, 30], [8, 15], [9, 40], [10, 25], [11, 20], [12, 30], [13, 25],
+    [14, 15], [15, 20], [16, 25],
+  ]
+  for (const [idx, amount] of cotisations) {
+    await db.contribution.create({
+      data: {
+        memberId: members[idx].id,
+        amount,
+        category: 'COTISATION',
+        note: 'Cotisation mensuelle',
+        recordedBy: members[idx].name,
+      },
+    })
+  }
+  const ziyaras = [
+    [0, 10], [3, 20], [9, 15], [4, 10], [6, 5], [11, 10], [7, 5],
+  ]
+  for (const [idx, amount] of ziyaras) {
+    await db.contribution.create({
+      data: {
+        memberId: members[idx].id,
+        amount,
+        category: 'ZIYARA',
+        note: 'Ziyara pour le Shaykh',
+        recordedBy: members[idx].name,
+      },
+    })
+  }
+
+  console.log('→ Sondage…')
+  const poll = await db.poll.create({
+    data: {
+      question: "Qui vient à l'Ijtimâ' de samedi ?",
+      meetingId: samedi.id,
+      options: JSON.stringify(["Je viens", "Je ne viens pas", "Inch'Allah"]),
+      createdBy: members[0].id,
+    },
+  })
+  for (let i = 0; i < 10; i++) {
+    await db.pollVote.create({
+      data: {
+        pollId: poll.id,
+        memberId: members[i].id,
+        choice: i < 7 ? 'Je viens' : 'Inch\u2019Allah',
+      },
+    })
+  }
+
+  console.log('→ Contenus…')
+  const adhkar = [
+    { t: 'Wadhifa', s: 'La wadhifa journalière de la Tariqa', time: 'Après Salât al-Maghreb', icon: '📖', body: "Récitation quotidienne de la wadhifa de la tariqa Boutchichiya, en collectif à la zaouia ou individuellement." },
+    { t: 'Latîf al-Kabîr', s: 'La grande invocation du Jeudi', time: 'Jeudi soir', icon: '✦', body: "Le Latîf se récite collectivement chaque jeudi soir après Salât al-Ichâ, en présence du Shaykh ou de son représentant." },
+    { t: 'Hizb al-Bahr', s: "L'oraison de la mer", time: 'Vendredi matin', icon: '🌊', body: "L'Hizb al-Bahr est récité le vendredi avant Salât al-Dohr." },
+    { t: 'Dhikr du matin', s: 'Adhkâr après Fajr', time: 'Chaque matin', icon: '🌅', body: "Adhkâr du matin selon l'enseignement de la tariqa." },
+    { t: 'Dhikr du soir', s: 'Adhkâr après Asr', time: 'Chaque soir', icon: '🌙', body: "Adhkâr du soir selon l'enseignement de la tariqa." },
+    { t: 'Istighfâr collectif', s: '100× Astaghfiru Llâh', time: 'Avant Samâ\u2019', icon: '💫', body: "Cent demandes de pardon récitées ensemble avant la séance de samâ'." },
+  ]
+  for (const a of adhkar) {
+    await db.contentItem.create({
+      data: { section: 'ADHKAR', title: a.t, subtitle: a.s, body: a.body, time: a.time, icon: a.icon },
+    })
+  }
+
+  const quran = [
+    { t: 'Sourate Al-Wâqi\u2018a', s: 'Récitation collective', time: 'Jeudi soir', icon: '📖', body: "La sourate Al-Wâqi'a est récitée collectivement chaque jeudi soir avant le Latîf." },
+    { t: 'Juz\u2018 \u2018Amma', s: 'Hizb quotidien', time: 'Chaque jour', icon: '📜', body: "Un hizb du Juz\u2018 \u2018Amma est réparti entre les foqaras pour être lu chaque jour." },
+    { t: 'Sourate Yâ-Sîn', s: 'Vendredi', time: 'Vendudi matin', icon: '🌟', body: "Yâ-Sîn est récitée le vendredi matin à la zaouia." },
+    { t: 'Sourate Al-Mulk', s: 'Avant le sommeil', time: 'Chaque soir', icon: '🌙', body: "Al-Mulk est récitée avant de dormir." },
+  ]
+  for (const q of quran) {
+    await db.contentItem.create({
+      data: { section: 'QURAN', title: q.t, subtitle: q.s, body: q.body, time: q.time, icon: q.icon },
+    })
+  }
+
+  const sama = [
+    { t: 'Samâ\u2019 du jeudi', s: 'Séance spirituelle', time: 'Jeudi 21:00', icon: '🎶', body: "Séance de samâ' avec les qasidas de la tariqa." },
+    { t: 'Qasida « Mâ dhakartu Llâha »', s: 'Grand classique', time: '', icon: '🎵', body: "Qasida écoutée lors des grandes séances." },
+    { t: 'Madih — « Sidi Hamza »', s: 'Louanges', time: '', icon: '🕊️', body: "Madih en l'honneur de Sidi Hamza." },
+  ]
+  for (const s of sama) {
+    await db.contentItem.create({
+      data: { section: 'SAMA', title: s.t, subtitle: s.s, body: s.body, time: s.time, icon: s.icon },
+    })
+  }
+
+  const durus = [
+    { t: 'Dou\u2019our du samedi', s: 'Enseignement de Sidi Hamza', time: 'Samedi après Dohr', icon: '🗣️', body: "Lecture et commentaire des enseignements de Sidi Hamza, may Allâh sanctifier son secret." },
+    { t: 'Ryâd as-Sâlihîn', s: 'Commentaire du hadith', time: 'Dimanche 10:30', icon: '📚', body: "Étude du recueil de hadiths Ryâd as-Sâlihîn." },
+    { t: 'Livre « Le Livre des sapiences »', s: 'Ibn \u2018Atâ\u2019 Allâh', time: 'Mercredi 20:30', icon: '📗', body: "Commentaire des Hikam d'Ibn \u2018Atâ\u2019 Allâh as-Sakandarî." },
+    { t: 'Conférence de Sidi Abd Al Haq', s: 'Invité', time: 'Samedi 26/09', icon: '🎙️', body: "Conférence exceptionnelle de Sidi Abd Al Haq lors de la Sadaqa." },
+  ]
+  for (const d of durus) {
+    await db.contentItem.create({
+      data: { section: 'DURUS', title: d.t, subtitle: d.s, body: d.body, time: d.time, icon: d.icon },
+    })
+  }
+
+  console.log('→ Réglages…')
+  await db.setting.create({
+    data: {
+      key: 'ijtima_days',
+      value: JSON.stringify({
+        jours: [
+          { label: 'Lundi', actif: true, heure: '20:00' },
+          { label: 'Jeudi', actif: true, heure: '19:30' },
+          { label: 'Samedi', actif: true, heure: '19:30' },
+        ],
+      }),
+    },
+  })
+  await db.setting.create({
+    data: { key: 'app_config', value: JSON.stringify({ nom: 'St Denis', ville: 'Saint-Denis', lieu: '28 rue Fontaine St Denis — Sonnette : El Fath' }) },
+  })
+
+  console.log('✓ Seed terminé')
+}
+
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(() => db.$disconnect())

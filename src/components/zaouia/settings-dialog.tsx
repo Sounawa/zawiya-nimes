@@ -1,0 +1,381 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { BadgeCheck, CalendarDays, Plus, Shield, UserRound, Wallet } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { api, useMembers, useSaveSetting, useSettings } from '@/lib/api'
+import { useUser } from '@/lib/store'
+import type { Member } from '@/lib/types'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
+
+const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+
+/* ═══════════════ Réglages : jours d'ijtima + rôles ═══════════════ */
+export function SettingsDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+}) {
+  const { data: settings } = useSettings()
+  const { data: membres } = useMembers()
+  const saveSetting = useSaveSetting()
+  const qc = useQueryClient()
+  const { toast } = useToast()
+
+  const joursDefaut: { label: string; actif: boolean; heure: string }[] =
+    settings?.ijtima_days?.jours ?? []
+  const [joursEdites, setJoursEdites] = useState<{
+    label: string
+    actif: boolean
+    heure: string
+  }[] | null>(null)
+  const jours = joursEdites ?? joursDefaut
+  const setJours = setJoursEdites
+  const [nouveauNom, setNouveauNom] = useState('')
+
+  const majJour = (i: number, patch: Partial<{ actif: boolean; heure: string }>) =>
+    setJours((js) => (js ?? joursDefaut).map((j, k) => (k === i ? { ...j, ...patch } : j)))
+
+  const ajouterJour = () => {
+    const absent = JOURS.find((j) => !jours.some((x) => x.label === j))
+    if (absent) setJours((js) => [...(js ?? joursDefaut), { label: absent, actif: true, heure: '19:30' }])
+  }
+
+  const retirerJour = (i: number) =>
+    setJours((js) => (js ?? joursDefaut).filter((_, k) => k !== i))
+
+  const enregistrerJours = () => {
+    saveSetting.mutate(
+      { key: 'ijtima_days', value: { jours } },
+      {
+        onSuccess: () =>
+          toast({
+            title: 'Jours enregistrés',
+            description: 'Les nouveaux ijtima\u2018 sont pris en compte.',
+          }),
+      }
+    )
+  }
+
+  /* ─── Rôles ─── */
+  const majRole = useMutation({
+    mutationFn: ({ id, role }: { id: string; role: string }) =>
+      api(`/api/members/${id}`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['members'] })
+    },
+  })
+
+  const ajouterMembre = useMutation({
+    mutationFn: (name: string) =>
+      api('/api/members', { method: 'POST', body: JSON.stringify({ name, role: 'ADMIN' }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['members'] })
+      toast({ title: 'Membre ajouté', description: `Sidi ${nouveauNom} a rejoint la communauté.` })
+      setNouveauNom('')
+    },
+    onError: () => toast({ title: 'Impossible d\u2019ajouter', variant: 'destructive' }),
+  })
+
+  const tresorier = (membres ?? []).find((m) => m.role === 'TREASURER')
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto rounded-3xl border-[#0b5d42]/15 bg-[#fdfcf8] p-6">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl text-[#123c2d]">
+            Réglages de la zaouia
+          </DialogTitle>
+          <DialogDescription>
+            Jours d'ijtima, rôles et trésorerie — ouverts à toute la communauté.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* ─── Jours d'ijtima' ─── */}
+        <section aria-label="Jours d'ijtima" className="space-y-3">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+            <CalendarDays className="h-4 w-4" /> Jours des ijtima'
+          </h3>
+          <div className="rounded-2xl border border-[#0b5d42]/12 bg-white p-4 shadow-sm">
+            <ul className="space-y-2.5">
+              {jours.map((j, i) => (
+                <motion.li
+                  layout
+                  key={j.label}
+                  className="flex items-center gap-3 rounded-xl bg-[#fbf9f4] px-3 py-2"
+                >
+                  <Switch
+                    checked={j.actif}
+                    onCheckedChange={(v) => majJour(i, { actif: v })}
+                    aria-label={`${j.label} ${j.actif ? 'actif' : 'inactif'}`}
+                  />
+                  <span className={cn('flex-1 text-sm font-medium', j.actif ? 'text-[#33453a]' : 'text-[#b6b1a0] line-through')}>
+                    {j.label}
+                  </span>
+                  <Input
+                    type="time"
+                    value={j.heure}
+                    onChange={(e) => majJour(i, { heure: e.target.value })}
+                    className="w-28 rounded-lg border-[#0b5d42]/25 bg-white text-sm"
+                  />
+                  <button
+                    onClick={() => retirerJour(i)}
+                    aria-label={`Retirer ${j.label}`}
+                    className="rounded-full p-1.5 text-[#b6b1a0] hover:bg-[#b3452f]/10 hover:text-[#b3452f]"
+                  >
+                    <Plus className="h-3.5 w-3.5 rotate-45" />
+                  </button>
+                </motion.li>
+              ))}
+            </ul>
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={ajouterJour}
+                className="gap-1.5 rounded-full border-dashed border-[#0b5d42]/40 text-[#0b5d42]"
+              >
+                <Plus className="h-3.5 w-3.5" /> Jour
+              </Button>
+              <Button
+                size="sm"
+                onClick={enregistrerJours}
+                disabled={saveSetting.isPending}
+                className="ml-auto rounded-full bg-[#0b5d42] text-white hover:bg-[#0b3d2e]"
+              >
+                Enregistrer
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Rôles ─── */}
+        <section aria-label="Rôles" className="space-y-3">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#0b5d42]">
+            <Shield className="h-4 w-4" /> Rôles de la communauté
+          </h3>
+          <p className="rounded-xl bg-[#efe9dc]/60 px-3 py-2 text-xs leading-relaxed text-[#78877d]">
+            Tout le monde a les droits d'administration par défaut.
+            Un seul frère peut porter le rôle de <strong className="text-[#8a6d2f]">trésorier</strong> —
+            c'est lui qui gère l'argent (cotisations & ziyara).
+          </p>
+          <div className="max-h-64 overflow-y-auto rounded-2xl border border-[#0b5d42]/12 bg-white p-2 shadow-sm">
+            {(membres ?? []).map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 hover:bg-[#fbf9f4]"
+              >
+                <span className="flex items-center gap-2 text-sm font-medium text-[#33453a]">
+                  <UserRound className="h-3.5 w-3.5 text-[#0b5d42]/50" />
+                  Sidi {m.name}
+                  {m.role === 'TREASURER' && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#c9a24b]/15 px-2 py-0.5 text-[10px] font-bold text-[#a3781f]">
+                      <Wallet className="h-3 w-3" /> Trésorier
+                    </span>
+                  )}
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() =>
+                      majRole.mutate({
+                        id: m.id,
+                        role: m.role === 'TREASURER' ? 'ADMIN' : 'TREASURER',
+                      })
+                    }
+                    className={cn(
+                      'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                      m.role === 'TREASURER'
+                        ? 'bg-[#c9a24b] text-white'
+                        : 'bg-[#efe9dc] text-[#78877d] hover:bg-[#c9a24b]/20 hover:text-[#a3781f]'
+                    )}
+                    title={
+                      tresorier && m.role !== 'TREASURER'
+                        ? `Remplacer ${tresorier.name} comme trésorier`
+                        : 'Donner le rôle de trésorier'
+                    }
+                  >
+                    Trésorier
+                  </button>
+                  <button
+                    onClick={() => majRole.mutate({ id: m.id, role: 'ADMIN' })}
+                    disabled={m.role === 'ADMIN'}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                      m.role === 'ADMIN'
+                        ? 'bg-[#0b5d42]/10 text-[#0b5d42]'
+                        : 'bg-[#efe9dc] text-[#78877d] hover:bg-[#0b5d42]/10 hover:text-[#0b5d42]'
+                    )}
+                  >
+                    <BadgeCheck className="h-3 w-3" /> Admin
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Ajouter un membre */}
+          <div className="flex gap-2">
+            <Input
+              value={nouveauNom}
+              onChange={(e) => setNouveauNom(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && nouveauNom.trim()) ajouterMembre.mutate(nouveauNom.trim())
+              }}
+              placeholder="Nouveau frère…"
+              className="rounded-xl border-[#0b5d42]/25 bg-white"
+            />
+            <Button
+              onClick={() => nouveauNom.trim() && ajouterMembre.mutate(nouveauNom.trim())}
+              disabled={ajouterMembre.isPending}
+              className="shrink-0 rounded-xl bg-[#0b5d42] text-white hover:bg-[#0b3d2e]"
+            >
+              <Plus className="mr-1 h-4 w-4" /> Ajouter
+            </Button>
+          </div>
+        </section>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/* ═══════════════ Profil : « Je suis… » ═══════════════ */
+export function ProfileDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+}) {
+  const name = useUser((s) => s.name)
+  const role = useUser((s) => s.role)
+  const setName = useUser((s) => s.setName)
+  const setMember = useUser((s) => s.setMember)
+  const logout = useUser((s) => s.logout)
+  const { data: membres } = useMembers()
+  const { toast } = useToast()
+  const [choixManuel, setChoixManuel] = useState<string | null>(null)
+  const choix = choixManuel ?? name ?? ''
+
+  const monMembre: Member | undefined = (membres ?? []).find((m) => m.name === name)
+
+  const valider = () => {
+    const v = choix.trim()
+    if (!v) return
+    if (monMembre && monMembre.name === v) {
+      setMember(monMembre.id, monMembre.role)
+      onOpenChange(false)
+      return
+    }
+    // Nouveau prénom : créer le membre puis entrer
+    fetch('/api/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: v }),
+    })
+      .then(async (r) => {
+        if (r.ok) {
+          const m = (await r.json()) as Member
+          setName(v)
+          setMember(m.id, m.role)
+          toast({ title: `Marhaban bik, Sidi ${v}` })
+          onOpenChange(false)
+        } else {
+          const err = await r.json()
+          toast({ title: err.error ?? 'Erreur', variant: 'destructive' })
+        }
+      })
+      .catch(() => toast({ title: 'Erreur réseau', variant: 'destructive' }))
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm rounded-3xl border-[#0b5d42]/15 bg-[#fdfcf8] p-6">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl text-[#123c2d]">Je suis…</DialogTitle>
+          <DialogDescription>
+            {monMembre
+              ? `Sidi ${monMembre.name} — ${monMembre.role === 'TREASURER' ? 'trésorier de la zaouia' : 'administrateur'}`
+              : 'Choisis ton prénom pour entrer dans la zaouia.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#78877d]">
+              Prénom
+            </Label>
+            <div className="relative">
+              <input
+                value={choix}
+                onChange={(e) => setChoixManuel(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && valider()}
+                list="prenoms-zaouia"
+                placeholder="Ton prénom…"
+                className="w-full rounded-full border border-[#0b5d42]/25 bg-white py-3 pl-5 pr-5 text-center text-lg text-[#123c2d] outline-none transition-all focus:border-[#0b5d42] focus:ring-4 focus:ring-[#0b5d42]/10"
+              />
+              <datalist id="prenoms-zaouia">
+                {(membres ?? []).map((m) => (
+                  <option key={m.id} value={m.name} />
+                ))}
+              </datalist>
+            </div>
+          </div>
+
+          {/* Suggestions rapides */}
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {(membres ?? [])
+              .slice(0, 8)
+              .map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setChoixManuel(m.name)}
+                  className={cn(
+                    'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                    choix === m.name
+                      ? 'bg-[#0b5d42] text-white'
+                      : 'bg-white text-[#0b5d42] ring-1 ring-[#0b5d42]/15 hover:bg-[#0b5d42]/5'
+                  )}
+                >
+                  Sidi {m.name}
+                </button>
+              ))}
+          </div>
+
+          <Button
+            onClick={valider}
+            className="w-full rounded-full bg-[#0b5d42] py-3 text-white hover:bg-[#0b3d2e]"
+          >
+            {monMembre ? 'Mettre à jour' : 'Entrer'}
+          </Button>
+
+          {monMembre && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                logout()
+                onOpenChange(false)
+              }}
+              className="w-full rounded-full text-[#b3452f] hover:bg-[#b3452f]/10 hover:text-[#b3452f]"
+            >
+              Changer d'identité
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

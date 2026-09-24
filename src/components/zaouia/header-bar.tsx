@@ -29,7 +29,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
         {/* Logo + titre */}
         <button
           onClick={onOpenProfile}
-          className="flex items-center gap-3 rounded-2xl p-1 pr-3 transition-colors hover:bg-primary/5"
+          className="flex items-center gap-3 rounded-2xl p-1 pr-1 transition-colors hover:bg-primary/5 sm:pr-3"
           aria-label="Profil"
         >
           <motion.div
@@ -39,7 +39,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           >
             <Image src="/tariqa.png" alt="Sceau de la zawiya" fill sizes="44px" className="object-contain p-0.5" />
           </motion.div>
-          <span className="text-left leading-tight">
+          <span className="hidden text-left leading-tight min-[420px]:block">
             <span className="block text-[15px] font-bold tracking-wide text-encre">ZAWIYA</span>
             <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
               Nimes

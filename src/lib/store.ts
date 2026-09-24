@@ -53,6 +53,7 @@ export const useNav = create<NavState>((set) => ({
 export type CibleImpression =
   | { kind: 'presence'; meetingId: string }
   | { kind: 'comptes' }
+  | { kind: 'bilan' }
 
 interface PrintState {
   cible: CibleImpression | null

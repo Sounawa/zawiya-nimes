@@ -1,0 +1,174 @@
+     1→# Worklog — Zaouia St Denis (Clone amélioré)
+     2→
+     3→---
+     4→Task ID: 1
+     5→Agent: main (Z.ai Code)
+     6→Task: Exploration du site original https://zaouia-st-denis.netlify.app/ et planification du clone
+     7→
+     8→Work Log:
+     9→- Lu le site original via page_reader + agent-browser (navigation, clics, formulaires)
+    10→- Structure identifiée :
+    11→  - Écran d'entrée : logo calligraphie + "ZAOUIA ST DENIS" + citation Sidi Hamza + champ prénom
+    12→  - Header : logo tariqa.png (85x74), titre, user + notifications
+    13→  - Barre date + prochaine prière + compte à rebours (ASR 17:00 · dans X min)
+    14→  - Annonces : cartes vertes (Latîf al-Kabîr) et corail/rouge (ANNONCE)
+    15→  - AL-IJTIMÂ' : événements groupés par semaine (JEU 24 Latîf al-Kabîr 19:30–22:15 · 20 attendus · 3 inv.)
+    16→    - Détail événement : bouton "Je viendrai", "N attendus ▸" (liste "Sidi X"), "N invités ▸"
+    17→  - ADHKÂR, SALÂT (Jour/Semaine/Mois + heures Fajr/Chourouq/Dohr/Asr/Maghreb/Icha), QUR'ÂN, SAMÂ', DURÛS
+    18→  - FAB : ＋ Réunion / ＋ Semaine
+    19→  - Formulaire Nouvelle réunion : Modèle (Lundi, Jeudi, samedi, Samedi Sadaqa), Ville, Date, Objet, Icône, Adresse, Début, Fin, Annonce du jour, Le mot, Invités, Programme, Annuler/Publier
+    20→- Membres originaux observés : Sidi Abde, Adam, Ayoub, Badr, BRAHIM, El Hadji, Fotana, Ghafir, Moaade, Mohamed, Monsef, Mostafa, Mustafa, Nabil, Rahhal, Samy, Sidi Youssef
+    21→- Logo original tariqa.png copié dans /public/tariqa.png et /public/logo.png (placeholder — le fichier téléchargement.png de l'utilisateur n'est PAS arrivé dans /upload/)
+    22→- config.js original : nom "St Denis", ville Saint-Denis, lieu 28 rue Fontaine St Denis, Supabase backend (remplacé par Prisma+SQLite ici)
+    23→
+    24→Stage Summary:
+    25→- App originale = SPA noire/vert émeraude avec backend Supabase. Le clone sera en Next.js 16 + Prisma + thème clair (fond blanc demandé), nouvelles couleurs (vert profond + or), logo animé en page d'accueil, + sections Cotisation, Ziyara (calcul auto), Sondages, rôles (tous admin + trésorier unique).
+    26→- Prochaines étapes : schéma Prisma, API, UI complète.
+    27→
+    28→---
+    29→Task ID: 2
+    30→Agent: main (Z.ai Code)
+    31→Task: Développement complet du clone Zaouia St Denis (backend + frontend)
+    32→
+    33→Work Log:
+    34→- Schéma Prisma : Member (rôles ADMIN/TREASURER), Meeting, Attendance, Contribution (COTISATION/ZIYARA/DON), Poll, PollVote, Announcement, ContentItem (ADHKAR/QURAN/SAMA/DURUS), Setting (ijtima_days configurable)
+    35→- Seed : 17 membres (Abde, Adam, Ayoub, Badr, BRAHIM, El Hadji, Fotana, Ghafir, Moaade, Mohamed, Monsef, Mostafa, Mustafa, Nabil, Rahhal, Samy, Sidi Youssef), 2 annonces, 3 réunions, présences, 24 contributions (17 cotisations + 7 ziyara), 1 sondage, contenus Adhkâr/Qur'ân/Samâ'/Durûs, réglages
+    36→- API : /api/members (rôle TRÉSORIER unique auto-démoté), /api/meetings, /api/attendance (toggle Je viendrai), /api/contributions (totaux calculés serveur), /api/polls + vote (bascule/annule), /api/announcements, /api/content, /api/settings, /api/prayer-times (Aladhan API méthode UOIF, IPv4 forcé via https family:4, cache mémoire, fallback)
+    37→- Frontend : WelcomeGate (logo tariqa.png animé : halo doré, anneaux, particules PRNG mulberry32 pour éviter mismatch d'hydratation — Math.sin n'est PAS portable entre moteurs JS), HeaderBar (date + prochaine prière + countdown), Annonces (vert/corail sur blanc), IjtimaSection (groupée par semaine, Je viendrai, listes attendus/invités, programme), NewMeetingDialog (modèles, icônes, programme, invités), SalatSection (Jour/Semaine/Mois, vraies heures), ContentSections (Adhkâr 6, Qur'ân 4, Samâ' 3, Durûs 4), CotisationSection (caisse totale, formulaire, classement contributeurs avec barres, historique filtrable), ZiyaraSection (montant pour le Shaykh calculé automatiquement, stats participants/moyenne/pourcentage), SondagesSection (vote avec barres %, voir qui a voté), SettingsDialog (jours d'ijtima' éditables avec switches + heures, rôles trésorier unique + admin par défaut, ajout membres), ProfileDialog (Je suis… avec suggestions)
+    38→- Palette : fond crème #fbf9f4 + blanc, vert profond #0b5d42, or #b8923a/#c9a24b — FONDS DE DOCUMENTS BLANCS (demande explicite), plus de marron/taupe
+    39→- Sticky footer ✓, responsive mobile 390px ✓, FAB Réunion ✓
+    40→- Corrections : Prisma Cascade/SetNull capitalisés, relation PollCreator complète, icône lucide Coin→Coins, hydratation particules (mulberry32), setState-in-effect refactorés (état dérivé), fetch Aladhan IPv4
+    41→
+    42→Stage Summary:
+    43→- Application complète vérifiée via agent-browser : entrée prénom → page principale, toutes sections dépliables, vote bascule (7→8 constant 10), ajout contribution ZIYARA → recalcul auto 75€→90€→8 participants, publication réunion (4 réunions), sauvegarde jours ijtima (Lundi désactivé), trésorier unique (Abde), footer sticky bottom 843.75/844, responsive OK, zéro erreur console/hydratation, lint 0 erreur
+    44→- Logo : le fichier téléchargement.png de l'utilisateur n'est PAS arrivé dans /home/z/my-project/upload/ (dossier vide) → logo original tariqa.png utilisé en placeholder, remplacable dans /public/tariqa.png
+    45→- Prochaines phases possibles : notifications push, mode sombre, édition/suppression annonces, statistiques graphiques, export PDF des comptes
+    46→
+    47→---
+    48→Task ID: 3
+    49→Agent: main (Z.ai Code)
+    50→Task: Modifications demandées par l'utilisateur — Zawiya Nimes, animations, suppression sections, trésorerie ziyara, lieu/jour ijtima
+    51→
+    52→Work Log:
+    53→- Renommage complet « Zaouia St Denis » → « Zawiya Nimes » : welcome gate (ZAWIYA/NIMES), header (ZAWIYA/Nimes), footer, metadata layout, DB (Meeting.city='Nîmes', app_config={nom:'Nimes',ville:'Nîmes',lieu:''}), seed.ts à jour, alt texts
+    54→- Welcome gate : logo descendu (my-auto + pt-6/pt-10 au lieu de justify-center qui coupait le logo sur petits viewport — fix overflow), nouvelles animations : rayons de lumière dorés tournants (conic-gradient masqué), titre ZAWIYA lettre par lettre avec reflet doré + NIMES en tracking animé, 18 étoiles scintillantes (.etoile CSS), séparateur orné rotatif ✦
+    55→- Calendrier des prières SUPPRIMÉ : section Salât effacée (salat-section.tsx + /api/prayer-times), bandeau header prière+countdown remplacé par date + Nîmes ; usePrayerTimes, Timings, PRIERES retirés de api.ts/types.ts
+    56→- Sections Qur'ân, Samâ', Durûs SUPPRIMÉES — seule Adhkâr reste (content-sections.tsx), OUVERTE PAR DÉFAUT (defaultOpen) + affordance : badge « déplier » + chevron-pulse CSS + hover/active states sur SectionShell
+    57→- Choix du lieu & jour d'ijtima : réglages → nouvelle section « Lieu des ijtima' » (ville + adresse, clé app_config) ; NewMeetingDialog → pastilles de jours (jours configurés marqués « · », clic = prochaine date + heure des réglages), ville/adresse pré-remplies depuis app_config, date manuelle conservée ; MeetingCard affiche la ville (MapPin)
+    58→- Ziyara réservée au TRÉSORIER : ZiyaraSection return null si role!=='TREASURER' (hooks avant early return — lint rules-of-hooks) ; formulaire d'ajout ZIYARA intégré à la section ; liste complète des entrées avec bouton crayon → édition inline du montant (useUpdateContribution PATCH /api/contributions/[id]) ; colonne ZIYARA retirée du formulaire des Cotisations ; note explicative dans réglages ; badge « Trésorier » dans le header
+    59→- contribution-shared.tsx créé : FormulaireContribution (categories en prop), LigneContribution (édition montant ✓/✕), Compteur, Progression — partagé Cotisations/Ziyara
+    60→- Vérifications agent-browser : titre ZAWIYA NIMES + 18 étoiles, logo y=38px mobile/111px desktop (non coupé), Adam (non-trésorier) → Ziyara absente + formulaire cotisations sans colonne Ziyara, Abde (trésorier) → Ziyara visible, édition montant 15→25 € → total 90→100 € recalculé auto (revert 15), dialogue réunion : Samedi pré-choisi (prochain jour actif, date 2026-09-26), clic Jeudi → 2026-10-01 + 19:30, ville Nîmes, réglages lieu enregistré puis reset, cartes réunion « Nîmes », 0 erreur runtime (navigateur neuf), pas de scroll horizontal 390px, lint 0 erreur, VLM confirme design (rayons, étoiles, gradient or/vert)
+    61→
+    62→Stage Summary:
+    63→- Toutes les demandes de l'utilisateur traitées : renommage Nîmes, logo plus bas + 3 nouvelles animations, calendrier prières supprimé, sections Sama'/Durûs/Qur'ân supprimées, adhkâr ouverts par défaut (le contenu était bien là — problème d'affordance des sections pliables), lieu+jour d'ijtima configurables, Ziyara trésorier-only avec édition des montants
+    64→- Données : meetings city=Nîmes address=NULL, app_config lieu vide (à remplir par l'utilisateur dans Réglages), un doublon « Wadhifa du lundi » existe en DB (supprimable via corbeille)
+    65→- Risques/pistes suivantes : logo utilisateur toujours absent (placeholder tariqa.png), animations supplémentaires proposables (parallaxe, bismillah calligraphié), export PDF comptes, mode sombre
+    66→
+    67→---
+    68→Task ID: 4
+    69→Agent: main (Z.ai Code) — revue continue
+    70→Task: QA approfondie + correction de bugs + nouvelles fonctionnalités (annonces, statistiques) + polish responsive
+    71→
+    72→Work Log:
+    73→- QA agent-browser : gate → entrée Abde (trésorier) → toutes sections → vote bascule (8→7→8 ✓) → 0 erreur runtime
+    74→- BUG CORRIGÉ (comptage sondages) : votes « Inch’Allah » (apostrophe typographique U+2019 du seed) ne comptaient pas face à l'option « Inch'Allah » (apostrophe droite) → 2 votes invisibles (somme options 8 ≠ total 10). Fix : normChoix() normalisant \u2018/\u2019/' dans compteur, monVote et liste votants + données DB corrigées (2 votes) + seed.ts harmonisé
+    75→- Nettoyage DB : ziyara de test restaurée 25→15 € (total 90 €, 8 entrées), réunion dupliquée « Wadhifa du lundi » du 26/09 supprimée (3 réunions), entrée Fotana 30 € « juijn » conservée (donnée utilisateur)
+    76→- NOUVELLE FONCTIONNALITÉ — création d'annonces : en-tête de section avec bouton « ＋ Annonce » (avant : suppression seule, useCreateAnnouncement resté sans UI), dialogue complet (titre facultatif, message, sélecteur couleur VERT/CORAIL avec libellés explicites), APERÇU EN DIRECT de la carte avant publication, état vide avec CTA, date d'affichage ajoutée sur les cartes, exit animations. Testé : création « TEST QA — Nîmes » couleur or → apparition en tête → suppression ✓
+    77→- NOUVELLE FONCTIONNALITÉ — statistiques mensuelles : GrapheMensuel dans Cotisations (6 derniers mois, hors ziyara), barres animées en cascade (mois courant vert, autres or), badge de tendance ▲/▼ % vs mois précédent, tooltips € par mois. Vérifié : 6 barres rendues
+    78→- STYLING : cartes Adhkâr avec lift au survol (y:-3) + icône qui grossit + bordure foncée ; MeetingCard avec liseré doré vertical quand « ✓ inscrit » + ombre au survol renforcée + bordure verte ; FAB Réunion avec anneau pulsé (fab-ring) ; boutons header avec shrink-0
+    79→- BUG RESPONSIVE CORRIGÉ : header débordait à 390px (scrollWidth 452 — badge Trésorier + bouton déconnexion) → badge trésorier masqué sous sm, bouton LogOut masqué sous sm (déconnexion reste via ProfileDialog), max-w-[46vw] sur le bouton utilisateur → 390px exact, plus de scroll horizontal
+    80→- Vérifications finales : lint 0 erreur, session navigateur vierge → 0 erreur runtime, sections toutes présentes, VLM juge le design « high-quality, professional, thematically cohesive », aucun défaut visuel signalé
+    81→
+    82→Stage Summary:
+    83→- État : application stable et complète (gate animé, annonces CRUD complet, ijtima avec lieu/jour, cotisations + graphe 6 mois, ziyara trésorier-only avec édition, sondages fiables, adhkâr, réglages lieu/jours/rôles)
+    84→- Bugs résolus ce round : comptage votes apostrophes, débordement header mobile
+    85→- Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplir dans Réglages
+    86→- Recommandations prochain round : édition/suppression en douceur des meetings existants (dialogue modifier), export PDF des comptes pour le trésorier, mode sombre, recherche de membre, notifications push
+    87→
+    88→---
+    89→Task ID: 5
+    90→Agent: main (Z.ai Code) — revue continue
+    91→Task: QA complète + 3 nouvelles fonctionnalités (édition réunions, export CSV, annuaire) + polish visuel détaillé
+    92→
+    93→Work Log:
+    94→- QA initiale agent-browser : gate animé ✓ → entrée Abde (trésorier, badge visible) ✓ → 7 sections présentes ✓ → vote sondage bascule (2→3→annulé→re-vote "Je viens" 8/10) ✓ → ajout Ziyara 15 € → total 90→105 € recalcul auto ✓ → suppression UI → retour 90 € ✓ → réglages Lundi ON/OFF persisté en DB ✓ → 0 erreur console/lint au départ
+    95→- NOUVELLE FONCTIONNALITÉ — modification des réunions : useUpdateMeeting (PATCH /api/meetings/:id) dans api.ts ; NewMeetingDialog accepte meeting?: Meeting (mode édition : titre "Modifier la réunion", pré-remplissage complet date/ville/adresse/titre/icone/horaires/annonce/mot/programme via parseProgram, sélecteur de modèle masqué, bouton "Enregistrer les modifications") ; MeetingCard : bouton crayon doré (h-11 w-11) à côté de la corbeille. Testé : titre "Sadaqa de l'Ijtimâ' — test QA" modifié et persisté en DB puis revert via PATCH ; programme du Latîf al-Kabîr (5 lignes) pré-rempli ✓
+    96→- NOUVELLE FONCTIONNALITÉ — export CSV trésorier : exporterCSV() dans cotisation-section.tsx (BOM UTF-8, séparateur ; pour Excel FR, colonnes Date/Frère/Catégorie/Montant/Note/Enregistré par, totaux caisse+ziyara en fin, nom de fichier daté comptes-zawiya-nimes-YYYY-MM-DD.csv) ; bouton "Exporter les comptes (CSV)" doré réservé role==='TREASURER' + toast de confirmation. Testé : téléchargement 29 lignes, BOM présent, totaux 475/90 exacts
+    97→- NOUVELLE FONCTIONNALITÉ — Annuaire de la communauté : annuaire-section.tsx (entre Sondages et Adhkâr) : carte résumé (frères / cotisants / % participation) sur fond pattern-khatim, recherche instantanée par prénom avec bouton effacer, cartes membres (avatar à initiale sur teinte HSL dérivée du prénom — hash stable, badge "moi" doré, stats caisse/ziyara/presences, badge Trésorier/Admin), liste bornée max-h-96. Testé : 18 frères / 17 cotisants / 94 %, recherche "mo" → Moaade, Mohamed, Monsef, Mostafa
+    98→- STYLING DÉTAILLÉ (globals.css) : pattern-khatim (étoile 8 branches), bandeau-orne (séparateur doré pointillé du footer), defile-fin (scrollbar fine 5px pour toutes les listes internes : annuaire, historique cotisations, entrées ziyara, présentes réunion, membres réglages), :focus-visible anneau doré (accessibilité clavier), -webkit-tap-highlight-color + touch-action (polish mobile), prefers-reduced-motion (toutes animations neutralisées)
+    99→- STYLING DÉTAILLÉ (composants) : Compteur en véritable décompte progressif (requestAnimationFrame + easeOutExpo 900 ms, ref pour reprendre depuis la valeur affichée — past setState-in-effect interdit par lint) ; footer enrichi (bandeau orné + ✦ doré) ; bouton export avec hover/shadow/active states
+   100→- INCIDENT INFRA : le serveur dev s'est arrêté en cours de round (kill automatique des processus enfants entre invocations shell) → relance stable par double-fork (setsid bun run dev &) — le serveur survit désormais aux fins de session shell
+   101→- Vérifications finales : 0 erreur console (hook console.error), scrollWidth=clientWidth (1280 desktop, 390 mobile iPhone — zéro débordement horizontal), lint 0 erreur, VLM confirme design "high quality, no overlapping/cut-off/misalignment" (desktop + mobile), FAB ne masque aucun contenu (pb-32, chevauche seulement le footer décoratif — pattern standard)
+   102→
+   103→Stage Summary:
+   104→- État : application stable et enrichie — 7 sections (Annonces, Al-Ijtimâ' avec édition complète CRUD, Cotisations avec graphe 6 mois + export CSV, Ziyara trésorier-only, Sondages, Annuaire avec recherche, Adhkâr)
+   105→- 3 nouvelles fonctionnalités livrées et testées bout-en-bout ce round : édition de réunions, export CSV comptes, annuaire communauté
+   106→- Données DB inchangées (test revert : titre réunion restauré, total ziyara 90 €)
+   107→- Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplir dans Réglages
+   108→- Recommandations prochain round : édition inline des sondages, compteur de présence par réunion pour le Shaykh, notifications/son à la publication d'une annonce, mode impression des comptes (PDF), historique des modifications
+   109→
+   110→---
+   111→Task ID: 6
+   112→Agent: main (Z.ai Code) — revue continue
+   113→Task: QA complète + correction bug votes + 3 nouvelles fonctionnalités (édition sondages, feuille de présence imprimable, comptes imprimables) + polish visuel
+   114→
+   115→Work Log:
+   116→- QA initiale agent-browser (session vierge) : gate animé ✓ → entrée Abde (trésorier) ✓ → 7 sections présentes ✓ → vote bascule 8↔7 ✓ → Ziyara 90 € / 8 participants ✓ → Cotisations 475 € + graphe 6 mois + CSV ✓ → réglages jours persistés en DB (Lundi OFF vérifié via /api/settings) ✓ → dialogue réunion : clic Jeudi → date auto 2026-10-01 + heure 19:30 + ville Nîmes ✓ → 0 erreur console, 0 débordement 1280px
+   117→- BUG CORRIGÉ (comptage « voir qui ») : le bouton « N votes · voir qui » des sondages ne dépliait JAMAIS les votants — le toggle `setVoirVotants(v => v ? null : '')` assignait '' (falsy, jamais égal à une option) au lieu d'une valeur véridique. Fix : toggle sur 'tous' + condition de rendu `voirVotants !== null` (les 3 listes de votants s'ouvrent d'un coup). Vérifié : 3 ul visibles avec les noms
+   118→- NOUVELLE FONCTIONNALITÉ — édition des sondages : useUpdatePoll (PATCH) dans api.ts ; PATCH /api/polls/[id] accepte options[] (≥ 2 requises) et supprime les votes orphelins (choice ne correspondant plus à aucune option, normalisation apostrophes serveur) ; NouveauSondageDialog supporte poll? (mode édition : titre « Modifier le sondage », pré-remplissage question+options, bouton « Enregistrer », avertissement ⚠︎ en direct « N votes ne correspondent plus à une réponse — ils seront supprimés ») ; crayon doré sur chaque carte sondage. Testé : édition sans changement → 10 votes conservés ; création poll TEST QA → vote Jeudi → suppression option Jeudi → 1 vote orphelin supprimé (0 votes restants) → poll de test supprimé (DB propre : 1 poll, 10 votes)
+   119→- NOUVELLE FONCTIONNALITÉ — fermer/rouvrir un sondage : bouton Lock/LockOpen dans le pied de carte → PATCH closesAt ; état fermé = badge cadenas + options disabled + carte estompée. Testé : fermer → 3 boutons disabled + « rouvrir » → réouvert
+   120→- NOUVELLE FONCTIONNALITÉ — feuille de présence imprimable (pour le Shaykh) : store usePrint (zustand, imprimer() → setState + double requestAnimationFrame + window.print()) ; composant print-sheet.tsx ZoneImpression (hidden print:block, écoute afterprint pour se vider) ; FeuillePresence = en-tête ZAWIYA NIMES, titre+date longue+horaire+lieu, résumé (17 frères / 3 invités / 20 personnes), programme, tableau # / Nom / Invités / Signature avec rangées vides à remplir à la main + ligne total ; bouton imprimante sur chaque carte réunion. VLM sur PDF généré : « clean, no overlapping, professional »
+   121→- NOUVELLE FONCTIONNALITÉ — comptes imprimables (pour le trésorier) : ComptesImprimables = 3 encadrés totaux (Caisse 475 € / Ziyara 90 € / Total 565 €), journal complet trié par date (26 entrées, catégorie colorée), lignes totaux, zone signature « Le trésorier » ; bouton « Imprimer / PDF » vert à côté du CSV doré (grille 2 colonnes). VLM sur PDF : « very clean, professional »
+   122→- CSS impression (globals.css) : @page marges 14mm, fond blanc forcé, portails Radix masqués, #zone-impression positionné, saut de page propre sur les <tr> ; page.tsx : l'app ne porte print:hidden QUE si une cible d'impression est active (Ctrl+P normal n'imprime pas une page blanche)
+   123→- STYLING : carte sondage hover lift + ombre verte, étoile d'or ✦ sur l'option qui mène, état fermé estompé, boutons d'action (crayon/fermer) au style existant ; badge « passée » + opacité 60% sur les réunions passées ; variable morte `membres` retirée de CarteSondage
+   124→- Responsive : 390px vérifié — boutons fermer/rouvrir visibles, rangée d'actions réunion (Je viendrai 168px + 3×44px) sans débordement, scrollWidth=390 exact
+   125→- Vérifications finales : lint 0 erreur, navigateur vierge 0 erreur runtime, dev.log que des 200, DB inchangée (1 poll / 10 votes / 26 contributions / 475 € + 90 €)
+   126→
+   127→Stage Summary:
+   128→- État : application stable et enrichie — 7 sections, sondages désormais pleinement CRUD (créer/voter/éditer/fermer/supprimer), impression professionnelle de la feuille de présence (Shaykh) et des comptes (trésorier)
+   129→- Bugs résolus ce round : « voir qui » des sondages jamais dépliable (toggle falsy)
+   130→- Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplacer dans Réglages, badge « passée » non visible avec les données actuelles (toutes les réunions sont aujourd'hui/à venir — logique vérifiée par comparaison de dates)
+   131→- Recommandations prochain round : notifications (son/toast) à la publication d'une annonce, export CSV filtré par période, statistiques de présence par frère dans l'annuaire, mode sombre, logo utilisateur à récupérer
+   132→
+   133→---
+   134→Task ID: 7
+   135→Agent: main (Z.ai Code) — revue continue
+   136→Task: QA complète + correction bug UX (en-têtes sous bandeau collant) + 2 nouvelles fonctionnalités (annuaire enrichi, export CSV par période) + polish visuel détaillé (toasts, fil d'or, FAB mobile)
+   137→
+   138→Work Log:
+   139→- QA initiale agent-browser (session Abde trésorier + session vierge) : gate animé ✓ → entrée prénom ✓ → 7 sections présentes (Ziyara absente pour Mostafa non-trésorier ✓) → vote sondage bascule 8↔7↔annulé↔restauré ✓ → ajout ziyara Ayoub 5 € → total 90→95 € recalcul auto puis suppression → retour 90 € ✓ → réglages Lundi ON/OFF persisté en DB puis revert ✓ → dialogue réunion : pastilles Jeudi→2026-10-01 19:30, Lundi→2026-09-28 20:00 (heures des réglages) ✓ → présence Wadhifa 8→9 «✓ inscrit» puis retour 8 ✓ → 0 erreur console, 0 débordement horizontal
+   140→- BUG UX CORRIGÉ (en-têtes de section masqués) : après défilement, l'en-tête d'une section (bouton « déplier ») pouvait se retrouver SOUS le bandeau collant (top<96px) → clic impossible (agent-browser « Element is covered by <p> »). Fix : SectionShell obtient un ref + basculer() fait scrollIntoView({block:'start', behavior:'smooth'}) à l'ouverture si top<96 — scroll-mt-24 existant garantit la marge. Vérifié : clic direct après scroll fonctionne
+   141→- NETTOYAGE DB : réunion test « Sadaqa de l'Ijtimâ' » du 28/09 (0 attendus, créée au round 5) supprimée → 3 réunions seedées ; contribution test 1 € d'Abde créée pour tester les toasts puis supprimée → 26 contributions, caisse 475 €, ziyara 90 €
+   142→- NOUVELLE FONCTIONNALITÉ — annuaire enrichi (statistiques de présence) : tri Prénom/Caisse/Présences (groupe aria-label « Trier l'annuaire », aria-pressed, réordonnancement framer-motion layout) ; taux d'assiduité par frère (présences / réunions au calendrier) avec mini-barre animée 3 teintes (vert ≥80%, vert doux ≥40%, or sinon) ; badges régularité (assidu/régulier/occasionnel/jamais inscrit) + pastille flamme dorée sur l'avatar des assidus ; « dern. 24 sept. » dernière contribution ; résumé 4 colonnes (Frères/Cotisants/Inscrits/Participation) ; légende explicative ; skeleton de chargement en 3 blocs. VLM : « A- », aucun défaut
+   143→- NOUVELLE FONCTIONNALITÉ — export CSV filtré par période : pastilles de mois dorées dans l'historique (« Toutes » + un bouton par mois ayant des entrées, du plus récent au plus ancien) ; filtre combiné catégorie×période ; compteur d'historique « N · total € » ; le bouton CSV du trésorier suit la période (en-tête « Comptes de la Zawiya Nîmes — septembre 2026 », nom de fichier daté + suffixe -2026-09, TOTAL CAISSE de la période, TOTAL ZIYARA omis en mode période car entrées ziyara exclues) ; classement « Qui a donné » respecte la période. Testé : téléchargement 22 lignes mode période vs 30 lignes toutes périodes (8 ziyara + totaux 475/90)
+   144→- STYLING DÉTAILLÉ : (1) Toaster réécrit aux couleurs de la zawiya — blanc cassé, liseré vertical vert→or (corail pour destructive), icône ronde BadgeCheck/CircleAlert, arrondi 2xl, ombre teintée ; (2) « fil d'or » — barre de progression de lecture (useScroll+useSpring framer-motion) en dégradé vert→or sous le bandeau collant ; (3) balayage doré sous le titre de section quand ouverte (motion.span scaleX) + liseré vertical or pâle autour du contenu ouvert + ombre renforcée ; (4) LigneContribution en entrée décalée (stagger index×45ms, x:-14) ; (5) formulaire contribution : « moi » présélectionné (membreEffectif = membre || moiId) — plus besoin d'ouvrir le sélecteur pour sa propre cotisation, aria-label « Montant en euros »
+   145→- BUG MOBILE (VLM) : FAB « Réunion » recouvrait le bouton Enregistrer des formulaires à 390px → FAB compact icon-only 52×52 sous sm (h-13 w-13, label masqué), pb-40 sur main pour dégager la fin de page ; chevauchement restant = coin inférieur droit uniquement (motif Material standard, clic possible sur le reste du bouton pleine largeur)
+   146→- Vérifications finales : viewport 390×844 via CDP Emulation.setDeviceMetricsOverride — scrollWidth=390 exact (zéro débordement) ; session vierge → 0 erreur runtime ; lint 0 erreur ; dev.log que des 200 ; DB propre (3 réunions, 26 contributions, 1 sondage, 10 votes, totaux 475/90 €) ; VLM final : « highly professional and polished, no overlapping or cut-off elements, excellent visual quality »
+   147→
+   148→Stage Summary:
+   149→- État : application stable et enrichie — 7 sections complètes, annuaire désormais triable avec statistiques d'assiduité, trésorerie exportable par période, direction visuelle cohérente (toasts, fil d'or, liserés)
+   150→- Bugs résolus ce round : en-têtes de section cliquables même sous le bandeau collant (scrollIntoView conditionnel), FAB mobile compact (recouvrement des boutons Enregistrer), données test résiduelles supprimées
+   151→- UX : « moi » présélectionné dans les formulaires de contribution — saisie en 2 clics au lieu de 3
+   152→- Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplir dans Réglages, fenêtre d'édition inline du montant étroite sur très petits écrans (acceptable)
+   153→- Recommandations prochain round : mode sombre (variables .dark déjà présentes dans globals.css, reste à câbler un toggle), notifications push/web, historique des modifications (audit), recherche globale (⌘K), statistiques annuelles imprimables pour l'assemblée
+   154→
+   155→---
+   156→Task ID: 8
+   157→Agent: main (Z.ai Code) — revue continue
+   158→Task: QA complète + 3 nouvelles fonctionnalités (mode nuit, recherche globale ⌘K, journal de la zawiya) + refonte tokenisée des couleurs + polish responsive
+   159→
+   160→Work Log:
+   161→- QA initiale (session Abde trésorier) : gate ✓, 7 sections ✓, bascule présence 20→18 attendus (Abde + 1 invité) puis restaurée ✓, sondage 8/2 · 10 votes ✓, annuaire 18 frères triable ✓, 0 erreur console, scrollWidth 1280/1280 et 390/390, dev.log que des 200 → app stable, passage aux fonctionnalités
+   162→- NOUVELLE FONCTIONNALITÉ — MODE NUIT COMPLET : 561 hex arbitraires remplacés par des tokens sémantiques (script Python 2 passes, print-sheet.tsx exclu pour garder l'impression sur fond blanc) — palette étendue : encre, brouillard(-clair), lin(-clair), feuille, ivoire, or-pale/moyen, corail-pale, sable-vif, sauge(-clair), gold-vif/clair ; ThèmeProvider next-themes (attribute=class, défaut clair) dans layout.tsx ; ThemeToggle (soleil doré/lune d'argent, rotation printanière, useSyncExternalStore pour l'hydratation — setState-in-effect interdit par lint) dans le header ET le gate ; .dark redéfini : forêt profonde #10201a, cartes #182b22, primary #1d7a55 (garde le texte blanc lisible 5.3:1), or de lune #d5b76a ; variantes nuit des motifs (lattice/arabesque/khatim), scrollbars, defile-fin, fil shimmer, fab-ring, sélection ; fixes contraste après revue VLM : --brouillard #9db1a4, --brouillard-clair #93a396, --border #35493c, --input #3d5849, badge « ✓ inscrit » dark:text-sauge, pastilles dorées dark:text-accent-foreground ; arrêts de dégradé from-white→from-card (4 fichiers) ; cercles du logo gardés blancs (logo vert foncé sur blanc — vérifié VLM)
+   163→- NOUVELLE FONCTIONNALITÉ — RECHERCHE GLOBALE ⌘K : RechercheGlobale (cmdk via CommandDialog shadcn) — 5 groupes (Réunions triées par date avec ville + date dorée, Frères avec badge Trésorier, Annonces, Adhkâr, Sondages), recherche floue native cmdk, raccourci ⌘K/Ctrl+K + bouton loupe dans le header ; navigation : useNav (zustand, demande {id, horodatage}) + SectionShell abonné au magasin (setState dans le rappel d'abonnement — motif recommandé, ouvre + scrollIntoView) ; ids ajoutés : ijtima, annonces (scroll-mt-24 direct) ; useAnnouncements extrait vers api.ts. Testé : Ctrl+K → « wadhifa » → Entrée → section Ijtima ouverte à top=95.75px ✓ ; « mostafa » → Annuaire ouvert à 96px ✓
+   164→- NOUVELLE FONCTIONNALITÉ — JOURNAL DE LA ZAWIYA (audit) : modèle Prisma AuditLog (kind/action/label/actor, index createdAt desc) ; helper journaliser() best-effort (n'échoue jamais la requête) ; 13 mutations journalisées : réunions CUD, contributions CUD, annonces C/D, sondages CUD, membres C, présence INSCRIRE/DESINSCRIRE, réglages U (libellés humains « jours d'ijtima' »/« lieu des ijtima' ») — votes NON journalisés (bruit, déjà visibles dans les sondages) ; acteur : api() client injecte automatiquement le prénom courant dans tout corps JSON (les DELETE reçoivent un corps vide pour le porter) ; GET /api/audit (80 dernières) ; HistoriqueSection : regroupement par jour (Aujourd'hui/Hier/date longue, en-têtes sticky dorés), pastille icône par nature (7 LucideIcons), badge verbe (ajouté/modifié/supprimé/inscription/désistement), temps relatif (« il y a 5 min », « hier »), liste max-h-96 defile-fin, skeletons, entrée décalée framer-motion ; invalidation ['audit'] ajoutée aux 13 mutations. Testé bout-en-bout : désincription → « Abde ne viendra plus à « Latîf al-Kabîr » », réinscription, cotisation → toutes tracées avec acteur ✓
+   165→- INCIDENT QA : un clic trop large (« dernier bouton Supprimer ») a supprimé le sondage de la communauté → restauré directement en DB (mêmes 10 votants du seed, distribution 8 « Je viens » / 2 « Inch'Allah » conforme au dernier état vérifié, Moaade+Mohamed Inch'Allah, meeting Sadaqa, créateur Abde) ; cotisation test 1 € supprimée ; journal vidé de mes entrées de test ; annonce VERTE (citation Sidi Hamza) déjà absente en début de round (supprimée lors d'un round antérieur) restaurée du seed
+   166→- POLISH RESPONSIVE : le header débordait à 390px après l'ajout loupe+thème (scrollWidth 420) → gap-1.5, boutons d'action h-9 w-9 sous sm, bouton utilisateur max-w-[30vw], px-3 → 390/390 exact, 5 éléments visibles (VLM confirme) ; cibles tactiles des pastilles d'action agrandies p-1.5→p-2 (6 boutons : cotisations, réglages, annonces, sondages)
+   167→- Vérifications finales : lint 0 erreur, navigateur vierge 0 erreur runtime, 8 sections (Annonces · Al-Ijtimâ' · Cotisations · Ziyara · Sondages · Annuaire · Historique · Adhkâr), VLM juge les deux thèmes « 9/10, excellent, professional, highly consistent — aucun défaut », DB propre (2 annonces, 3 réunions, 26 contributions 475€/90€, 1 sondage 10 votes 8/2, 18 frères, journal vide prêt), serveur relancé proprement (setsid nohup — le client Prisma devait être régénéré pour AuditLog)
+   168→
+   169→Stage Summary:
+   170→- État : application stable enrichie de 3 fonctionnalités majeures — mode nuit complet (40+ tokens adaptatifs, toggle header + gate), recherche globale ⌘K naviguant vers les sections, journal d'activité consultable par tous (13 types d'actions tracées avec auteur)
+   171→- Architecture : toutes les couleurs passent désormais par des variables CSS sémantiques → tout futur thème se définit dans :root/.dark uniquement ; l'acteur des mutations est injecté automatiquement côté client
+   172→- Non résiduel : logo utilisateur toujours non fourni (placeholder /public/tariqa.png), app_config.lieu vide à remplir dans Réglages, impression Ctrl+P de l'app en mode nuit donnerait des couleurs nuit (les feuilles dédiées présence/comptes restent propres)
+   173→- Recommandations prochain round : notifications navigateur à la publication d'annonce/réunion, statistiques annuelles imprimables pour l'assemblée générale, export du journal (CSV/PDF), filtres du journal par nature d'action, logo utilisateur à récupérer
+   174→

@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Megaphone, Plus, X } from 'lucide-react'
+import { Megaphone, Pencil, Plus, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Announcement } from '@/lib/types'
-import { useCreateAnnouncement } from '@/lib/api'
+import { useCreateAnnouncement, useUpdateAnnouncement } from '@/lib/api'
 import { dateCourte } from '@/lib/format'
 import {
   Dialog,
@@ -48,7 +48,15 @@ export function useDeleteAnnouncement() {
 }
 
 /* ═══════════════ Une carte d'annonce ═══════════════ */
-function CarteAnnonce({ a, index }: { a: Announcement; index: number }) {
+function CarteAnnonce({
+  a,
+  index,
+  onModifier,
+}: {
+  a: Announcement
+  index: number
+  onModifier: (a: Announcement) => void
+}) {
   const del = useDeleteAnnouncement()
 
   return (
@@ -108,26 +116,58 @@ function CarteAnnonce({ a, index }: { a: Announcement; index: number }) {
           <p className="mt-1 whitespace-pre-line font-display text-[17px] leading-relaxed text-secondary-foreground">
             {a.text}
           </p>
-          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brouillard-clair">
+          <p className="mt-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brouillard-clair">
             {dateCourte(a.createdAt)}
+            {a.date !== a.createdAt && (
+              <span className="rounded-full bg-primary/8 px-1.5 py-px normal-case tracking-normal text-brouillard">
+                · modifiée le {dateCourte(a.date)}
+              </span>
+            )}
           </p>
         </div>
-        <button
-          onClick={() => del.mutate(a.id)}
-          aria-label="Supprimer l'annonce"
-          className="rounded-full p-2 text-brouillard-clair opacity-0 transition-all hover:bg-black/5 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+
+        {/* Actions — modifier & supprimer, révélées au survol */}
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            onClick={() => onModifier(a)}
+            aria-label="Modifier l'annonce"
+            title="Modifier l'annonce"
+            className="rounded-full p-2 text-brouillard-clair opacity-0 transition-all hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 group-hover:opacity-100 max-sm:opacity-100"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => del.mutate(a.id)}
+            aria-label="Supprimer l'annonce"
+            title="Supprimer l'annonce"
+            className="rounded-full p-2 text-brouillard-clair opacity-0 transition-all hover:bg-black/5 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 max-sm:opacity-100"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     </motion.article>
   )
 }
 
-/* ═══════════════ Section Annonces + création ═══════════════ */
+/* ═══════════════ Section Annonces + création + édition ═══════════════ */
 export function Annonces() {
   const { data: annonces } = useAnnouncements()
   const [dialogOuvert, setDialogOuvert] = useState(false)
+  const [edition, setEdition] = useState<Announcement | null>(null)
+
+  const ouvrirCreation = () => {
+    setEdition(null)
+    setDialogOuvert(true)
+  }
+  const ouvrirEdition = (a: Announcement) => {
+    setEdition(a)
+    setDialogOuvert(true)
+  }
+  const fermerDialog = (v: boolean) => {
+    setDialogOuvert(v)
+    if (!v) setEdition(null)
+  }
 
   return (
     <section id="annonces" aria-label="Annonces" className="scroll-mt-24 space-y-3">
@@ -137,7 +177,7 @@ export function Annonces() {
           <Megaphone className="h-4 w-4" /> Annonces
         </p>
         <button
-          onClick={() => setDialogOuvert(true)}
+          onClick={ouvrirCreation}
           className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-primary ring-1 ring-primary/20 transition-all hover:bg-primary/8 hover:shadow-sm active:scale-95"
         >
           <Plus className="h-3.5 w-3.5" /> Annonce
@@ -146,61 +186,98 @@ export function Annonces() {
 
       {/* Cartes */}
       {(annonces ?? []).map((a, i) => (
-        <CarteAnnonce key={a.id} a={a} index={i} />
+        <CarteAnnonce key={a.id} a={a} index={i} onModifier={ouvrirEdition} />
       ))}
 
       {/* État vide */}
       {annonces && !annonces.length && (
         <button
-          onClick={() => setDialogOuvert(true)}
+          onClick={ouvrirCreation}
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/30 bg-card/50 p-5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
         >
           <Megaphone className="h-4 w-4" /> Publier une annonce pour la communauté
         </button>
       )}
 
-      <NouvelleAnnonceDialog open={dialogOuvert} onOpenChange={setDialogOuvert} />
+      <AnnonceDialog
+        open={dialogOuvert}
+        onOpenChange={fermerDialog}
+        annonce={edition}
+      />
     </section>
   )
 }
 
-/* ═══════════════ Dialogue de création ═══════════════ */
-function NouvelleAnnonceDialog({
+/* ═══════════════ Dialogue création / modification ═══════════════ */
+function AnnonceDialog({
   open,
   onOpenChange,
+  annonce = null,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
+  /** Annonce à modifier — null = création */
+  annonce?: Announcement | null
 }) {
   const create = useCreateAnnouncement()
+  const update = useUpdateAnnouncement()
   const { toast } = useToast()
+
+  const edition = annonce !== null
+  const enCours = edition ? update : create
 
   const [titre, setTitre] = useState('')
   const [texte, setTexte] = useState('')
   const [couleur, setCouleur] = useState<'VERT' | 'CORAIL'>('VERT')
 
-  const publier = () => {
+  /* Pré-remplir pendant le rendu (motif React officiel) :
+     — édition : champs depuis l'annonce existante
+     — création : champs vides */
+  const [prerempli, setPrerempli] = useState(false)
+  if (open && !prerempli) {
+    if (edition && annonce) {
+      setTitre(annonce.title ?? '')
+      setTexte(annonce.text)
+      setCouleur(annonce.color)
+    } else {
+      setTitre('')
+      setTexte('')
+      setCouleur('VERT')
+    }
+    setPrerempli(true)
+  }
+  if (!open && prerempli) setPrerempli(false)
+
+  const enregistrer = () => {
     if (!texte.trim()) {
       toast({ title: 'Texte requis', description: 'Écris le message de l’annonce.', variant: 'destructive' })
       return
     }
-    create.mutate(
-      {
-        title: titre.trim() || undefined,
-        text: texte.trim(),
-        color: couleur,
+    const payload = {
+      title: titre.trim() || undefined,
+      text: texte.trim(),
+      color: couleur,
+    }
+    if (edition && annonce) {
+      update.mutate(
+        { id: annonce.id, ...payload },
+        {
+          onSuccess: () => {
+            toast({ title: 'Annonce modifiée', description: 'Les changements sont en ligne.' })
+            onOpenChange(false)
+          },
+          onError: () => toast({ title: 'Échec de la modification', variant: 'destructive' }),
+        }
+      )
+      return
+    }
+    create.mutate(payload, {
+      onSuccess: () => {
+        toast({ title: 'Annonce publiée', description: 'Elle apparaît en tête de la page.' })
+        onOpenChange(false)
       },
-      {
-        onSuccess: () => {
-          toast({ title: 'Annonce publiée', description: 'Elle apparaît en tête de la page.' })
-          setTitre('')
-          setTexte('')
-          setCouleur('VERT')
-          onOpenChange(false)
-        },
-        onError: () => toast({ title: 'Échec de la publication', variant: 'destructive' }),
-      }
-    )
+      onError: () => toast({ title: 'Échec de la publication', variant: 'destructive' }),
+    })
   }
 
   return (
@@ -208,10 +285,20 @@ function NouvelleAnnonceDialog({
       <DialogContent className="max-w-md rounded-3xl border-primary/15 bg-ivoire p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display text-2xl text-encre">
-            <Megaphone className="h-5 w-5 text-primary" /> Nouvelle annonce
+            {edition ? (
+              <>
+                <Pencil className="h-5 w-5 text-primary" /> Modifier l’annonce
+              </>
+            ) : (
+              <>
+                <Megaphone className="h-5 w-5 text-primary" /> Nouvelle annonce
+              </>
+            )}
           </DialogTitle>
           <DialogDescription>
-            Le message s'affichera en tête de la page pour toute la communauté.
+            {edition
+              ? 'Ajuste le message — la communauté voit la version mise à jour.'
+              : "Le message s'affichera en tête de la page pour toute la communauté."}
           </DialogDescription>
         </DialogHeader>
 
@@ -328,11 +415,17 @@ function NouvelleAnnonceDialog({
             Annuler
           </Button>
           <Button
-            onClick={publier}
-            disabled={create.isPending}
+            onClick={enregistrer}
+            disabled={enCours.isPending}
             className="rounded-full bg-primary px-8 text-white hover:bg-emerald-deep"
           >
-            {create.isPending ? 'Publication…' : 'Publier'}
+            {enCours.isPending
+              ? edition
+                ? 'Enregistrement…'
+                : 'Publication…'
+              : edition
+                ? 'Enregistrer'
+                : 'Publier'}
           </Button>
         </DialogFooter>
       </DialogContent>

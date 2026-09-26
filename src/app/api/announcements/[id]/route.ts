@@ -4,6 +4,35 @@ import { journaliser } from '@/lib/audit'
 
 type Params = { params: Promise<{ id: string }> }
 
+// PATCH /api/announcements/:id — modifier une annonce
+export async function PATCH(req: Request, { params }: Params) {
+  try {
+    const { id } = await params
+    const body = await req.json()
+    if (!body.text || typeof body.text !== 'string') {
+      return NextResponse.json({ error: 'Texte requis' }, { status: 400 })
+    }
+    const annonce = await db.announcement.update({
+      where: { id },
+      data: {
+        title: body.title || null,
+        text: body.text,
+        color: body.color === 'CORAIL' ? 'CORAIL' : 'VERT',
+        date: new Date(),
+      },
+    })
+    await journaliser({
+      kind: 'ANNOUNCEMENT',
+      action: 'UPDATE',
+      label: `Annonce modifiée — « ${annonce.title || annonce.text.slice(0, 60)} »`,
+      actor: body.actor || null,
+    })
+    return NextResponse.json(annonce)
+  } catch {
+    return NextResponse.json({ error: 'Annonce introuvable' }, { status: 404 })
+  }
+}
+
 // DELETE /api/announcements/:id
 export async function DELETE(req: Request, { params }: Params) {
   try {

@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Clock, MapPin, Pencil, Printer, Sparkles, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
+import { ChevronDown, Clock, Eye, MapPin, Pencil, Printer, Sparkles, Trash2, Users, UserPlus, CalendarPlus } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { useNav, usePrint, useUser } from '@/lib/store'
+import { useNav, usePrint, useRappelBandeau, useUser } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { JOURS_COURTS, parseProgram, type Meeting } from '@/lib/types'
 import { cleSemaine, libelleSemaine } from '@/lib/format'
@@ -320,6 +320,8 @@ import { MiniCalendrier } from './mini-calendrier'
 
 export function IjtimaSection() {
   const { data: meetings, isLoading } = useMeetings()
+  const masques = useRappelBandeau((s) => s.masques)
+  const retablir = useRappelBandeau((s) => s.retablir)
 
   if (isLoading) {
     return (
@@ -363,6 +365,16 @@ export function IjtimaSection() {
   return (
     <SectionShell titre="Al-Ijtimâ'" compteur={`${meetings?.length ?? 0} réunion${(meetings?.length ?? 0) > 1 ? 's' : ''}`} id="ijtima">
       <div className="space-y-5">
+        {/* Rappel masqué — possibilité de le réafficher */}
+        {idProchaine && masques.includes(idProchaine) && (
+          <button
+            onClick={() => retablir(idProchaine)}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/40 bg-or-pale/40 px-4 py-2.5 text-xs font-semibold text-gold-vif transition-colors hover:bg-or-pale/70 active:scale-[0.99]"
+          >
+            <Eye className="h-4 w-4" aria-hidden />
+            Réafficher le rappel du prochain ijtimâ'
+          </button>
+        )}
         {/* Vue du mois — jours de réunion d'un coup d'œil */}
         {meetings && meetings.length > 0 && <MiniCalendrier />}
         {semaines.map((s) => (

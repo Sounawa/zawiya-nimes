@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Le rendu offre une lisibilité excellente du texte arabe scanné, parfaitement centré dans son cadre ornemental et d'une taille suffisante pour une lecture confortable sur mobile. La légende bilingue est claire et bien hiérarchisée, tandis que les boutons de navigation sont positionnés de manière idéale dans les coins inférieurs, parfaitement accessibles au pouce pour le feuilletage. **Note : 9/10** (une légère perte d'espace en bas de page empêche le score parfait).",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1790434729,
+  "id": "20260926225847d626c89f7a604cd8",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "20260926225847d626c89f7a604cd8",
+  "usage": {
+    "completion_tokens": 117,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 464,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 581
+  }
+}

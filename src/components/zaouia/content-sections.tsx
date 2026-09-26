@@ -506,11 +506,12 @@ function SectionContenu({
   )
 }
 
-/* ─── Les quatre sections de contenus spirituels ─── */
+/* ─── Les sections de contenus spirituels ───
+   (Le cahier d'invocations et le kitāb arabe ont leur propre lecteur —
+   cf. cahier-section.tsx / kitab-section.tsx) */
 export function ContentSections() {
   return (
     <>
-      <SectionContenu titre="Adhkâr" id="adhkar" section="ADHKAR" libelle="dhikr" defaultOpen />
       <SectionContenu titre="Qur'ân" id="quran" section="QURAN" libelle="lectures du Qur'ân" />
       <SectionContenu titre="Samâ'" id="sama" section="SAMA" libelle="samâ'" />
       <SectionContenu titre="Durûs" id="durus" section="DURUS" libelle="dars" />

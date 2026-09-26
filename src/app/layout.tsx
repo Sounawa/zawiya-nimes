@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Outfit, Amiri } from "next/font/google";
+import { Cormorant_Garamond, Outfit, Amiri, EB_Garamond, Crimson_Text } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryProvider } from "@/components/providers/query-provider";
@@ -22,6 +22,21 @@ const arabic = Amiri({
   variable: "--font-arabic",
   subsets: ["arabic"],
   weight: ["400", "700"],
+});
+
+/* Polices de lecture du cahier d'invocations */
+const garamond = EB_Garamond({
+  variable: "--font-livre2",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
+const crimson = Crimson_Text({
+  variable: "--font-livre3",
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -54,7 +69,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${display.variable} ${sans.variable} ${arabic.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${display.variable} ${sans.variable} ${arabic.variable} ${garamond.variable} ${crimson.variable} font-sans antialiased bg-background text-foreground`}
       >
         <ThemeProvider>
           <QueryProvider>{children}</QueryProvider>

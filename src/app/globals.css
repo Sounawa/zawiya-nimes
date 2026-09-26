@@ -308,6 +308,28 @@
   background: #4c6a58;
 }
 
+/* ─── Bandeau horizontal de chapitres (cahier / kitāb) ─── */
+.scrollbar-mince {
+  scrollbar-width: thin;
+  scrollbar-color: #d8d0bd transparent;
+}
+.dark .scrollbar-mince {
+  scrollbar-color: #3a5245 transparent;
+}
+.scrollbar-mince::-webkit-scrollbar {
+  height: 4px;
+}
+.scrollbar-mince::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-mince::-webkit-scrollbar-thumb {
+  background: #ddd5c2;
+  border-radius: 6px;
+}
+.dark .scrollbar-mince::-webkit-scrollbar-thumb {
+  background: #3a5245;
+}
+
 /* ─── Navigation clavier — anneau doré visible ─── */
 :focus-visible {
   outline: 2px solid rgba(184, 146, 58, 0.75);

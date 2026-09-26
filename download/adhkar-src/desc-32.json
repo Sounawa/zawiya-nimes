@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Based on the image provided:\n\n1.  **Chapter Title:** The large ornamental title at the top reads **\"السُّكَان\"** (As-Sukān), which translates to \"The Dwelling\" or \"The Residence.\"\n2.  **Content:** The page contains a specific prayer or litany titled \"Supplication for the Dwelling,\" which is intended to be recited upon entering one's home. The text is structured with an introduction, followed by numbered verses or lines of the prayer, and concludes with a reference to the source of the text.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1790433832,
+  "id": "2026092622434969d48db18c7f493a",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "2026092622434969d48db18c7f493a",
+  "usage": {
+    "completion_tokens": 121,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3574,
+    "prompt_tokens_details": {
+      "cached_tokens": 2
+    },
+    "total_tokens": 3695
+  }
+}

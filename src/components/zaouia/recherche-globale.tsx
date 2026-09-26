@@ -11,6 +11,10 @@ import {
 } from '@/lib/api'
 import { dateCourte, libelleSemaine } from '@/lib/format'
 import type { ContentItem } from '@/lib/types'
+import { CHAPITRES_CAHIER } from '@/data/cahier'
+import { CHAPITRES_KITAB } from '@/data/kitab'
+import { useDemandeChapitre } from './cahier-section'
+import { useDemandePage } from './kitab-section'
 import {
   CommandDialog,
   CommandEmpty,
@@ -32,8 +36,18 @@ import {
 } from 'lucide-react'
 
 /** Recherche globale — ⌘K / Ctrl+K, ou le bouton loupe du bandeau.
- *  Parcourt réunions, frères, annonces, adhkâr et sondages,
- *  puis conduit à la section correspondante. */
+ *  Parcourt réunions, frères, annonces, cahier d'invocations, kitāb
+ *  arabe et sondages, puis conduit à la section correspondante. */
+
+/** Retire les diacritiques de translittération : « Nâṣirî » → « nasiri ».
+ *  Permet de trouver un chapitre sans taper les accents. */
+function sansDiacritiques(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f\u064b-\u0652]/g, '')
+    .normalize('NFC')
+    .toLowerCase()
+}
 export function RechercheGlobale() {
   const [ouvert, setOuvert] = useState(false)
   const ouvrirSection = useNav((s) => s.ouvrir)
@@ -41,7 +55,6 @@ export function RechercheGlobale() {
   const { data: meetings } = useMeetings()
   const { data: membres } = useMembers()
   const { data: annonces } = useAnnouncements()
-  const { data: adhkars } = useContent('ADHKAR')
   const { data: quran } = useContent('QURAN')
   const { data: sama } = useContent('SAMA')
   const { data: durus } = useContent('DURUS')
@@ -171,30 +184,55 @@ export function RechercheGlobale() {
             </>
           )}
 
-          {/* ─── Adhkâr ─── */}
-          {(adhkars?.length ?? 0) > 0 && (
-            <>
-              <CommandSeparator />
-              <CommandGroup heading="Adhkâr">
-                {adhkars!.map((c) => (
-                  <CommandItem
-                    key={c.id}
-                    value={`${c.title} ${c.subtitle ?? ''} ${c.body ?? ''}`}
-                    onSelect={() => allerA('adhkar')}
-                    className="gap-3"
-                  >
-                    <BookOpenText className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="min-w-0 flex-1 truncate">
-                      <span className="font-medium">{c.title}</span>
-                      {c.time && (
-                        <span className="ml-1.5 text-xs text-muted-foreground">· {c.time}</span>
-                      )}
+          {/* ─── Cahier d'invocations (phonétique) ─── */}
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Cahier d'invocations">
+              {CHAPITRES_CAHIER.map((c) => (
+                <CommandItem
+                  key={c.id}
+                  value={`cahier ${sansDiacritiques(c.titre + ' ' + c.texte.slice(0, 300))}`}
+                  onSelect={() => {
+                    useDemandeChapitre.getState().demander(c.id)
+                    allerA('cahier')
+                  }}
+                  className="gap-3"
+                >
+                  <BookOpenText className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1 truncate">
+                    <span className="font-medium">{c.titre}</span>
+                    <span className="ml-1.5 text-xs text-muted-foreground">
+                      · p. {c.debut}–{c.fin}
                     </span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </>
-          )}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+
+          {/* ─── Kitāb al-Adhkār (arabe) ─── */}
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Kitāb al-Adhkār — كتاب الأذكار">
+              {CHAPITRES_KITAB.map((c) => (
+                <CommandItem
+                  key={c.id}
+                  value={`kitab ${sansDiacritiques(c.translit)} ${sansDiacritiques(c.titreAr)} ${c.titreAr}`}
+                  onSelect={() => {
+                    useDemandePage.getState().demander(c.debut)
+                    allerA('kitab')
+                  }}
+                  className="gap-3"
+                >
+                  <BookOpenText className="h-4 w-4 shrink-0 text-gold" />
+                  <span className="min-w-0 flex-1 truncate">
+                    <span dir="rtl" className="font-arabic font-medium">{c.titreAr}</span>
+                    <span className="ml-1.5 text-xs text-muted-foreground">{c.translit}</span>
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
 
           {/* ─── Autres contenus spirituels — Qur'ân, Samâ', Durûs ─── */}
           {([

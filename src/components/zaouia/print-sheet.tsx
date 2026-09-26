@@ -2,9 +2,10 @@
 
 import { useEffect } from 'react'
 import { useContributions, useMeetings, useMembers } from '@/lib/api'
-import { usePrint } from '@/lib/store'
+import { useLecture, usePrint } from '@/lib/store'
 import { dateLongue, euros } from '@/lib/format'
 import { parseProgram } from '@/lib/types'
+import { CHAPITRES_CAHIER } from '@/data/cahier'
 
 /* ═══════════════════════════════════════════════════════════════════
    Zone d'impression — cachée à l'écran, seule visible à l'impression.
@@ -37,6 +38,8 @@ export function ZoneImpression() {
         <ComptesImprimables />
       ) : cible.kind === 'presences' ? (
         <StatsPresences />
+      ) : cible.kind === 'cahier' ? (
+        <FeuilleCahier chapitreId={cible.chapitreId} />
       ) : (
         <BilanAnnuel />
       )}
@@ -69,6 +72,53 @@ function PiedFeuille() {
         year: 'numeric',
       })}
     </footer>
+  )
+}
+
+/* ═══════════════ Chapitre du cahier d'invocations ═══════════════ */
+function FeuilleCahier({ chapitreId }: { chapitreId: string }) {
+  const l = useLecture()
+  const chapitre = CHAPITRES_CAHIER.find((c) => c.id === chapitreId)
+  if (!chapitre) return null
+
+  const policesImpression: Record<string, string> = {
+    cormorant: 'var(--font-display), Georgia, serif',
+    garamond: 'var(--font-livre2), Georgia, serif',
+    crimson: 'var(--font-livre3), Georgia, serif',
+  }
+
+  return (
+    <div className="page p-[9mm]">
+      {EnteteFeuille(`Cahier d'invocations — ${chapitre.titre}`)}
+      <p className="mb-4 text-center text-[10px] uppercase tracking-[0.25em] text-[#78877d]">
+        cahier de la zawiya · p. {chapitre.debut}–{chapitre.fin}
+      </p>
+      <div
+        style={{
+          fontFamily: policesImpression[l.police],
+          fontSize: `${l.taille}px`,
+          lineHeight: l.interligne === 'compact' ? 1.5 : l.interligne === 'aere' ? 2.2 : 1.8,
+        }}
+      >
+        {chapitre.texte.split('\n').map((ligne, i) => {
+          const m = ligne.match(/^(.*?)(\s*[x×]\s*[\dHh '\u2019]+)$/u)
+          if (m && m[2].trim()) {
+            return (
+              <p key={i} className="whitespace-pre-wrap">
+                {m[1]}
+                <span className="font-bold">{m[2].trim()}</span>
+              </p>
+            )
+          }
+          return (
+            <p key={i} className="whitespace-pre-wrap">
+              {ligne || '\u00A0'}
+            </p>
+          )
+        })}
+      </div>
+      <PiedFeuille />
+    </div>
   )
 }
 

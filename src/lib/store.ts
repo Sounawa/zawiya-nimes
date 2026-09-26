@@ -75,12 +75,44 @@ export const useRappelBandeau = create<RappelState>()(
   )
 )
 
+/* ─── Préférences de lecture du cahier d'invocations ───
+   Police, taille, interligne, couleurs — tout se règle ici,
+   enregistré sur l'appareil de chacun. */
+export type PoliceLecture = 'cormorant' | 'garamond' | 'crimson'
+export type Interligne = 'compact' | 'normal' | 'aere'
+export type ThemeLecture = 'ivoire' | 'parchemin' | 'nuit'
+export type AccentLecture = 'or' | 'vert' | 'brun'
+
+interface LectureState {
+  police: PoliceLecture
+  taille: number
+  interligne: Interligne
+  theme: ThemeLecture
+  accent: AccentLecture
+  regler: (p: Partial<Omit<LectureState, 'regler'>>) => void
+}
+
+export const useLecture = create<LectureState>()(
+  persist(
+    (set) => ({
+      police: 'cormorant',
+      taille: 19,
+      interligne: 'normal',
+      theme: 'ivoire',
+      accent: 'or',
+      regler: (p) => set(p),
+    }),
+    { name: 'zaouia-lecture' }
+  )
+)
+
 /* ─── Zone d'impression (feuille de présence / comptes) ─── */
 export type CibleImpression =
   | { kind: 'presence'; meetingId: string }
   | { kind: 'comptes' }
   | { kind: 'bilan' }
   | { kind: 'presences' }
+  | { kind: 'cahier'; chapitreId: string }
 
 interface PrintState {
   cible: CibleImpression | null

@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "1) **Chapter Title:** The large ornamental title at the top reads **\"فَصْلُ السَّمَاكِ\"** (Fasl al-Samak), which translates to \"The Chapter of the Fish\" or \"Section of the Fish.\"\n\n2) **Content Description:** The page presents a collection of Islamic supplications (*du'as*) and prayers to be recited, specifically categorized by different types of fish. It includes specific invocations for eating fish in general, for mackerel (*al-Samak al-Makril*), and for sardines (*al-Kusk*), each beginning with the standard formula \"O Allah, bless for us in what You have provided us.\"",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1790433840,
+  "id": "202609262243539bcd29ae104e411b",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "202609262243539bcd29ae104e411b",
+  "usage": {
+    "completion_tokens": 149,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3574,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 3723
+  }
+}

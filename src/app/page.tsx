@@ -18,6 +18,8 @@ import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
 import { SondagesSection } from '@/components/zaouia/sondages-section'
 import { AnnuaireSection } from '@/components/zaouia/annuaire-section'
 import { HistoriqueSection } from '@/components/zaouia/historique-section'
+import { CahierInvocations } from '@/components/zaouia/cahier-section'
+import { KitabAlAdhkar } from '@/components/zaouia/kitab-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
 import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
@@ -95,6 +97,8 @@ export default function Page() {
         <SondagesSection />
         <AnnuaireSection />
         <HistoriqueSection />
+        <CahierInvocations />
+        <KitabAlAdhkar />
         <ContentSections />
       </main>
 

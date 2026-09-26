@@ -324,3 +324,15 @@ export function useCreateAnnouncement() {
     },
   })
 }
+
+export function useUpdateAnnouncement() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string; title?: string; text: string; color?: string }) =>
+      api<Announcement>(`/api/announcements/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['announcements'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}

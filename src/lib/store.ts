@@ -49,6 +49,32 @@ export const useNav = create<NavState>((set) => ({
   effacer: () => set({ demande: null }),
 }))
 
+/* ─── Rappel du prochain ijtimâ' (bandeau) — masquage persistant ─── */
+interface RappelState {
+  /** IDs des réunions dont le rappel en bandeau a été masqué */
+  masques: string[]
+  masquer: (id: string) => void
+  /** Réaffiche le rappel pour une réunion (ou toutes si null) */
+  retablir: (id?: string) => void
+}
+
+export const useRappelBandeau = create<RappelState>()(
+  persist(
+    (set) => ({
+      masques: [],
+      masquer: (id) =>
+        set((s) => ({
+          masques: s.masques.includes(id) ? s.masques : [...s.masques, id],
+        })),
+      retablir: (id) =>
+        set((s) => ({
+          masques: id ? s.masques.filter((x) => x !== id) : [],
+        })),
+    }),
+    { name: 'zaouia-rappel-bandeau' }
+  )
+)
+
 /* ─── Zone d'impression (feuille de présence / comptes) ─── */
 export type CibleImpression =
   | { kind: 'presence'; meetingId: string }

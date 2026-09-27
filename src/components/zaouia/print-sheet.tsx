@@ -6,6 +6,7 @@ import { useLecture, usePrint } from '@/lib/store'
 import { dateLongue, euros } from '@/lib/format'
 import { parseProgram } from '@/lib/types'
 import { CHAPITRES_CAHIER } from '@/data/cahier'
+import { CHAPITRES_ARABES } from './kitab-section'
 
 /* ═══════════════════════════════════════════════════════════════════
    Zone d'impression — cachée à l'écran, seule visible à l'impression.
@@ -40,6 +41,8 @@ export function ZoneImpression() {
         <StatsPresences />
       ) : cible.kind === 'cahier' ? (
         <FeuilleCahier chapitreId={cible.chapitreId} />
+      ) : cible.kind === 'kitab' ? (
+        <FeuilleKitab chapitreId={cible.chapitreId} />
       ) : (
         <BilanAnnuel />
       )}
@@ -102,6 +105,54 @@ function FeuilleCahier({ chapitreId }: { chapitreId: string }) {
       >
         {chapitre.texte.split('\n').map((ligne, i) => {
           const m = ligne.match(/^(.*?)(\s*[x×]\s*[\dHh '\u2019]+)$/u)
+          if (m && m[2].trim()) {
+            return (
+              <p key={i} className="whitespace-pre-wrap">
+                {m[1]}
+                <span className="font-bold">{m[2].trim()}</span>
+              </p>
+            )
+          }
+          return (
+            <p key={i} className="whitespace-pre-wrap">
+              {ligne || '\u00A0'}
+            </p>
+          )
+        })}
+      </div>
+      <PiedFeuille />
+    </div>
+  )
+}
+
+/* ═══════════════ Chapitre du kitāb arabe — كتاب الأذكار ═══════════════ */
+function FeuilleKitab({ chapitreId }: { chapitreId: string }) {
+  const l = useLecture()
+  const chapitre = CHAPITRES_ARABES.find((c) => c.id === chapitreId)
+  if (!chapitre) return null
+
+  const policesImpression: Record<string, string> = {
+    amiri: 'var(--font-arabic), serif',
+    scheherazade: 'var(--font-arabic2), serif',
+    naskh: 'var(--font-arabic3), serif',
+  }
+
+  return (
+    <div className="page p-[9mm]" dir="rtl" lang="ar">
+      {EnteteFeuille('Kitāb al-Adhkār — كتاب الأذكار')}
+      <p className="mb-4 text-center font-arabic text-[13px] text-[#43382a]">
+        {chapitre.titreAr} · {chapitre.translit} · ص {chapitre.debut}–{chapitre.fin}
+      </p>
+      <div
+        className="text-right"
+        style={{
+          fontFamily: policesImpression[l.policeArabe],
+          fontSize: `${Math.min(l.tailleArabe, 24)}px`,
+          lineHeight: l.interligne === 'compact' ? 1.7 : l.interligne === 'aere' ? 2.4 : 2.1,
+        }}
+      >
+        {chapitre.texte.split('\n').map((ligne, i) => {
+          const m = ligne.match(/^(.*?)(\s*[×x]\s*[٠-٩\dHh '’]+)$/u)
           if (m && m[2].trim()) {
             return (
               <p key={i} className="whitespace-pre-wrap">

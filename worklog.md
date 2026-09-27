@@ -319,3 +319,27 @@ Stage Summary:
 - Le rappel du prochain ijtimâ' (Latîf du jeudi) est modifiable au crayon et masquable à l'œil barré, réaffichable depuis la section Al-Ijtimâ' ; les annonces sont éditables avec badge de modification
 - Le cahier d'invocations complet (32 chapitres phonétiques, 95 Ko) et le kitāb arabe (21 chapitres, 65 pages scannées) sont dans l'app, avec réglages police/taille/interligne/fond/accent persistants et impression par chapitre
 - ⚠ Le fichier que l'utilisateur a voulu joindre n'est jamais arrivé sur le disque (upload/ vide) — les documents ont été récupérés directement depuis la base Supabase du site original ; si l'utilisateur fournit un jour une version TEXTE du kitāb arabe (Word/DOCX), remplacer les scans par du texte éditable sera direct
+
+---
+Task ID: kitab-arabe-rewrite
+Agent: Z.ai Code (session principale)
+Task: Réécriture intégrale du Kitāb al-Adhkār en texte arabe réel (consigne explicite : « pas d'OCR, réécrire l'intégralité en gardant la structure du cahier, Coran en riwāyat Warsh ») — pour que police et couleurs se règlent à volonté
+
+Work Log:
+- RÉCUPÉRATION DES SOURCES ARABES RÉELLES : listing du bucket Supabase `docs` du site original → 3 PDF contenant du VRAI texte arabe vectoriel : Jazr (1 p.), Al-Latif ibn Hajar (3 p.), Salat al-Mashishiyyah (7 p.) → extraits intégralement (pdftotext) ; le cahier phonétique (déjà intégré) sert de référence de lecture pour tout le reste
+- CORAN EN RIWĀYAT WARSH : les 4 sourates (Yâ-Sîn 36, al-Fatḥ 48, al-Wâqi'a 56, al-Mulk 67) réécrites intégralement, vocalisées, avec les lectures Warsh confirmées par le cahier phonétique : مَالِكِ (Fâtiha), يَاصٓ, طَٰئِرُكُم (36:19), يَٰلَيْتَ (36:26), إِن شَآءَ (48:27 avec madd), شَٰهِدًا (48:8), خَشِىَ (36:11 kasra), et les imāla retranscrites par le cahier (balē, kuffēri, sīmēhum, fastawē) rendues en graphie standard
+- src/data/kitab-arabe.ts (k01–k11) + kitab-arabe-2.ts (k12–k21) : 21 chapitres, 65 pages du livre, ~40 Ko d'arabe réel — sourates Warsh, Waẓîfa, Waẓîfat Fajr/Ṣubḥ/Safar, Taqwiyya (avec le Zajr ilâhî), Iftitâḥ as-Silka, Khatm as-Silka (12 courtes sourates + 2:1-5 + 2:285-286 + clôture), Fidya, les 3 Laṭîf (avec les répétitions ×4/×40/×400/×1000 et les deux Zajr authentiques extraits des PDF), Dalâ'il (iftitâḥ + khatm complet 7,8 Ko), Du'â' an-Nâṣirî (~60 vers), Munfarija (~55 vers), A-lâ Yâ Laṭîf, Mashîshiyya (texte authentique du PDF), Ṣalawât (9 ṣalāt + versets + noms divins)
+- Conventions conservées du cahier : ﴾ ﴿ passages coraniques, ۞ ٭ séparateurs, « × ١٠٠ » répétitions en chiffres arabes, renvois « ← ص N »
+- STORE : useLecture étendu (policeArabe: 'amiri'|'scheherazade'|'naskh', tailleArabe 17–42 px, défaut 25) ; CibleImpression + { kind: 'kitab', chapitreId }
+- POLICES : Scheherazade New + Noto Naskh Arabic ajoutées à layout.tsx (next/font) aux côtés d'Amiri — 3 familles arabes au choix
+- kitab-section.tsx RÉÉCRIT : lecteur texte RTL (dir="rtl" lang="ar") miroir du cahier — bandeau 21 onglets arabes, article thémé (ivoire/parchemin/nuit + accent or/vert/brun), texte ligne à ligne avec badges de répétition, en-tête bilingue (titre arabe + translit + pages), pied de chapitre avec titres arabes des voisins (flèches inversées RTL), impression
+- print-sheet.tsx : FeuilleKitab (RTL, en-tête bilingue, police/taille reprises des préférences, taille plafonnée 24 px à l'impression)
+- recherche-globale.tsx : entrées kitab = 21 chapitres CHAPITRES_ARABES, useDemandePage.demander(id du chapitre) ; import de data/kitab.ts supprimé (les scans ne servent plus)
+- Correction fine après relecture croisée cahier : Nâṣirî (لِعِزِّ مُلْكِ، تَخْفِضُ، أَذَى الشَّرِّ، وَقَهْرِ أَعْدَانَا، فَمَا أَطَقْنَا، وَاجْعَلْ مِنَ السِّرِّ/السِّتْرِ، بِارْتِفَاعِ قَدْرِهِ) ; Munfarija (فَإِذَا اقْتَصَدَتْ، حِجًا، تَهِجِي، فَكُونِي الْمَرْضِيَّةَ بِتُقًى، مَدِيحُ الْعَقْلِ، الْمُسْتَهْدِي الْمُسْتَحْيِي الْبَهِجِ)
+- QA agent-browser (qa12, Abde) : section dépliée → 21 onglets + Yâ-Sîn Warsh rendu (Amiri) ✓ ; navigation Laṭîf Ibn Ḥajar → texte du Zajr authentique ✓ ; panneau réglages → 3 polices arabes (أميري/شهرزاد/نسخ), Scheherazade appliquée (getComputedStyle « Scheherazade New » 25 px) ✓ ; ⌘K « اللطيف » → option kitab → navigation A-lâ Yâ Laṭîf confirmée (onglet + article) ✓ ; Mashîshiyya = texte du PDF ✓ ; Dalâ'il 8 863 car. ✓ ; cahier 32 onglets intact (régression) ✓ ; mobile 390×844 : scrollWidth 390 exact (aucun débordement), VLM arabe lisible/RTL/ergonomie validés ✓ ; console 0 erreur ; lint 0 erreur
+
+Stage Summary:
+- Le Kitāb al-Adhkār est désormais un VRAI TEXTE arabe intégral (21 chapitres, Coran en riwāyat Warsh), avec 3 polices arabes (Amiri, Scheherazade, Noto Naskh), taille, interligne, fond et accent réglables et persistés, impression RTL dédiée, recherche ⌘K par chapitre
+- Le cahier phonétique (32 chapitres) et le kitab arabe se répondent : mêmes conventions ﴾﴿ ۞ ٭, mêmes structures, le cahier servant de référence de lecture Warsh
+- Les scans de public/kitab/ ne servent plus (section texte) —conservés pour référence, suppression possible si besoin de place
+- Restes possibles : vérification des lectures Warsh par un ḥāfiẓ de la zawiya (surtout Munfarija/Nâṣirî, variantes de récitation), et les rapports signalés « cahier de samā' » (756 p. index phonétique) / « Diwān as-Samā' » arabe (222 p.) / Coran complet Warsh 4 volumes (avec texte réel !) restent à intégrer si demandé

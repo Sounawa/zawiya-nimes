@@ -12,9 +12,8 @@ import {
 import { dateCourte, libelleSemaine } from '@/lib/format'
 import type { ContentItem } from '@/lib/types'
 import { CHAPITRES_CAHIER } from '@/data/cahier'
-import { CHAPITRES_KITAB } from '@/data/kitab'
 import { useDemandeChapitre } from './cahier-section'
-import { useDemandePage } from './kitab-section'
+import { CHAPITRES_ARABES, useDemandePage } from './kitab-section'
 import {
   CommandDialog,
   CommandEmpty,
@@ -214,12 +213,12 @@ export function RechercheGlobale() {
           <>
             <CommandSeparator />
             <CommandGroup heading="Kitāb al-Adhkār — كتاب الأذكار">
-              {CHAPITRES_KITAB.map((c) => (
+              {CHAPITRES_ARABES.map((c) => (
                 <CommandItem
                   key={c.id}
                   value={`kitab ${sansDiacritiques(c.translit)} ${sansDiacritiques(c.titreAr)} ${c.titreAr}`}
                   onSelect={() => {
-                    useDemandePage.getState().demander(c.debut)
+                    useDemandePage.getState().demander(c.id)
                     allerA('kitab')
                   }}
                   className="gap-3"
@@ -227,7 +226,7 @@ export function RechercheGlobale() {
                   <BookOpenText className="h-4 w-4 shrink-0 text-gold" />
                   <span className="min-w-0 flex-1 truncate">
                     <span dir="rtl" className="font-arabic font-medium">{c.titreAr}</span>
-                    <span className="ml-1.5 text-xs text-muted-foreground">{c.translit}</span>
+                    <span className="ml-1.5 text-xs text-muted-foreground">{c.translit} · p. {c.debut}–{c.fin}</span>
                   </span>
                 </CommandItem>
               ))}

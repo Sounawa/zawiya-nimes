@@ -79,12 +79,17 @@ export const useRappelBandeau = create<RappelState>()(
    Police, taille, interligne, couleurs — tout se règle ici,
    enregistré sur l'appareil de chacun. */
 export type PoliceLecture = 'cormorant' | 'garamond' | 'crimson'
+export type PoliceArabe = 'amiri' | 'scheherazade' | 'naskh'
 export type Interligne = 'compact' | 'normal' | 'aere'
 export type ThemeLecture = 'ivoire' | 'parchemin' | 'nuit'
 export type AccentLecture = 'or' | 'vert' | 'brun'
 
 interface LectureState {
   police: PoliceLecture
+  /** police du kitāb arabe — Amiri, Scheherazade ou Naskh */
+  policeArabe: PoliceArabe
+  /** taille du kitāb arabe (px) — indépendante du cahier */
+  tailleArabe: number
   taille: number
   interligne: Interligne
   theme: ThemeLecture
@@ -96,6 +101,8 @@ export const useLecture = create<LectureState>()(
   persist(
     (set) => ({
       police: 'cormorant',
+      policeArabe: 'amiri',
+      tailleArabe: 25,
       taille: 19,
       interligne: 'normal',
       theme: 'ivoire',
@@ -113,6 +120,7 @@ export type CibleImpression =
   | { kind: 'bilan' }
   | { kind: 'presences' }
   | { kind: 'cahier'; chapitreId: string }
+  | { kind: 'kitab'; chapitreId: string }
 
 interface PrintState {
   cible: CibleImpression | null

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Outfit, Amiri, EB_Garamond, Crimson_Text } from "next/font/google";
+import { Cormorant_Garamond, Outfit, Amiri, EB_Garamond, Crimson_Text, Scheherazade_New, Noto_Naskh_Arabic } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryProvider } from "@/components/providers/query-provider";
@@ -22,6 +22,19 @@ const arabic = Amiri({
   variable: "--font-arabic",
   subsets: ["arabic"],
   weight: ["400", "700"],
+});
+
+/* Polices du kitāb arabe — texte sacré et du'ā' */
+const scheherazade = Scheherazade_New({
+  variable: "--font-arabic2",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const naskh = Noto_Naskh_Arabic({
+  variable: "--font-arabic3",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
 });
 
 /* Polices de lecture du cahier d'invocations */
@@ -69,7 +82,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${display.variable} ${sans.variable} ${arabic.variable} ${garamond.variable} ${crimson.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${display.variable} ${sans.variable} ${arabic.variable} ${scheherazade.variable} ${naskh.variable} ${garamond.variable} ${crimson.variable} font-sans antialiased bg-background text-foreground`}
       >
         <ThemeProvider>
           <QueryProvider>{children}</QueryProvider>

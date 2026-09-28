@@ -6,6 +6,7 @@ import { ChevronDown, Clock, Eye, MapPin, Pencil, Printer, Sparkles, Trash2, Use
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useNav, usePrint, useRappelBandeau, useUser } from '@/lib/store'
+import { peut } from '@/lib/permissions'
 import { cn } from '@/lib/utils'
 import { JOURS_COURTS, parseProgram, type Meeting } from '@/lib/types'
 import { cleSemaine, libelleSemaine } from '@/lib/format'
@@ -19,6 +20,10 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
   const [voirInvites, setVoirInvites] = useState(false)
   const [editionOuverte, setEditionOuverte] = useState(false)
   const memberId = useUser((s) => s.memberId)
+  const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
+  /* Rédiger l'ijtima' — la plume des frères de Nîmes */
+  const peutRediger = peut(ville, role, 'reunions.rediger')
   const imprimer = usePrint((s) => s.imprimer)
   const qc = useQueryClient()
 
@@ -191,14 +196,16 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
                 >
                   {jeViens ? '✓ Je viendrai' : 'Je viendrai'}
                 </motion.button>
-                <button
-                  onClick={() => setEditionOuverte(true)}
-                  aria-label="Modifier la réunion"
-                  title="Modifier la réunion"
-                  className="grid h-11 w-11 place-items-center rounded-full border border-gold/40 text-gold transition-all hover:bg-gold/10 hover:border-gold/70"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
+                {peutRediger && (
+                  <button
+                    onClick={() => setEditionOuverte(true)}
+                    aria-label="Modifier la réunion"
+                    title="Modifier la réunion"
+                    className="grid h-11 w-11 place-items-center rounded-full border border-gold/40 text-gold transition-all hover:bg-gold/10 hover:border-gold/70"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                )}
                 <button
                   onClick={() => imprimer({ kind: 'presence', meetingId: meeting.id })}
                   aria-label="Imprimer la feuille de présence"
@@ -207,14 +214,16 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
                 >
                   <Printer className="h-4 w-4" />
                 </button>
-                <button
-                  onClick={() => del.mutate()}
-                  aria-label="Supprimer la réunion"
-                  title="Supprimer la réunion"
-                  className="grid h-11 w-11 place-items-center rounded-full border border-destructive/25 text-destructive/70 transition-colors hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {peutRediger && (
+                  <button
+                    onClick={() => del.mutate()}
+                    aria-label="Supprimer la réunion"
+                    title="Supprimer la réunion"
+                    className="grid h-11 w-11 place-items-center rounded-full border border-destructive/25 text-destructive/70 transition-colors hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
               {/* Listes attendus / invités */}

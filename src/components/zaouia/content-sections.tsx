@@ -22,6 +22,8 @@ import {
   useReorderContent,
   useUpdateContent,
 } from '@/lib/api'
+import { useUser } from '@/lib/store'
+import { peut } from '@/lib/permissions'
 import type { ContentItem } from '@/lib/types'
 import { SectionShell } from './ijtima-section'
 import { useToast } from '@/hooks/use-toast'
@@ -292,6 +294,11 @@ function CarteContenu({
   onMove: (sens: -1 | 1) => void
   onDelete: () => void
 }) {
+  const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
+  /* Les contenus de la zawiya — édités par les frères de Nîmes */
+  const peutEditer = peut(ville, role, 'contenus.editer')
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 10 }}
@@ -341,7 +348,8 @@ function CarteContenu({
         </div>
 
         {/* Actions — cibles tactiles larges sur mobile, compactes au survol desktop */}
-        <div className="flex shrink-0 flex-col items-center gap-0.5 opacity-60 transition-opacity duration-200 group-hover:opacity-100">
+        {peutEditer && (
+          <div className="flex shrink-0 flex-col items-center gap-0.5 opacity-60 transition-opacity duration-200 group-hover:opacity-100">
           <div className="flex">
             <button
               type="button"
@@ -382,7 +390,8 @@ function CarteContenu({
               </button>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </motion.article>
   )
@@ -411,6 +420,10 @@ export function SectionContenu({
   const remove = useDeleteContent()
   const reorder = useReorderContent()
   const { toast } = useToast()
+  const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
+  /* Les contenus de la zawiya — édités par les frères de Nîmes */
+  const peutEditer = peut(ville, role, 'contenus.editer')
 
   const [dialogOuvert, setDialogOuvert] = useState(false)
   const [edition, setEdition] = useState<ContentItem | null>(null)
@@ -449,17 +462,19 @@ export function SectionContenu({
     </div>
   ) : (
     <div className="space-y-3">
-      {/* Ajout — le Shaykh (ou tout frère) enrichit les contenus */}
-      <button
-        type="button"
-        onClick={() => {
-          setEdition(null)
-          setDialogOuvert(true)
-        }}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/45 bg-or-pale/40 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-gold-vif transition-all hover:border-gold/70 hover:bg-or-pale/70 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-gold/40 active:scale-[0.99]"
-      >
-        <Plus className="h-4 w-4" /> Ajouter
-      </button>
+      {/* Ajout — les frères de Nîmes enrichissent les contenus */}
+      {peutEditer && (
+        <button
+          type="button"
+          onClick={() => {
+            setEdition(null)
+            setDialogOuvert(true)
+          }}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/45 bg-or-pale/40 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-gold-vif transition-all hover:border-gold/70 hover:bg-or-pale/70 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-gold/40 active:scale-[0.99]"
+        >
+          <Plus className="h-4 w-4" /> Ajouter
+        </button>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {items.map((item, i) => (

@@ -570,16 +570,15 @@ export function MaCotisation() {
 /* ═══════════════════════════════════════════════════════════════
    LE REGISTRE DU RÉFÉRENT — la liste des cotisants, à confirmer.
 
-   Le référent cotisations coche « il a donné » : toutes les sommes
-   en attente du frère passent à « reçues ». Un nouveau clic retire
-   la confirmation (erreur de saisie, par exemple).
+   Le référent cotisations (le trésorier) coche « il a donné » : toutes
+   les sommes en attente du frère passent à « reçues ». Un nouveau clic
+   retire la confirmation (erreur de saisie, par exemple).
 
-   Pour l'instant la fonction est ouverte à TOUT LE MONDE ; quand la
-   zawiya voudra la réserver au trésorier, passer
-   RESERVER_AU_TRESORIER à true — seuls les porteurs du rôle
-   TREASURER verront alors les boutons (la liste reste visible).
+   La confirmation est désormais RÉSERVÉE au trésorier — et au
+   référent de la zaouia, qui peut tout faire. La liste des
+   cotisants reste visible aux frères de Nîmes.
    ═══════════════════════════════════════════════════════════════ */
-const RESERVER_AU_TRESORIER = false
+const RESERVER_AU_TRESORIER = true
 
 export function RegistreReferent({
   periode,
@@ -600,7 +599,8 @@ export function RegistreReferent({
   const name = useUser((s) => s.name)
   const { toast } = useToast()
 
-  const peutConfirmer = !RESERVER_AU_TRESORIER || role === 'TREASURER'
+  /* Trésorier — ou référent, qui porte toutes les charges */
+  const peutConfirmer = !RESERVER_AU_TRESORIER || role === 'TREASURER' || role === 'REFERENT'
 
   const entrees = useMemo(
     () =>
@@ -669,7 +669,9 @@ export function RegistreReferent({
       <p className="mb-3 text-[11px] italic text-brouillard">
         {periodeSelectionnee ? periodeSelectionnee.label : 'Toutes périodes'} — {euros(totalConfirme)} confirmés
         {totalAttente > 0 ? ` · ${euros(totalAttente)} en attente` : ''}
-        {!RESERVER_AU_TRESORIER && ' · ouvert à tous pour le moment'}
+        {!RESERVER_AU_TRESORIER
+          ? ' · ouvert à tous pour le moment'
+          : !peutConfirmer && ' · la confirmation revient au trésorier'}
       </p>
 
       {/* Pastilles de période — le registre suit la sélection */}

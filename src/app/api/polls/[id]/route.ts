@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -13,9 +14,11 @@ function normChoix(s: string): string {
     .toLowerCase()
 }
 
-// DELETE /api/polls/:id
+// DELETE /api/polls/:id — réservé aux frères de Nîmes
 export async function DELETE(req: Request, { params }: Params) {
   try {
+    const { refus } = await exiger(req, 'sondages.supprimer')
+    if (refus) return refus
     const { id } = await params
     let acteur: string | null = null
     try {
@@ -41,6 +44,8 @@ export async function DELETE(req: Request, { params }: Params) {
 // PATCH /api/polls/:id — modifier question / options, fermer / rouvrir
 export async function PATCH(req: Request, { params }: Params) {
   try {
+    const { refus } = await exiger(req, 'sondages.creer')
+    if (refus) return refus
     const { id } = await params
     const body = await req.json()
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 // GET /api/meetings — toutes les réunions (avec présences & membres)
 export async function GET() {
@@ -18,9 +19,11 @@ export async function GET() {
   }
 }
 
-// POST /api/meetings — créer une réunion
+// POST /api/meetings — rédiger un ijtima' (frères de Nîmes)
 export async function POST(req: Request) {
   try {
+    const { refus } = await exiger(req, 'reunions.rediger')
+    if (refus) return refus
     const body = await req.json()
     if (!body.title || !body.date)
       return NextResponse.json({ error: 'Titre et date requis' }, { status: 400 })

@@ -44,8 +44,8 @@ export function ZiyaraSection() {
   const nbMembres = membres?.length ?? 0
   const moyenne = participants ? total / participants : 0
 
-  // Section invisible pour les non-trésoriers
-  if (role !== 'TREASURER') return null
+  // Section invisible pour les frères hors trésorerie (trésorier ou référent)
+  if (role !== 'TREASURER' && role !== 'REFERENT') return null
 
   return (
     <SectionShell

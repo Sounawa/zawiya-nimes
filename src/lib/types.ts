@@ -1,10 +1,27 @@
 // Types partagés de l'application Zawiya Nimes
 
-export type Role = 'ADMIN' | 'TREASURER' | 'MEMBER'
+/* ─── Groupes & rôles ───
+   Ville  : la zawiya du frère — NIMES (droits complets) ou MONTPELLIER
+   Rôle   : MEMBER (participe) < TREASURER (trésorerie) < REFERENT (gère tout) */
+export type Ville = 'NIMES' | 'MONTPELLIER'
+export type Role = 'REFERENT' | 'TREASURER' | 'MEMBER'
+
+/** Libellés affichables */
+export const VILLE_LABEL: Record<string, string> = {
+  NIMES: 'Nîmes',
+  MONTPELLIER: 'Montpellier',
+}
+
+export const ROLE_LABEL: Record<string, string> = {
+  MEMBER: 'Membre',
+  TREASURER: 'Trésorier',
+  REFERENT: 'Référent',
+}
 
 export interface Member {
   id: string
   name: string
+  city: Ville
   role: Role
   createdAt: string
   _count?: { contributions: number; attendances: number }

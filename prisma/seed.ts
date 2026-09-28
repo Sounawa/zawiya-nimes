@@ -35,7 +35,11 @@ async function main() {
   console.log('→ Membres…')
   const members = [] as { id: string; name: string }[]
   for (const name of MEMBRES) {
-    const m = await db.member.create({ data: { name, role: 'ADMIN' } })
+    /* Abde porte la conduite de la zaouia (référent) — il peut tout,
+       y compris la trésorerie ; les autres sont membres de Nîmes. */
+    const m = await db.member.create({
+      data: { name, city: 'NIMES', role: name === 'Abde' ? 'REFERENT' : 'MEMBER' },
+    })
     members.push(m)
   }
 

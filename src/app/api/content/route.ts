@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 // GET /api/content?section=ADHKAR — contenus par section
 export async function GET(req: Request) {
@@ -18,9 +19,11 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/content — ajouter un contenu
+// POST /api/content — ajouter un contenu (frères de Nîmes)
 export async function POST(req: Request) {
   try {
+    const { refus } = await exiger(req, 'contenus.editer')
+    if (refus) return refus
     const body = await req.json()
     if (!body.section || !body.title)
       return NextResponse.json({ error: 'Section et titre requis' }, { status: 400 })

@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 type Params = { params: Promise<{ id: string }> }
 
-// PATCH /api/meetings/:id
+// PATCH /api/meetings/:id — rédiger : frères de Nîmes
 export async function PATCH(req: Request, { params }: Params) {
   try {
+    const { refus } = await exiger(req, 'reunions.rediger')
+    if (refus) return refus
     const { id } = await params
     const body = await req.json()
     const data: Record<string, string | null> = {}

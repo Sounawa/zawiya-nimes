@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { usePrint, useUser } from '@/lib/store'
 import { useMembers } from '@/lib/api'
+import { peut } from '@/lib/permissions'
 import { WelcomeGate } from '@/components/zaouia/welcome-gate'
 import { HeaderBar } from '@/components/zaouia/header-bar'
 import { Annonces } from '@/components/zaouia/annonces'
@@ -25,40 +26,47 @@ import { EnregistrementSW } from '@/components/zaouia/enregistrement-sw'
 
 export default function Page() {
   const name = useUser((s) => s.name)
+  const ville = useUser((s) => s.ville)
   const memberId = useUser((s) => s.memberId)
+  const role = useUser((s) => s.role)
   const setMember = useUser((s) => s.setMember)
   const cibleImpression = usePrint((s) => s.cible)
   const { data: membres } = useMembers()
   const qc = useQueryClient()
 
+  /* Les droits du frère connecté — groupe (ville) + rôle */
+  const voirCotisations = peut(ville, role, 'cotisations.voir')
+  const redigerReunions = peut(ville, role, 'reunions.rediger')
+
   const [reglagesOuverts, setReglagesOuverts] = useState(false)
   const [profilOuvert, setProfilOuvert] = useState(false)
   const [nouvelleReunion, setNouvelleReunion] = useState(false)
 
-  /* Résoudre le prénom → membre (id + rôle) */
+  /* Résoudre le prénom + la zawiya → membre (id + rôle)
+     Inconnu ? Le participant s'inscrit lui-même dans son groupe. */
   useEffect(() => {
     if (name && membres) {
-      const m = membres.find((x) => x.name === name)
-      if (m && m.id !== memberId) {
-        setMember(m.id, m.role)
+      const m = membres.find((x) => x.name === name && x.city === ville)
+      if (m && (m.id !== memberId || m.role !== role)) {
+        setMember(m.id, m.role, m.city)
       } else if (!m) {
-        // Le prénom n'existe pas encore : le créer
+        // Le prénom n'existe pas encore dans cette zawiya : le créer
         fetch('/api/members', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ name, ville }),
         })
           .then((r) => (r.ok ? r.json() : null))
           .then((created) => {
             if (created) {
-              setMember(created.id, created.role)
+              setMember(created.id, created.role, created.city)
               qc.invalidateQueries({ queryKey: ['members'] })
             }
           })
           .catch(() => {})
       }
     }
-  }, [name, membres, memberId, setMember, qc])
+  }, [name, ville, membres, memberId, role, setMember, qc])
 
   /* Écran d'entrée tant que le prénom n'est pas posé */
   if (!name) {
@@ -87,8 +95,13 @@ export default function Page() {
         <BandeauProchainIjtima />
         <Annonces />
         <IjtimaSection />
-        <CotisationSection />
-        <ZiyaraSection />
+        {/* La trésorerie (cotisations + ziyara) est réservée à la zawiya de Nîmes */}
+        {voirCotisations && (
+          <>
+            <CotisationSection />
+            <ZiyaraSection />
+          </>
+        )}
         <AdhkarSection />
         <SamaSection />
       </main>
@@ -106,29 +119,31 @@ export default function Page() {
         </div>
       </footer>
 
-      {/* ─── Bouton flottant ＋ Réunion ─── */}
-      <div className="fixed bottom-6 right-6 z-40">
-        {/* Anneau pulsé */}
-        <motion.span
-          aria-hidden
-          className="fab-ring absolute inset-0 rounded-full"
-          animate={{ scale: [1, 1.35], opacity: [0.5, 0] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
-        />
-        <motion.button
-          initial={{ scale: 0, rotate: -90 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.4 }}
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.94 }}
-          onClick={() => setNouvelleReunion(true)}
-          aria-label="Nouvelle réunion"
-          className="relative flex h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-primary to-emerald-deep pl-5 pr-6 text-white shadow-xl shadow-primary/35 max-sm:h-13 max-sm:w-13 max-sm:justify-center max-sm:pl-0 max-sm:pr-0"
-        >
-          <CalendarPlus className="h-5 w-5 max-sm:h-6 max-sm:w-6" />
-          <span className="text-sm font-semibold tracking-wide max-sm:hidden">Réunion</span>
-        </motion.button>
-      </div>
+      {/* ─── Bouton flottant ＋ Réunion — la rédaction est réservée à Nîmes ─── */}
+      {redigerReunions && (
+        <div className="fixed bottom-6 right-6 z-40">
+          {/* Anneau pulsé */}
+          <motion.span
+            aria-hidden
+            className="fab-ring absolute inset-0 rounded-full"
+            animate={{ scale: [1, 1.35], opacity: [0.5, 0] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
+          />
+          <motion.button
+            initial={{ scale: 0, rotate: -90 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.4 }}
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => setNouvelleReunion(true)}
+            aria-label="Nouvelle réunion"
+            className="relative flex h-14 items-center gap-2.5 rounded-full bg-gradient-to-br from-primary to-emerald-deep pl-5 pr-6 text-white shadow-xl shadow-primary/35 max-sm:h-13 max-sm:w-13 max-sm:justify-center max-sm:pl-0 max-sm:pr-0"
+          >
+            <CalendarPlus className="h-5 w-5 max-sm:h-6 max-sm:w-6" />
+            <span className="text-sm font-semibold tracking-wide max-sm:hidden">Réunion</span>
+          </motion.button>
+        </div>
+      )}
 
       {/* ─── Dialogues ─── */}
       <NewMeetingDialog open={nouvelleReunion} onOpenChange={setNouvelleReunion} />

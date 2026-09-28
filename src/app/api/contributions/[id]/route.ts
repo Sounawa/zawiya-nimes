@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -9,10 +10,15 @@ function libelleCategorie(c: string): string {
 }
 
 // PATCH /api/contributions/:id
+// · corriger une somme → frères de Nîmes
+// · confirmer « il a donné » → trésorier ou référent
 export async function PATCH(req: Request, { params }: Params) {
   try {
+    const body = await req.json().catch(() => ({}))
+    const droit = body.confirm !== undefined ? 'cotisations.gerer' : 'cotisations.voir'
+    const { refus } = await exiger(req, droit)
+    if (refus) return refus
     const { id } = await params
-    const body = await req.json()
     const data: Record<string, unknown> = {}
     if (body.amount !== undefined) {
       const amount = parseFloat(body.amount)
@@ -53,9 +59,11 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 }
 
-// DELETE /api/contributions/:id
+// DELETE /api/contributions/:id — zawiya de Nîmes
 export async function DELETE(req: Request, { params }: Params) {
   try {
+    const { refus } = await exiger(req, 'cotisations.voir')
+    if (refus) return refus
     const { id } = await params
     let acteur: string | null = null
     try {

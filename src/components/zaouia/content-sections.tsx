@@ -388,13 +388,16 @@ function CarteContenu({
   )
 }
 
-/* ─── Une section de contenus complète (liste + CRUD + dialogue) ─── */
-function SectionContenu({
+/* ─── Une section de contenus complète (liste + CRUD + dialogue) ───
+   sansCoquille : rend le contenu nu, sans l'en-tête de section —
+   quand une section parente fournit déjà la coquille (Qur'ân…) */
+export function SectionContenu({
   titre,
   id,
   section,
   libelle,
   defaultOpen = false,
+  sansCoquille = false,
 }: {
   titre: string
   id: string
@@ -402,6 +405,7 @@ function SectionContenu({
   /** Libellé d'un élément, ex. « contenu » — utilisé dans les phrases */
   libelle: string
   defaultOpen?: boolean
+  sansCoquille?: boolean
 }) {
   const { data, isLoading } = useContent(section)
   const remove = useDeleteContent()
@@ -437,57 +441,54 @@ function SectionContenu({
     })
   }
 
-  return (
-    <SectionShell
-      titre={titre}
-      compteur={data ? `${data.length}` : undefined}
-      defaultOpen={defaultOpen}
-      id={id}
-    >
-      {isLoading ? (
-        <div className="space-y-3">
-          {[0, 1].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-sand/60" />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {/* Ajout — le Shaykh (ou tout frère) enrichit les contenus */}
-          <button
-            type="button"
-            onClick={() => {
-              setEdition(null)
+  const corps = isLoading ? (
+    <div className="space-y-3">
+      {[0, 1].map((i) => (
+        <div key={i} className="h-20 animate-pulse rounded-2xl bg-sand/60" />
+      ))}
+    </div>
+  ) : (
+    <div className="space-y-3">
+      {/* Ajout — le Shaykh (ou tout frère) enrichit les contenus */}
+      <button
+        type="button"
+        onClick={() => {
+          setEdition(null)
+          setDialogOuvert(true)
+        }}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/45 bg-or-pale/40 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-gold-vif transition-all hover:border-gold/70 hover:bg-or-pale/70 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-gold/40 active:scale-[0.99]"
+      >
+        <Plus className="h-4 w-4" /> Ajouter
+      </button>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {items.map((item, i) => (
+          <CarteContenu
+            key={item.id}
+            item={item}
+            index={i}
+            total={items.length}
+            onEdit={() => {
+              setEdition(item)
               setDialogOuvert(true)
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/45 bg-or-pale/40 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-gold-vif transition-all hover:border-gold/70 hover:bg-or-pale/70 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-gold/40 active:scale-[0.99]"
-          >
-            <Plus className="h-4 w-4" /> Ajouter
-          </button>
+            onMove={(sens) => deplacer(i, sens)}
+            onDelete={() => supprimer(item)}
+          />
+        ))}
+        {!items.length && (
+          <p className="rounded-2xl border border-dashed border-primary/20 p-6 text-center text-sm text-brouillard sm:col-span-2">
+            <Sparkles className="mx-auto mb-2 h-5 w-5 text-gold" />
+            Rien pour le moment ✦
+          </p>
+        )}
+      </div>
+    </div>
+  )
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {items.map((item, i) => (
-              <CarteContenu
-                key={item.id}
-                item={item}
-                index={i}
-                total={items.length}
-                onEdit={() => {
-                  setEdition(item)
-                  setDialogOuvert(true)
-                }}
-                onMove={(sens) => deplacer(i, sens)}
-                onDelete={() => supprimer(item)}
-              />
-            ))}
-            {!items.length && (
-              <p className="rounded-2xl border border-dashed border-primary/20 p-6 text-center text-sm text-brouillard sm:col-span-2">
-                <Sparkles className="mx-auto mb-2 h-5 w-5 text-gold" />
-                Rien pour le moment ✦
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+  const coquille = (
+    <>
+      {corps}
 
       <ContentDialog
         open={dialogOuvert}
@@ -502,17 +503,30 @@ function SectionContenu({
           })
         }
       />
+    </>
+  )
+
+  /* Nu — quand la section parente fournit déjà la coquille */
+  if (sansCoquille) return <div className="mt-5">{coquille}</div>
+
+  return (
+    <SectionShell
+      titre={titre}
+      compteur={data ? `${data.length}` : undefined}
+      defaultOpen={defaultOpen}
+      id={id}
+    >
+      {coquille}
     </SectionShell>
   )
 }
 
 /* ─── Les sections de contenus spirituels ───
-   (Le cahier d'invocations et le kitāb arabe ont leur propre lecteur —
-   cf. cahier-section.tsx / kitab-section.tsx) */
+   (les adhkâr et le Coran Warsh ont leurs propres lecteurs —
+   cf. adhkar-section.tsx / quran-section.tsx) */
 export function ContentSections() {
   return (
     <>
-      <SectionContenu titre="Qur'ân" id="quran" section="QURAN" libelle="lectures du Qur'ân" />
       <SectionContenu titre="Samâ'" id="sama" section="SAMA" libelle="samâ'" />
       <SectionContenu titre="Durûs" id="durus" section="DURUS" libelle="dars" />
     </>

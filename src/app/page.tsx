@@ -18,8 +18,8 @@ import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
 import { SondagesSection } from '@/components/zaouia/sondages-section'
 import { AnnuaireSection } from '@/components/zaouia/annuaire-section'
 import { HistoriqueSection } from '@/components/zaouia/historique-section'
-import { CahierInvocations } from '@/components/zaouia/cahier-section'
-import { KitabAlAdhkar } from '@/components/zaouia/kitab-section'
+import { AdhkarSection } from '@/components/zaouia/adhkar-section'
+import { QuranSection } from '@/components/zaouia/quran-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
 import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
@@ -88,7 +88,7 @@ export default function Page() {
         onOpenProfile={() => setProfilOuvert(true)}
       />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 pb-40 pt-5">
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-9 px-4 pb-40 pt-6">
         <BandeauProchainIjtima />
         <Annonces />
         <IjtimaSection />
@@ -97,8 +97,8 @@ export default function Page() {
         <SondagesSection />
         <AnnuaireSection />
         <HistoriqueSection />
-        <CahierInvocations />
-        <KitabAlAdhkar />
+        <AdhkarSection />
+        <QuranSection />
         <ContentSections />
       </main>
 

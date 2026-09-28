@@ -300,7 +300,10 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
-      className="fixed inset-0 z-[90] flex flex-col bg-background grain-papier"
+      /* mb-0 : parade contre les space-y-* d'un ancêtre (Tailwind v4
+          pose margin-block-end sur :not(:last-child)) — un lecteur plein
+          écran ne doit jamais recevoir de marge, où qu'il vive */
+      className="fixed inset-0 z-[90] mb-0 flex flex-col bg-background grain-papier"
       role="dialog"
       aria-modal="true"
       aria-label={`Lecteur — ${titre}`}

@@ -405,6 +405,73 @@ body::after {
   opacity: 0.3;
 }
 
+/* ─── La tuile khātim petite — octogone pour menus boutons ───
+   Même découpe que .tuile-khatim mais angles de 7 px : pour les
+   jetons de montant et les petits boutons « il a donné ». Le
+   filet d'or vit sur l'enveloppe (plaque emboîtée), jamais un
+   contour natif — le clip l'amputerait aux diagonales. */
+.tuile-khatim-sm {
+  clip-path: polygon(
+    7px 0,
+    calc(100% - 7px) 0,
+    100% 7px,
+    100% calc(100% - 7px),
+    calc(100% - 7px) 100%,
+    7px 100%,
+    0 calc(100% - 7px),
+    0 7px
+  );
+}
+
+/* ─── La sebka — filet de losanges de stuc ───
+   Les claustras de l'Alhambra : un réseau de losanges au trait
+   d'un cheveu, en réserve dorée derrière le bandeau. Le masque
+   la fait naître du bord droit et s'éteindre avant le titre —
+   l'ornement habite la marge, jamais la lecture. */
+.sebka {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Cg fill='none' stroke='%23a5824a' stroke-width='0.8'%3E%3Cpath d='M13 1L25 13L13 25L1 13Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 26px 26px;
+  opacity: 0.055;
+  -webkit-mask-image: linear-gradient(to right, transparent 2%, black 30%);
+  mask-image: linear-gradient(to right, transparent 2%, black 30%);
+}
+.dark .sebka {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Cg fill='none' stroke='%23c9a45c' stroke-width='0.8'%3E%3Cpath d='M13 1L25 13L13 25L1 13Z'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.07;
+}
+
+/* ─── La corniche à merlons — créneaux nasrides ───
+   Le profil des murailles de l'Alhambra : des merlons pointus
+   d'or mat, sept pixels de haut, sur filet. C'est la signature
+   du bandeau — visible à chaque écran, discrète au repos. */
+.frise-merlons {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M0 7 L1 3.2 L4.5 0.7 L8 3.2 L9 7 Z' fill='%23a5824a'/%3E%3C/svg%3E");
+  background-size: 12px 7px;
+  background-repeat: repeat-x;
+  border-top: 1px solid color-mix(in oklab, var(--gold) 38%, transparent);
+  opacity: 0.42;
+}
+.dark .frise-merlons {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M0 7 L1 3.2 L4.5 0.7 L8 3.2 L9 7 Z' fill='%23c9a45c'/%3E%3C/svg%3E");
+  border-top-color: color-mix(in oklab, var(--gold) 30%, transparent);
+  opacity: 0.34;
+}
+
+/* ─── Le girih — étoiles à huit pans liées par sangles ───
+   La géométrie de la technique perse-andalouse : un octogramme
+   (khātim) au centre, quatre sangles qui filent vers les étoiles
+   voisines. En filigrane sur la carte de la caisse — l'argent
+   repose sur un tapis de géométrie, pas sur du vide. */
+.filigrane-girih {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%2317553f' stroke-width='1'%3E%3Crect x='18' y='18' width='20' height='20'/%3E%3Crect x='18' y='18' width='20' height='20' transform='rotate(45 28 28)'/%3E%3Cpath d='M28 0V18M28 38V56M0 28H18M38 28H56'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 56px 56px;
+  opacity: 0.08;
+}
+.dark .filigrane-girih {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%234f9678' stroke-width='1'%3E%3Crect x='18' y='18' width='20' height='20'/%3E%3Crect x='18' y='18' width='20' height='20' transform='rotate(45 28 28)'/%3E%3Cpath d='M28 0V18M28 38V56M0 28H18M38 28H56'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.09;
+}
+
 /* ─── La page de lecture — plaque de manuscrit ───
    Un filet intérieur en réserve : la carte devient la planche
    d'un livre enluminé, sans crier. */

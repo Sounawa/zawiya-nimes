@@ -2,13 +2,27 @@
 
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Banknote, CalendarDays, CalendarRange, Download, Printer, TrendingUp, Users } from 'lucide-react'
+import {
+  Banknote,
+  CalendarRange,
+  Clock3,
+  Download,
+  Printer,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
 import { useContributions } from '@/lib/api'
 import { usePrint, useUser } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 import { euros } from '@/lib/format'
 import { SectionShell } from './ijtima-section'
-import { FormulaireContribution, LigneContribution, Compteur, Progression } from './contribution-shared'
+import {
+  Compteur,
+  LigneContribution,
+  MaCotisation,
+  Progression,
+  RegistreReferent,
+} from './contribution-shared'
 import { cn } from '@/lib/utils'
 import type { Contribution } from '@/lib/types'
 
@@ -25,7 +39,7 @@ function exporterCSV(
     : [`Comptes de la Zawiya Nîmes — toutes périodes`]
   const lignes = [
     ...entete,
-    'Date;Frère;Catégorie;Montant (€);Note;Enregistré par',
+    'Date;Frère;Catégorie;Montant (€);Note;Enregistré par;Confirmé',
     ...contributions
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date))
@@ -37,6 +51,7 @@ function exporterCSV(
           String(c.amount).replace('.', ','),
           (c.note ?? '').replace(/[;\n]/g, ' '),
           c.recordedBy ?? '',
+          c.confirmedAt ? `Oui (${c.confirmedBy ?? 'référent'})` : 'Non',
         ].join(';')
       ),
     '',
@@ -123,7 +138,6 @@ function exporterBilanCSV(contributions: Contribution[]) {
   const blob = new Blob(['\uFEFF' + lignes.join('\n')], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url
   a.download = `bilan-annuel-zawiya-nimes-${annee}.csv`
   document.body.appendChild(a)
   a.click()
@@ -274,6 +288,18 @@ export function CotisationSection() {
     [cotisationsVisibles]
   )
 
+  // La caisse ne compte que ce que le référent a confirmé ;
+  // les déclarations non confirmées sont affichées à part.
+  const horsZiyara = useMemo(() => cotisations.filter((c) => c.category !== 'ZIYARA'), [cotisations])
+  const totalConfirme = useMemo(
+    () => horsZiyara.filter((c) => c.confirmedAt).reduce((s, c) => s + c.amount, 0),
+    [horsZiyara]
+  )
+  const totalAttente = useMemo(
+    () => horsZiyara.filter((c) => !c.confirmedAt).reduce((s, c) => s + c.amount, 0),
+    [horsZiyara]
+  )
+
   // Qui a donné quoi (par membre) — hors ziyara, gérée séparément par le trésorier
   // (respecte la période sélectionnée : le classement reflète le mois affiché)
   const parMembre = useMemo(() => {
@@ -294,21 +320,38 @@ export function CotisationSection() {
   return (
     <SectionShell
       titre="Cotisations"
-      compteur={totals ? `${cotisations.filter((c) => c.category !== 'ZIYARA').length} entrées` : undefined}
+      compteur={totals ? `${horsZiyara.length} entrées` : undefined}
       id="cotisations"
     >
       {isLoading ? (
         <div className="h-40 animate-pulse rounded-2xl bg-sand/60" />
       ) : (
         <div className="space-y-4">
+          {/* Ma cotisation — chaque participant déclare sa somme */}
+          <MaCotisation />
+
+          {/* Le registre du référent — confirmer que la personne a donné */}
+          <RegistreReferent
+            periode={periode}
+            periodeSelectionnee={periodeSelectionnee}
+            moisDisponibles={moisDisponibles}
+            onPeriodeChange={setPeriode}
+            role={role}
+          />
+
           {/* Carte caisse */}
           <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-card via-feuille to-feuille p-6 shadow-sm">
-            <div className="pattern-lattice absolute inset-0" aria-hidden />
+            <div className="filigrane-girih absolute inset-0" aria-hidden />
             <div className="relative">
               <p className="mb-3 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
                 <Banknote className="h-4 w-4" /> La Caisse
               </p>
-              <Compteur valeur={totals ? totals.COTISATION + totals.DON : 0} libelle="Cotisations & dons cumulés" />
+              <Compteur valeur={totalConfirme} libelle="Confirmées par le référent" />
+              {totalAttente > 0 && (
+                <p className="mt-1.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-gold-vif">
+                  <Clock3 className="h-3.5 w-3.5" />+ {euros(totalAttente)} déclarés en attente
+                </p>
+              )}
               {role === 'TREASURER' && totals && (
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button
@@ -377,8 +420,6 @@ export function CotisationSection() {
             </div>
           </div>
 
-          <FormulaireContribution categorieDefaut="COTISATION" categories={['COTISATION', 'DON']} />
-
           {/* Évolution mensuelle de la caisse */}
           {cotisations.length > 0 && <GrapheMensuel cotisations={cotisations} />}
 
@@ -407,14 +448,19 @@ export function CotisationSection() {
             </div>
           )}
 
-          {/* Historique — filtrable par catégorie et par mois */}
+          {/* Historique — filtrable par catégorie ; suit la période du registre */}
           <div className="rounded-2xl border border-primary/12 bg-card p-4 shadow-sm">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              <p className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 <TrendingUp className="h-3.5 w-3.5 text-primary" /> Historique
                 <span className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
                   {cotisationsVisibles.length} · {euros(totalPeriode)}
                 </span>
+                {periodeSelectionnee && (
+                  <span className="text-[10px] font-medium normal-case italic tracking-normal text-brouillard">
+                    {periodeSelectionnee.label}
+                  </span>
+                )}
               </p>
               <div className="flex gap-1">
                 {(['TOUS', 'COTISATION', 'DON'] as const).map((f) => (
@@ -434,46 +480,6 @@ export function CotisationSection() {
               </div>
             </div>
 
-            {/* Pastilles de période — le CSV du trésorier suit la sélection */}
-            {moisDisponibles.length > 0 && (
-              <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-brouillard" aria-hidden />
-                <button
-                  onClick={() => setPeriode('TOUTES')}
-                  aria-pressed={periode === 'TOUTES'}
-                  className={cn(
-                    'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
-                    periode === 'TOUTES'
-                      ? 'bg-gold text-white shadow-sm dark:text-accent-foreground'
-                      : 'bg-sand text-brouillard hover:bg-sable-vif'
-                  )}
-                >
-                  Toutes
-                </button>
-                {moisDisponibles.map((m) => (
-                  <button
-                    key={m.cle}
-                    onClick={() => setPeriode(m.cle)}
-                    aria-pressed={periode === m.cle}
-                    title={m.label}
-                    className={cn(
-                      'rounded-full px-2.5 py-1 text-[10px] font-bold capitalize tracking-wider transition-colors',
-                      periode === m.cle
-                        ? 'bg-gold text-white shadow-sm dark:text-accent-foreground'
-                        : 'bg-sand text-brouillard hover:bg-sable-vif'
-                    )}
-                  >
-                    {m.court}
-                  </button>
-                ))}
-                {role === 'TREASURER' && periodeSelectionnee && (
-                  <span className="ml-1 hidden text-[10px] italic text-brouillard sm:inline">
-                    l'export CSV suivra cette période
-                  </span>
-                )}
-              </div>
-            )}
-
             <ul className="defile-fin max-h-72 divide-y divide-sand overflow-y-auto">
               <AnimatePresence initial={false}>
                 {listeFiltree.map((c, i) => (
@@ -486,6 +492,7 @@ export function CotisationSection() {
                     categorie={c.category}
                     note={c.note}
                     date={c.date}
+                    confirme={c.confirmedAt !== null}
                     onDeleted={() => {}}
                   />
                 ))}

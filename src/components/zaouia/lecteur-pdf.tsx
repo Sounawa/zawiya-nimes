@@ -106,7 +106,25 @@ function assortirAuFond(toile: HTMLCanvasElement, g: Gamme) {
   /* trop peu de papier clair : page laissée telle quelle */
   if (pic < 90 || masse < echantillons * 0.08) return
 
-  /* La nuance exacte du papier : moyenne RGB autour du pic */
+  /* Le ton LE PLUS SOMBRE des papiers significatifs. Pourquoi : les
+     cahiers imprimés posent leur texte dans une boîte légèrement plus
+     beige que les marges — deux tons de papier par page. Prennons la
+     marge comme référence, et la boîte ressort en rectangle plus sombre
+     derrière le texte. En prenant le ton de la boîte, tout ce qui est
+     plus clair (boîte ET marges) glisse vers le fond exact du site :
+     une seule teinte de papier, celle de la maison. */
+  const seuilPic = masse * 0.25
+  let reference = pic
+  for (let l = 90; l <= 252; l++) {
+    /* maximum local (plus massif que ses voisins immédiats) */
+    const voisinage = Math.max(hist[l - 1] || 0, hist[l + 1] || 0)
+    if (hist[l] > seuilPic && hist[l] >= voisinage) {
+      reference = l
+      break
+    }
+  }
+
+  /* La nuance exacte du papier : moyenne RGB autour du ton de référence */
   let sr = 0
   let sg = 0
   let sb = 0
@@ -115,7 +133,7 @@ function assortirAuFond(toile: HTMLCanvasElement, g: Gamme) {
     for (let x = 0; x < w; x += pas) {
       const o = (y * w + x) * 4
       const l = (0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2]) | 0
-      if (Math.abs(l - pic) <= 2) {
+      if (Math.abs(l - reference) <= 2) {
         sr += d[o]
         sg += d[o + 1]
         sb += d[o + 2]

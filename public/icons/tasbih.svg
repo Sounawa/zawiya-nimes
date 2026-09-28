@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+<defs>
+<radialGradient id="bead" cx="0.35" cy="0.3" r="0.78"><stop offset="0" stop-color="#BFF0D6"/><stop offset="0.38" stop-color="#4FB884"/><stop offset="1" stop-color="#14573C"/></radialGradient>
+<linearGradient id="imame" x1="56" y1="80" x2="72" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#F2D89A"/><stop offset="0.5" stop-color="#D4A94A"/><stop offset="1" stop-color="#9C7526"/></linearGradient>
+</defs>
+<g transform="translate(-1.95 -7.11) scale(1.0305)"><g>
+  <circle cx="64.0" cy="19.0" r="9" fill="url(#bead)"/>
+  <circle cx="79.5" cy="23.2" r="9" fill="url(#bead)"/>
+  <circle cx="90.8" cy="34.5" r="9" fill="url(#bead)"/>
+  <circle cx="95.0" cy="50.0" r="9" fill="url(#bead)"/>
+  <circle cx="90.8" cy="65.5" r="9" fill="url(#bead)"/>
+  <circle cx="37.2" cy="65.5" r="9" fill="url(#bead)"/>
+  <circle cx="33.0" cy="50.0" r="9" fill="url(#bead)"/>
+  <circle cx="37.2" cy="34.5" r="9" fill="url(#bead)"/>
+  <circle cx="48.5" cy="23.2" r="9" fill="url(#bead)"/>
+  <path d="M57 74 h14 a3.5 3.5 0 0 1 3.5 3.5 l-3.5 24 h-14 l-3.5 -24 a3.5 3.5 0 0 1 3.5 -3.5 Z" fill="url(#imame)"/>
+  <path d="M54 101 h20 l-4.5 8 h-11 Z" fill="#D4A94A"/>
+  <path d="M59 109 L53 124 M64 109 L64 126 M69 109 L75 124" stroke="#D4A94A" stroke-width="3.6" stroke-linecap="round" fill="none"/>
+</g></g>
+</svg>

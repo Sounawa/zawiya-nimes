@@ -296,8 +296,9 @@ function CarteContenu({
 }) {
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
+  const perms = useUser((s) => s.perms)
   /* Les contenus de la zawiya — édités par les frères de Nîmes */
-  const peutEditer = peut(ville, role, 'contenus.editer')
+  const peutEditer = peut(ville, role, 'contenus.editer', perms)
 
   return (
     <motion.article
@@ -422,8 +423,9 @@ export function SectionContenu({
   const { toast } = useToast()
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
+  const perms = useUser((s) => s.perms)
   /* Les contenus de la zawiya — édités par les frères de Nîmes */
-  const peutEditer = peut(ville, role, 'contenus.editer')
+  const peutEditer = peut(ville, role, 'contenus.editer', perms)
 
   const [dialogOuvert, setDialogOuvert] = useState(false)
   const [edition, setEdition] = useState<ContentItem | null>(null)

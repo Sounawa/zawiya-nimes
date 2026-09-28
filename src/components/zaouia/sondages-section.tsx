@@ -58,8 +58,9 @@ function CarteSondage({ poll }: { poll: Poll }) {
   const memberId = useUser((s) => s.memberId)
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
+  const perms = useUser((s) => s.perms)
   /* Les sondages de la zawiya — seuls les frères de Nîmes les créent */
-  const peutGerer = peut(ville, role, 'sondages.creer')
+  const peutGerer = peut(ville, role, 'sondages.creer', perms)
   const [voirVotants, setVoirVotants] = useState<string | null>(null)
   const [editionOuverte, setEditionOuverte] = useState(false)
 
@@ -330,7 +331,8 @@ export function SondagesDuIjtima() {
   const { data: polls, isLoading } = usePolls()
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
-  const peutCreer = peut(ville, role, 'sondages.creer')
+  const perms = useUser((s) => s.perms)
+  const peutCreer = peut(ville, role, 'sondages.creer', perms)
   const [ouvert, setOuvert] = useState(false)
 
   return (

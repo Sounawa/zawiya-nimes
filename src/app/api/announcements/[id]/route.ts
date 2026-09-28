@@ -5,7 +5,7 @@ import { exiger } from '@/lib/auth-serveur'
 
 type Params = { params: Promise<{ id: string }> }
 
-// PATCH /api/announcements/:id — modifier une annonce
+// PATCH /api/announcements/:id — modifier une annonce (et son audience)
 export async function PATCH(req: Request, { params }: Params) {
   try {
     const { refus } = await exiger(req, 'annonces.creer')
@@ -15,12 +15,16 @@ export async function PATCH(req: Request, { params }: Params) {
     if (!body.text || typeof body.text !== 'string') {
       return NextResponse.json({ error: 'Texte requis' }, { status: 400 })
     }
+    const villes = Array.isArray(body.cities)
+      ? body.cities.filter((c: unknown) => ['NIMES', 'AVIGNON', 'MONTPELLIER'].includes(c as string))
+      : null
     const annonce = await db.announcement.update({
       where: { id },
       data: {
         title: body.title || null,
         text: body.text,
         color: body.color === 'CORAIL' ? 'CORAIL' : 'VERT',
+        cities: villes && villes.length ? JSON.stringify(villes) : null,
         date: new Date(),
       },
     })

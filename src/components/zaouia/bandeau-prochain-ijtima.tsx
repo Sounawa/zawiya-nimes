@@ -46,8 +46,9 @@ export function BandeauProchainIjtima() {
   const masquer = useRappelBandeau((s) => s.masquer)
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
+  const perms = useUser((s) => s.perms)
   /* Le crayon du bandeau modifie la réunion — frères de Nîmes */
-  const peutRediger = peut(ville, role, 'reunions.rediger')
+  const peutRediger = peut(ville, role, 'reunions.rediger', perms)
   const { toast } = useToast()
 
   /* Dialogue de modification de la réunion rappelée */

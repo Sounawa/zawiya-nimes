@@ -1,21 +1,48 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
-import { exiger } from '@/lib/auth-serveur'
+import { exiger, membreAppeleur } from '@/lib/auth-serveur'
 
-// GET /api/announcements
-export async function GET() {
+const VILLES = ['NIMES', 'AVIGNON', 'MONTPELLIER']
+
+/** Nettoie la liste des zawiya destinataires — null = toutes */
+function lireDestinataires(cities: unknown): string | null {
+  if (!Array.isArray(cities) || !cities.length) return null
+  const propres = cities.filter((c) => VILLES.includes(c))
+  return propres.length ? JSON.stringify(propres) : null
+}
+
+/** Une annonce est-elle destinée à cette zawiya ? (null = toutes) */
+function destinataire(annonce: { cities: string | null }, ville: string): boolean {
+  if (!annonce.cities) return true
   try {
-    const announcements = await db.announcement.findMany({
+    const liste = JSON.parse(annonce.cities) as string[]
+    return Array.isArray(liste) && liste.includes(ville)
+  } catch {
+    return true
+  }
+}
+
+// GET /api/announcements — les frères ne voient que les annonces
+// destinées à leur zawiya (ou à toutes les zawiya).
+export async function GET(req: Request) {
+  try {
+    const membre = await membreAppeleur(req)
+    const annonces = await db.announcement.findMany({
       orderBy: { createdAt: 'desc' },
     })
-    return NextResponse.json(announcements)
+    const visibles =
+      membre && membre.status === 'ACTIVE'
+        ? annonces.filter((a) => destinataire(a, membre.city))
+        : annonces
+    return NextResponse.json(visibles)
   } catch {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 
-// POST /api/announcements — la voix de la zawiya : frères de Nîmes
+// POST /api/announcements — la voix de la zawiya, avec son audience :
+// toutes les zawiya, ou une sélection (ex. Nîmes + Montpellier).
 export async function POST(req: Request) {
   try {
     const { refus } = await exiger(req, 'annonces.creer')
@@ -27,6 +54,7 @@ export async function POST(req: Request) {
         title: body.title || null,
         text: body.text,
         color: body.color === 'CORAIL' ? 'CORAIL' : 'VERT',
+        cities: lireDestinataires(body.cities),
       },
     })
     await journaliser({

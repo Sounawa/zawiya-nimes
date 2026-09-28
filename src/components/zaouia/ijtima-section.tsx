@@ -22,8 +22,9 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
   const memberId = useUser((s) => s.memberId)
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
+  const perms = useUser((s) => s.perms)
   /* Rédiger l'ijtima' — la plume des frères de Nîmes */
-  const peutRediger = peut(ville, role, 'reunions.rediger')
+  const peutRediger = peut(ville, role, 'reunions.rediger', perms)
   const imprimer = usePrint((s) => s.imprimer)
   const qc = useQueryClient()
 

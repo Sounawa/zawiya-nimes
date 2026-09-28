@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import { useQueryClient } from '@tanstack/react-query'
+import { cn } from '@/lib/utils'
 import { useUser } from '@/lib/store'
 import { ThemeToggle } from '@/components/zaouia/theme-toggle'
-import type { Ville } from '@/lib/types'
+import { VILLE_LABEL, type Ville } from '@/lib/types'
 
 /** PRNG arithmétique pur (mulberry32) — strictement identique serveur/client,
  *  contrairement à Math.sin dont la précision varie selon le moteur JS. */
@@ -124,13 +126,36 @@ function TitreLettres() {
   )
 }
 
+/* ─── L'état d'un prénom à la porte ───
+   VERIFIE  : on ne sait pas encore (prénom trop court ou en vérification)
+   INCONNU  : personne ne porte ce prénom dans cette zawiya
+   SANS_CODE: connu sans code — le premier passage le pose
+   PRET     : connu avec code — il faut le taper
+   ATTENTE  : inscription faite, validation du référent en cours
+   BLOQUE   : accès révoqué par le référent */
+type EtatPorte = 'VERIFIE' | 'INCONNU' | 'SANS_CODE' | 'PRET' | 'ATTENTE' | 'BLOQUE'
+
+const ZAWIYAS: { id: Ville; label: string; sub: string }[] = [
+  { id: 'NIMES', label: 'Nîmes', sub: 'la maison-mère' },
+  { id: 'AVIGNON', label: 'Avignon', sub: 'le groupe frère' },
+  { id: 'MONTPELLIER', label: 'Montpellier', sub: 'le groupe frère' },
+]
+
 export function WelcomeGate() {
   const setName = useUser((s) => s.setName)
   const setVille = useUser((s) => s.setVille)
+  const setMember = useUser((s) => s.setMember)
+  const qc = useQueryClient()
+
   const [value, setValue] = useState('')
   const [ville, setVilleChoisie] = useState<Ville>(useUser.getState().ville ?? 'NIMES')
+  const [code, setCode] = useState('')
+  const [etat, setEtat] = useState<EtatPorte>('VERIFIE')
+  const [erreur, setErreur] = useState<string | null>(null)
+  const [envoi, setEnvoi] = useState(false)
   const [heure, setHeure] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const codeRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -141,13 +166,178 @@ export function WelcomeGate() {
     return () => clearInterval(t)
   }, [])
 
-  const entrer = () => {
+  /* L'état du prénom dans la zawiya choisie — debounced, discret */
+  useEffect(() => {
     const v = value.trim()
-    if (v) {
-      setVille(ville)
-      setName(v)
+    setErreur(null)
+    if (v.length < 2) {
+      setEtat('VERIFIE')
+      return
+    }
+    const t = setTimeout(() => {
+      fetch(`/api/auth/etat?name=${encodeURIComponent(v)}&ville=${ville}`)
+        .then((r) => r.json())
+        .then((d: { etat?: EtatPorte }) => setEtat(d?.etat ?? 'INCONNU'))
+        .catch(() => setEtat('VERIFIE'))
+    }, 350)
+    return () => clearTimeout(t)
+  }, [value, ville])
+
+  /* Vérifier à nouveau — après validation du référent */
+  const reverifier = () => {
+    const v = value.trim()
+    if (!v) return
+    fetch(`/api/auth/etat?name=${encodeURIComponent(v)}&ville=${ville}`)
+      .then((r) => r.json())
+      .then((d: { etat?: EtatPorte }) => setEtat(d?.etat ?? 'INCONNU'))
+      .catch(() => {})
+  }
+
+  const entrer = async () => {
+    const v = value.trim()
+    if (!v || envoi) return
+    setErreur(null)
+    setEnvoi(true)
+    try {
+      const r = await fetch('/api/auth/entrer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: v, ville, pin: code.trim() }),
+      })
+      const d = await r.json()
+      /* Entré — le frère passe la porte */
+      if (r.ok && d?.id) {
+        setVille(ville)
+        setName(v)
+        setMember(d.id, d.role, d.city, d.perms)
+        qc.invalidateQueries({ queryKey: ['members'] })
+        return
+      }
+      /* Inscription enregistrée, validation en cours */
+      if (d?.attente) {
+        setEtat('ATTENTE')
+        return
+      }
+      /* Code incorrect, accès révoqué, champs invalides… */
+      if (d?.mauvaisCode) setCode('')
+      setErreur(d?.error ?? 'Impossible d’entrer — réessaie.')
+    } catch {
+      setErreur('Erreur réseau — réessaie.')
+    } finally {
+      setEnvoi(false)
     }
   }
+
+  /* ─── Écran d'attente : la demande est envoyée, le référent valide ─── */
+  if (etat === 'ATTENTE') {
+    return (
+      <motion.div
+        className="fixed inset-0 z-50 flex min-h-screen flex-col items-center overflow-y-auto bg-background px-6 py-8"
+        exit={{ opacity: 0, scale: 1.04 }}
+        transition={{ duration: 0.6, ease: 'easeInOut' }}
+      >
+        <div className="pattern-arabesque absolute inset-0" aria-hidden />
+        <Etoiles />
+        <div
+          className="absolute inset-0"
+          aria-hidden
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 45% at 50% 38%, rgba(201,162,75,0.14), transparent 70%)',
+          }}
+        />
+        <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
+          {/* Sablier doré */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="halo-dore relative mb-7 grid h-28 w-28 place-items-center rounded-full bg-white shadow-[0_20px_60px_-15px_rgba(11,93,66,0.35)] ring-1 ring-primary/10"
+          >
+            <motion.svg
+              viewBox="0 0 24 24"
+              className="h-12 w-12 text-primary"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              animate={{ rotate: [0, 0, 180, 180, 360, 360] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+              aria-hidden
+            >
+              <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+            </motion.svg>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.6 }}
+            className="text-center font-display text-3xl font-medium text-encre"
+          >
+            Inscription enregistrée
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="mt-4 max-w-xs text-center font-display text-lg italic leading-relaxed text-muted-foreground"
+          >
+            Marhaban bik, Sidi {value.trim()}. Le référent de la zawiya de{' '}
+            {VILLE_LABEL[ville]} va ouvrir ton accès — repasse dans un instant.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.5 }}
+            className="mt-9 flex w-full flex-col gap-2"
+          >
+            <button
+              onClick={reverifier}
+              className="w-full rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-[0.15em] text-white shadow-md shadow-primary/25 transition-all hover:bg-emerald-deep active:scale-95"
+            >
+              J’ai été validé — actualiser
+            </button>
+            <button
+              onClick={() => {
+                setEtat('VERIFIE')
+                setValue('')
+                setCode('')
+              }}
+              className="w-full rounded-full py-3 text-xs font-semibold uppercase tracking-[0.2em] text-brouillard transition-colors hover:text-primary"
+            >
+              Changer de prénom
+            </button>
+          </motion.div>
+        </div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="relative z-10 mt-8 text-xs tracking-widest text-brouillard"
+        >
+          {heure ? `${heure} · ${VILLE_LABEL[ville]}` : VILLE_LABEL[ville]}
+        </motion.p>
+      </motion.div>
+    )
+  }
+
+  /* Libellé du champ code selon l'état du prénom */
+  const libelleCode =
+    etat === 'PRET'
+      ? 'Ton code personnel'
+      : etat === 'SANS_CODE'
+        ? 'Choisis ton code'
+        : 'Choisis un code'
+  const aideCode =
+    etat === 'PRET'
+      ? 'Les 4 à 6 chiffres choisis à ton premier passage.'
+      : '4 à 6 chiffres — ils ouvriront l’application à chaque visite.'
+  const peutSoumettre =
+    value.trim().length >= 1 && /^\d{4,6}$/.test(code.trim()) && etat !== 'BLOQUE'
 
   return (
     <motion.div
@@ -224,7 +414,7 @@ export function WelcomeGate() {
             >
               <Image
                 src="/tariqa.png"
-                alt="Sceau de la zawiya de Nîmes"
+                alt="Sceau de la zawiya"
                 fill
                 priority
                 sizes="192px"
@@ -259,7 +449,7 @@ export function WelcomeGate() {
             transition={{ delay: 1.25, duration: 0.9, ease: 'easeOut' }}
             className="mt-1 block font-display text-2xl font-medium text-primary sm:text-3xl"
           >
-            {ville === 'NIMES' ? 'NIMES' : 'MONTPELLIER'}
+            {(VILLE_LABEL[ville] ?? ville).toUpperCase()}
           </motion.span>
         </motion.h1>
 
@@ -297,12 +487,12 @@ export function WelcomeGate() {
           </cite>
         </motion.blockquote>
 
-        {/* ─── Choix de la zawiya ─── */}
+        {/* ─── Choix de la zawiya (3 groupes) ─── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-10 w-full"
+          className="mt-9 w-full"
         >
           <label
             className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
@@ -312,12 +502,9 @@ export function WelcomeGate() {
           <div
             role="radiogroup"
             aria-label="Ta zawiya"
-            className="relative mx-auto flex w-full items-stretch gap-1.5 rounded-full border border-primary/25 bg-card/90 p-1.5 shadow-inner shadow-primary/5 backdrop-blur"
+            className="relative mx-auto flex w-full items-stretch gap-1 rounded-2xl border border-primary/25 bg-card/90 p-1.5 shadow-inner shadow-primary/5 backdrop-blur sm:rounded-full"
           >
-            {([
-              { id: 'NIMES', label: 'Nîmes', sub: 'la maison-mère' },
-              { id: 'MONTPELLIER', label: 'Montpellier', sub: 'le groupe frère' },
-            ] as { id: Ville; label: string; sub: string }[]).map((z) => {
+            {ZAWIYAS.map((z) => {
               const actif = ville === z.id
               return (
                 <button
@@ -326,7 +513,7 @@ export function WelcomeGate() {
                   role="radio"
                   aria-checked={actif}
                   onClick={() => setVilleChoisie(z.id)}
-                  className="relative flex-1 rounded-full px-4 py-2.5 text-center transition-all duration-300"
+                  className="relative flex-1 rounded-full px-2 py-2.5 text-center transition-all duration-300 sm:px-3"
                 >
                   {actif && (
                     <motion.span
@@ -338,7 +525,7 @@ export function WelcomeGate() {
                   <span className="relative block">
                     <span
                       className={
-                        'block text-sm font-semibold ' +
+                        'block text-[13px] font-semibold sm:text-sm ' +
                         (actif ? 'text-white' : 'text-secondary-foreground')
                       }
                     >
@@ -346,7 +533,7 @@ export function WelcomeGate() {
                     </span>
                     <span
                       className={
-                        'block text-[9px] uppercase tracking-[0.2em] ' +
+                        'mt-0.5 block text-[8px] uppercase tracking-[0.15em] sm:text-[9px] sm:tracking-[0.2em] ' +
                         (actif ? 'text-white/70' : 'text-brouillard')
                       }
                     >
@@ -378,24 +565,105 @@ export function WelcomeGate() {
               ref={inputRef}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && entrer()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && /^\d{4,6}$/.test(code)) codeRef.current?.focus()
+              }}
               placeholder="Ton prénom…"
               autoComplete="given-name"
-              className="w-full rounded-full border border-primary/25 bg-card/90 py-4 pl-6 pr-24 text-center text-lg text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:text-brouillard/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="w-full rounded-full border border-primary/25 bg-card/90 py-4 pl-6 pr-6 text-center text-lg text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:text-brouillard/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
+            />
+            {etat === 'PRET' && (
+              <span
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-primary"
+                title="Prénom connu — le code personnel ouvre la porte"
+                aria-label="Prénom connu"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+                </svg>
+              </span>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ─── Code personnel ─── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
+          className="mt-4 w-full"
+        >
+          <label
+            htmlFor="code"
+            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
+          >
+            {libelleCode}
+          </label>
+          <div className="relative">
+            <input
+              id="code"
+              ref={codeRef}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onKeyDown={(e) => e.key === 'Enter' && peutSoumettre && entrer()}
+              placeholder="••••"
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              aria-label={libelleCode}
+              className={cn(
+                'w-full rounded-full border bg-card/90 py-3.5 text-center text-xl tracking-[0.6em] text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:tracking-[0.4em] placeholder:text-brouillard/50 focus:ring-4 focus:ring-primary/10',
+                erreur || etat === 'BLOQUE'
+                  ? 'border-accent focus:border-accent'
+                  : 'border-primary/25 focus:border-primary'
+              )}
             />
             <motion.button
               onClick={entrer}
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.94 }}
-              disabled={!value.trim()}
+              disabled={!peutSoumettre || envoi}
               aria-label="Entrer"
               className="absolute right-1.5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full text-primary-foreground transition-all disabled:border disabled:border-border disabled:bg-card/60 disabled:text-brouillard enabled:bg-primary enabled:shadow-md enabled:shadow-primary/25"
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
+              {envoi ? (
+                <motion.span
+                  className="block h-5 w-5 rounded-full border-2 border-white/40 border-t-white"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                  aria-hidden
+                />
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              )}
             </motion.button>
           </div>
+          <AnimatePresence>
+            {(erreur || etat === 'BLOQUE') && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                role="alert"
+                className="mt-2.5 text-center text-xs font-medium text-gold-vif"
+              >
+                {erreur ??
+                  'Cet accès a été révoqué — contacte le référent de la zaouia.'}
+              </motion.p>
+            )}
+            {!erreur && etat !== 'BLOQUE' && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="mt-2.5 text-center text-[11px] leading-relaxed text-brouillard"
+              >
+                {aideCode}
+              </motion.p>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* ─── Heure discrète ─── */}
@@ -403,9 +671,9 @@ export function WelcomeGate() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.1 }}
-          className="mt-8 text-xs tracking-widest text-brouillard"
+          className="mt-7 text-xs tracking-widest text-brouillard"
         >
-          {heure ? `${heure} · Nîmes` : 'Nîmes'}
+          {heure ? `${heure} · ${VILLE_LABEL[ville]}` : VILLE_LABEL[ville]}
         </motion.p>
       </div>
 

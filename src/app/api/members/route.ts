@@ -4,16 +4,31 @@ import { journaliser } from '@/lib/audit'
 import { membreAppeleur } from '@/lib/auth-serveur'
 import { peut } from '@/lib/permissions'
 
-const VILLES = ['NIMES', 'MONTPELLIER']
+const VILLES = ['NIMES', 'AVIGNON', 'MONTPELLIER']
+const NOM_VILLE: Record<string, string> = {
+  NIMES: 'Nîmes',
+  AVIGNON: 'Avignon',
+  MONTPELLIER: 'Montpellier',
+}
 
-// GET /api/members — liste des membres (avec zawiya, rôle et stats)
+/* Jamais le code personnel — même haché — dans les listes */
+const CHAMPS_MEMBRE = {
+  id: true,
+  name: true,
+  city: true,
+  role: true,
+  status: true,
+  perms: true,
+  createdAt: true,
+  _count: { select: { contributions: true, attendances: true } },
+} as const
+
+// GET /api/members — liste des membres (avec zawiya, rôle, statut et stats)
 export async function GET() {
   try {
     const members = await db.member.findMany({
-      orderBy: [{ city: 'asc' }, { name: 'asc' }],
-      include: {
-        _count: { select: { contributions: true, attendances: true } },
-      },
+      orderBy: [{ status: 'asc' }, { city: 'asc' }, { name: 'asc' }],
+      select: CHAMPS_MEMBRE,
     })
     return NextResponse.json(members)
   } catch {
@@ -21,23 +36,21 @@ export async function GET() {
   }
 }
 
-// POST /api/members — s'inscrire soi-même : prénom + zawiya → membre
-// Le rôle est toujours MEMBER : seuls le trésorier et le référent sont
-// nommés par le référent dans les réglages.
+// POST /api/members — le référent ajoute un frère à la main :
+// il entre directement (statut actif, sans code — il en posera un
+// à son premier passage). Le rôle explicite reste réservé au référent.
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     const name = (body.name || '').trim()
     if (!name) return NextResponse.json({ error: 'Prénom requis' }, { status: 400 })
-    const city = VILLES.includes(body.ville ?? body.city)
-      ? (body.ville ?? body.city)
-      : 'NIMES'
+    const city = VILLES.includes(body.ville ?? body.city) ? (body.ville ?? body.city) : 'NIMES'
 
     /* Un rôle explicite ne peut être posé que par le référent */
     let role = 'MEMBER'
     if (body.role && body.role !== 'MEMBER') {
       const appelant = await membreAppeleur(req)
-      if (!appelant || !peut(appelant.city, appelant.role, 'membres.gerer')) {
+      if (!appelant || !peut(appelant.city, appelant.role, 'membres.gerer', appelant.perms)) {
         return NextResponse.json(
           { error: 'Seul le référent de la zaouia peut attribuer un rôle.' },
           { status: 403 }
@@ -54,12 +67,13 @@ export async function POST(req: Request) {
       )
 
     const member = await db.member.create({
-      data: { name, city, role },
+      data: { name, city, role, status: 'ACTIVE' },
+      select: { id: true, name: true, city: true, role: true, status: true, perms: true, createdAt: true },
     })
     await journaliser({
       kind: 'MEMBER',
       action: 'CREATE',
-      label: `${member.name} a rejoint la zawiya de ${city === 'MONTPELLIER' ? 'Montpellier' : 'Nîmes'}`,
+      label: `${member.name} a rejoint la zawiya de ${NOM_VILLE[city] ?? city}`,
       actor: body.actor || member.name,
     })
     return NextResponse.json(member, { status: 201 })

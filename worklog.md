@@ -605,3 +605,24 @@ Stage Summary:
 - Deux erreurs d'hydratation latentes corrigées (frère connecté + visiteur d'une autre zawiya) via la garde useSyncExternalStore — la promesse de l'API : jamais d'écart d'hydratation, la porte règne pendant l'hydratation puis s'efface pour le frère déjà entré
 - Si l'utilisateur fournit UN AUTRE fichier de logo un jour (pièce jointe qui n'arrive pas jusqu'ici, c'est arrivé au round 1) : le remplacer = écraser public/tariqa.png et re-bumper la version SW
 - Restes : rien de bloquant — pistes : grossir encore la calligraphie de la bannière si demandé (l'app d'origine allait jusqu'à 85 px), option « plaques d'or » décoratives autour du cartouche, avis du frère sur la plaque d'ivoire nocturne
+
+---
+Task ID: round-20-porte-ouverte
+Agent: Z.ai Code (session principale)
+Task: « pour le moment je vais enlever la securité » — retirer zawiya/prénom/code de la porte, remplacer la citation Sidi Hamza par le bouton ENTRER
+
+Work Log:
+- DEMANDE : l'utilisateur veut tester librement — plus de ville, plus de prénom, plus de code à l'entrée ; la citation de Sidi Hamza cède sa place au bouton « Entrer »
+- welcome-gate.tsx RÉÉCRIT en PORTE OUVERTE : logo calligraphié grand format (jour : papier crème ; nuit : lune d'ivoire), titre ZAWIYA NÎMES, séparateur orné, GRAND BOUTON ENTRER (pilule émeraude, reflet doré qui balaie, halo qui respire, flèche qui glisse au survol, autoFocus — Entrée au clavier) ; tous les ornements andalous conservés (étoiles, particules, rayons tournants, anneaux, ornements d'angle, vague du bas)
+- ENTRÉE DIRECTE comme référent de Nîmes : hote = membre REFERENT actif de NIMES (fallback premier frère actif), résolu via useMembers (react-query, déjà en cache au rendu de la porte) → setVille/setName/setMember → l'effet de résolution de page.tsx synchronise ; plus aucun appel API à l'entrée
+- États de la porte : chargement (« Un instant… » + toupie, bouton désactivé), erreur réseau (« La porte ne répond pas »), cas extrême sans frère actif à Nîmes
+- ProfileDialog (« Je suis… ») SIMPLIFIÉ : le champ code a disparu — choisir un frère entre directement (store local), « Changer d'identité » ramène à la porte ; prénom inconnu = message simple, plus d'inscription en attente
+- Les routes /api/auth/entrer et /api/auth/etat restent INTACTES côté serveur : le jour où la sécurité revient, réinstaller les champs (version précédente dans git, commit 0e35ac0)
+- SW bumpé zawiya-v5 → v6 (purge du shell en cache)
+- QA agent-browser (contexte propre) : porte jour — calligraphie « grand et très visible », bouton ENTRER élégant, aucun champ ni citation ; clic ENTRER → app « Abde RÉFÉRENT » avec bannière, sections, FAB réunion ; reload → resté connecté, 0 erreur d'hydratation ; « Changer d'identité » → retour porte OK ; profil → switch vers Adam SANS code OK ; nuit — calligraphie sur ivoire « excellent contraste », bouton « premium » ; mobile 390px — scrollWidth 390/390 exact, logo centré, bouton entier ; dev.log : uniquement des 200 (les deux warnings Fast Refresh datent de l'HPR pendant l'édition) ; lint 0 erreur ; commit 3887f6a
+- NOTE : l'utilisateur mentionne un LIEN pour télécharger le logo (JPEG qui bug en pièce jointe) — ni le lien ni l'image (pasted_image_1790615893527.png) ne sont arrivés dans /upload/ ; le logo authentique tariqa.png (round 19) reste en place ; il faut lui demander de coller le lien en TEXTE dans le chat
+
+Stage Summary:
+- La porte est OUVERTE : un seul bouton ENTRER fait entrer comme référent de Nîmes (tous les droits) — parfait pour tester ; la sécurité (zawiya/prénom/code) reviendra en réinstallant les champs de l'ancienne porte (git 0e35ac0), les routes API n'ont pas bougé
+- Le changement d'identité dans « Je suis… » ne demande plus de code non plus
+- Restes/pistes : obtenir le LIEN du logo de l'utilisateur (coller en texte brut) ; remettre la sécurité quand il le demandera ; le bouton ENTRER pourrait affiner son libellé si souhaité

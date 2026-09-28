@@ -1085,7 +1085,7 @@ export function AdhkarSection() {
   return (
     <SectionShell
       titre="Adhkâr"
-      compteur="8 documents · phonétique & arabe"
+      compteur="10 documents · phonétique & arabe"
       id="adhkar"
       defaultOpen={false}
     >
@@ -1103,7 +1103,7 @@ export function AdhkarSection() {
           />
         </div>
 
-        {/* ─── Les huit documents — une pièce, une porte ───
+        {/* ─── Les dix documents — une pièce, une porte ───
             (le cahier de samâ' a sa propre section plus bas) */}
         <div className="space-y-2">
           {DOCUMENTS_ADHKAR.filter((d) => d.id !== 'sama').map((doc, i) => {
@@ -1111,6 +1111,10 @@ export function AdhkarSection() {
             const detail = arabe ? doc.detailAr : doc.detailFr
             const nbChapitres = doc.pratiques?.length ?? (arabe ? doc.ar?.length : doc.ph?.length) ?? 0
             const estPdf = Boolean(arabe ? doc.pdfAr : doc.pdfPh)
+            /* Le document n'existe pas dans la langue de lecture
+               (Mulk n'est qu'en arabe) — un badge l'annonce, et le
+               lecteur s'ouvrira dans la langue disponible. */
+            const arabeSeul = langue === 'ph' && !doc.ph && Boolean(doc.ar)
             return (
               <motion.button
                 key={doc.id}
@@ -1146,7 +1150,7 @@ export function AdhkarSection() {
                   </span>
                   {/* Détail + badge « morceaux » en flex : jamais collés,
                       jamais rognés — le bidi ne mélange plus les nombres */}
-                  {(detail || nbChapitres > 1) && (
+                  {(detail || nbChapitres > 1 || arabeSeul) && (
                   <span className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-brouillard">
                     {detail && (
                     <span className="min-w-0 flex-1 truncate">
@@ -1162,6 +1166,11 @@ export function AdhkarSection() {
                     {nbChapitres > 1 && (
                       <span className="shrink-0 rounded-full border border-border px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wider text-brouillard">
                         {nbChapitres} {doc.pratiques ? 'pratiques' : 'morceaux'}
+                      </span>
+                    )}
+                    {arabeSeul && (
+                      <span className="shrink-0 rounded-full border border-border px-1.5 py-0.5 font-arabic text-[11px] leading-none text-brouillard">
+                        عربي
                       </span>
                     )}
                   </span>
@@ -1200,7 +1209,16 @@ export function AdhkarSection() {
                la position de lecture restent exactement en place. */
             key={`${lecteur.doc.id}-${lecteur.chapitre ?? 'tête'}`}
             doc={lecteur.doc}
-            langue={langue}
+            /* Surat al-Mulk n'existe qu'en arabe (pas de phonétique
+               dans le cahier) : son lecteur s'ouvre dans la langue
+               disponible plutôt qu'en page vide. */
+            langue={
+              langue === 'ph' && !lecteur.doc.ph && lecteur.doc.ar
+                ? 'ar'
+                : langue === 'ar' && !lecteur.doc.ar && lecteur.doc.ph
+                  ? 'ph'
+                  : langue
+            }
             chapitreInitial={lecteur.chapitre}
             onFermer={() => setLecteur(null)}
           />

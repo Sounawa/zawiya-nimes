@@ -1,10 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════
    ADHKÂR DE LA ZAWIYA — la présentation des invocations du site
-   original : neuf documents, chacun ouvrable en phonétique ou en
-   arabe. Le cahier de wadhifa est organisé en PRATIQUES : chaque
-   pratique garde sa version phonétique (cahier imprimé) et/ou sa
-   version arabe (kitāb imprimé, Coran en riwāyat Warsh) — plus
-   aucun chapitre ne se perd en changeant de langue.
+   original : neuf pièces d'origine + Surat al-Fath (onglet 9) et
+   Surat al-Mulk (onglet 10), sections à part. Chaque pièce ouvre en
+   phonétique ou en arabe. Le cahier de wadhifa est organisé en
+   PRATIQUES : chaque pratique garde sa version phonétique (cahier
+   imprimé) et/ou sa version arabe (kitāb imprimé, Coran en riwāyat
+   Warsh) — plus aucun chapitre ne se perd en changeant de langue.
    ═══════════════════════════════════════════════════════════════════ */
 
 import { CHAPITRES_CAHIER } from './cahier'
@@ -221,7 +222,12 @@ function kitab(id: string): ChapitreLecture | undefined {
     : undefined
 }
 
-/* ═══ Les neuf documents, dans l'ordre du site original de la zawiya ═══ */
+/* ═══ Les documents de la zawiya ════════════════════════════════════
+   Les neuf pièces du site original (cahier de wadhifa, Yā-Sīn, Nasirî,
+   Wāqi‘a, Laṭîf, Zajr, samâ‘, Mashîshiyya, Dalâ’il) puis, en sections
+   à part demandées par la zawiya : Surat al-Fatḥ en 9ᵉ position et
+   Surat al-Mulk en 10ᵉ — le cahier de samâ‘ a sa propre section en bas
+   de page, il est filtré de la liste numérotée. */
 export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
   {
     id: 'kitab',
@@ -302,15 +308,6 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     ar: depuisKitab(['k01']),
   },
   {
-    id: 'fath',
-    titreFr: 'Surat al-Fath',
-    titreAr: 'سُورَةُ الفَتْح',
-    detailFr: "l'ouverture de la victoire — riwāyat Warsh",
-    detailAr: 'سورة الفتح',
-    ph: depuisCahier(['ch12-sratalfat']),
-    ar: depuisKitab(['k02']),
-  },
-  {
     id: 'nasiri',
     titreFr: 'Dua Nasiri-Al Munfarijah',
     titreAr: 'الدعاء الناصري وقصيدة المنفرجة',
@@ -384,6 +381,25 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     pdfAr: '/adhkar/dalail.pdf',
     ph: depuisCahier(['ch17-iftitassilkaiftitd', 'ch19-khatmdalilalkhayrt']),
     ar: depuisKitab(['k16']),
+  },
+  /* ── Les deux sections à part, demandées par la zawiya —
+     onglets 9 et 10, après les pièces du site original ── */
+  {
+    id: 'fath',
+    titreFr: 'Surat al-Fath',
+    titreAr: 'سُورَةُ الفَتْح',
+    detailFr: "l'ouverture de la victoire — riwāyat Warsh",
+    detailAr: 'سورة الفتح',
+    ph: depuisCahier(['ch12-sratalfat']),
+    ar: depuisKitab(['k02']),
+  },
+  {
+    id: 'mulk',
+    titreFr: 'Surat al-Mulk',
+    titreAr: 'سُورَةُ المُلْك',
+    detailFr: 'la royauté — riwāyat Warsh',
+    detailAr: 'سورة الملك',
+    ar: depuisKitab(['k04']),
   },
 ]
 

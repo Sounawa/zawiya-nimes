@@ -302,6 +302,15 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     ar: depuisKitab(['k01']),
   },
   {
+    id: 'fath',
+    titreFr: 'Surat al-Fath',
+    titreAr: 'سُورَةُ الفَتْح',
+    detailFr: "l'ouverture de la victoire — riwāyat Warsh",
+    detailAr: 'سورة الفتح',
+    ph: depuisCahier(['ch12-sratalfat']),
+    ar: depuisKitab(['k02']),
+  },
+  {
     id: 'nasiri',
     titreFr: 'Dua Nasiri-Al Munfarijah',
     titreAr: 'الدعاء الناصري وقصيدة المنفرجة',

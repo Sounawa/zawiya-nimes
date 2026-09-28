@@ -64,8 +64,8 @@ const POLICES_PH: { id: PoliceLecture; nom: string; css: string }[] = [
   { id: 'crimson', nom: 'Crimson', css: 'var(--font-livre3)' },
 ]
 const POLICES_AR: { id: PoliceArabe; nom: string; css: string }[] = [
-  { id: 'amiri', nom: 'أميري', css: 'var(--font-arabic)' },
-  { id: 'scheherazade', nom: 'شهرزاد', css: 'var(--font-arabic2)' },
+  { id: 'scheherazade', nom: 'شهرزاد', css: 'var(--font-arabic)' },
+  { id: 'amiri', nom: 'أميري', css: 'var(--font-arabic2)' },
   { id: 'naskh', nom: 'نسخ', css: 'var(--font-arabic3)' },
 ]
 const INTERLIGNES: { id: Interligne; nom: string; valeur: number }[] = [

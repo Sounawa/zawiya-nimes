@@ -18,17 +18,19 @@ const sans = Outfit({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const arabic = Amiri({
+/* Polices du kitāb arabe — texte sacré et du'ā'
+   Scheherazade règne partout : toutes les écritures arabes du site
+   la portent (le frère l'a demandé). Amiri reste en réserve. */
+const scheherazade = Scheherazade_New({
   variable: "--font-arabic",
   subsets: ["arabic"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
-/* Polices du kitāb arabe — texte sacré et du'ā' */
-const scheherazade = Scheherazade_New({
+const arabic = Amiri({
   variable: "--font-arabic2",
   subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "700"],
 });
 
 const naskh = Noto_Naskh_Arabic({

@@ -132,8 +132,8 @@ function FeuilleKitab({ chapitreId }: { chapitreId: string }) {
   if (!chapitre) return null
 
   const policesImpression: Record<string, string> = {
-    amiri: 'var(--font-arabic), serif',
-    scheherazade: 'var(--font-arabic2), serif',
+    scheherazade: 'var(--font-arabic), serif',
+    amiri: 'var(--font-arabic2), serif',
     naskh: 'var(--font-arabic3), serif',
   }
 

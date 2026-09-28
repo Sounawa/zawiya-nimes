@@ -6,7 +6,7 @@ import { useLecture, usePrint } from '@/lib/store'
 import { dateLongue, euros } from '@/lib/format'
 import { parseProgram } from '@/lib/types'
 import { CHAPITRES_CAHIER } from '@/data/cahier'
-import { CHAPITRES_ARABES } from './kitab-section'
+import { CHAPITRES_ARABES } from '@/data/adhkar-docs'
 
 /* ═══════════════════════════════════════════════════════════════════
    Zone d'impression — cachée à l'écran, seule visible à l'impression.

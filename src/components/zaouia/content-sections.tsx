@@ -522,13 +522,12 @@ export function SectionContenu({
 }
 
 /* ─── Les sections de contenus spirituels ───
-   (les adhkâr et le Coran Warsh ont leurs propres lecteurs —
-   cf. adhkar-section.tsx / quran-section.tsx) */
+   (les adhkâr et le cahier de wadhifa ont leur propre lecteur —
+   cf. adhkar-section.tsx) */
 export function ContentSections() {
   return (
     <>
       <SectionContenu titre="Samâ'" id="sama" section="SAMA" libelle="samâ'" />
-      <SectionContenu titre="Durûs" id="durus" section="DURUS" libelle="dars" />
     </>
   )
 }

@@ -1,0 +1,954 @@
+     1→'use client'
+     2→
+     3→import { create } from 'zustand'
+     4→import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+     5→import { AnimatePresence, motion } from 'framer-motion'
+     6→import {
+     7→  BookOpen,
+     8→  ChevronLeft,
+     9→  ChevronRight,
+    10→  FileDown,
+    11→  List,
+    12→  Minus,
+    13→  Plus,
+    14→  Printer,
+    15→  Type,
+    16→  X,
+    17→} from 'lucide-react'
+    18→import {
+    19→  DOCUMENTS_ADHKAR,
+    20→  chapitresDuDoc,
+    21→  pdfDuDoc,
+    22→  type ChapitreLecture,
+    23→  type DocAdhkar,
+    24→  type LangueAdhkar,
+    25→} from '@/data/adhkar-docs'
+    26→import {
+    27→  useLecture,
+    28→  usePrint,
+    29→  type PoliceArabe,
+    30→  type PoliceLecture,
+    31→  type Interligne,
+    32→  type ThemeLecture,
+    33→  type AccentLecture,
+    34→} from '@/lib/store'
+    35→import { SectionShell } from './ijtima-section'
+    36→import { LecteurPdf } from './lecteur-pdf'
+    37→import { cn } from '@/lib/utils'
+    38→
+    39→/* ═══════════════════════════════════════════════════════════════════
+    40→   ADHKÂR — la présentation du site original : une liste de neuf
+    41→   documents, lisible en phonétique ou en arabe. Chaque pièce
+    42→   s'ouvre dans un lecteur plein écran qui garde l'écran allumé
+    43→   pendant la lecture, avec police, taille et couleurs réglables.
+    44→   ═══════════════════════════════════════════════════════════════════ */
+    45→
+    46→/* ─── Demande externe (recherche globale ⌘K) ─── */
+    47→interface DemandeLectureState {
+    48→  demande: { docId: string; chapitreId?: string; langue?: LangueAdhkar } | null
+    49→  demander: (docId: string, chapitreId?: string, langue?: LangueAdhkar) => void
+    50→  consommer: () => void
+    51→}
+    52→export const useDemandeLecture = create<DemandeLectureState>((set) => ({
+    53→  demande: null,
+    54→  demander: (docId, chapitreId, langue) => set({ demande: { docId, chapitreId, langue } }),
+    55→  consommer: () => set({ demande: null }),
+    56→}))
+    57→
+    58→/* ─── Les réglages de lecture (listes partagées cahier / kitāb) ─── */
+    59→const POLICES_PH: { id: PoliceLecture; nom: string; css: string }[] = [
+    60→  { id: 'cormorant', nom: 'Cormorant', css: 'var(--font-display)' },
+    61→  { id: 'garamond', nom: 'EB Garamond', css: 'var(--font-livre2)' },
+    62→  { id: 'crimson', nom: 'Crimson', css: 'var(--font-livre3)' },
+    63→]
+    64→const POLICES_AR: { id: PoliceArabe; nom: string; css: string }[] = [
+    65→  { id: 'amiri', nom: 'أميري', css: 'var(--font-arabic)' },
+    66→  { id: 'scheherazade', nom: 'شهرزاد', css: 'var(--font-arabic2)' },
+    67→  { id: 'naskh', nom: 'نسخ', css: 'var(--font-arabic3)' },
+    68→]
+    69→const INTERLIGNES: { id: Interligne; nom: string; valeur: number }[] = [
+    70→  { id: 'compact', nom: 'Compact', valeur: 1.6 },
+    71→  { id: 'normal', nom: 'Normal', valeur: 1.9 },
+    72→  { id: 'aere', nom: 'Aéré', valeur: 2.3 },
+    73→]
+    74→const THEMES: { id: ThemeLecture; nom: string; fond: string; texte: string; cadre: string }[] = [
+    75→  { id: 'ivoire', nom: 'Ivoire', fond: 'bg-[#fbf8f1]', texte: 'text-[#2d2a24]', cadre: 'border-[#e4dcc8]' },
+    76→  { id: 'parchemin', nom: 'Parchemin', fond: 'bg-[#f3e9d5]', texte: 'text-[#43382a]', cadre: 'border-[#d8c8a4]' },
+    77→  { id: 'nuit', nom: 'Nuit', fond: 'bg-[#14201a]', texte: 'text-[#d7e4d9]', cadre: 'border-[#2c4a3a]' },
+    78→]
+    79→const ACCENTS: { id: AccentLecture; nom: string; couleur: string }[] = [
+    80→  { id: 'or', nom: 'Or', couleur: '#b8923a' },
+    81→  { id: 'vert', nom: 'Vert', couleur: '#0b5d42' },
+    82→  { id: 'brun', nom: 'Brun', couleur: '#8a5a2e' },
+    83→]
+    84→
+    85→/* ─── Une ligne du texte, répétitions « x 100 » / « × ١٠٠ » en badge ─── */
+    86→function LigneInvocation({ ligne, accent }: { ligne: string; accent: string }) {
+    87→  const m = ligne.match(/^(.*?)(\s*[×x]\s*[٠-٩\dHh '’]+)$/u)
+    88→  if (m && m[2].trim()) {
+    89→    return (
+    90→      <span className="block">
+    91→        {m[1]}
+    92→        <span
+    93→          className="mx-1 inline-block rounded-md px-2 py-0.5 align-middle text-[0.72em] font-bold tracking-wide"
+    94→          style={{ color: accent, backgroundColor: `${accent}18` }}
+    95→        >
+    96→          {m[2].trim()}
+    97→        </span>
+    98→      </span>
+    99→    )
+   100→  }
+   101→  return <span className="block">{ligne || '\u00A0'}</span>
+   102→}
+   103→
+   104→/* ═══ LE LECTEUR PLEIN ÉCRAN ═══════════════════════════════════════ */
+   105→
+   106→interface LecteurProps {
+   107→  doc: DocAdhkar
+   108→  langue: LangueAdhkar
+   109→  chapitreInitial?: string
+   110→  onFermer: () => void
+   111→}
+   112→
+   113→function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps) {
+   114→  const l = useLecture()
+   115→  const imprimer = usePrint((s) => s.imprimer)
+   116→
+   117→  /* Le diwân de samâ‘ (398 chants) n'entre pas dans le fil principal :
+   118→     il se charge paresseusement à l'ouverture du document. */
+   119→  const estSama = doc.id === 'sama' && langue === 'ph'
+   120→  const [samaTexte, setSamaTexte] = useState<ChapitreLecture[] | null>(null)
+   121→  useEffect(() => {
+   122→    if (doc.id !== 'sama' || langue !== 'ph') return
+   123→    let annule = false
+   124→    import('@/data/sama-chants').then((m) => {
+   125→      if (!annule) setSamaTexte(m.CHAPITRES_SAMA)
+   126→    })
+   127→    return () => {
+   128→      annule = true
+   129→    }
+   130→  }, [doc.id, langue])
+   131→
+   132→  const chapitres = useMemo(
+   133→    () => (doc.id === 'sama' && langue === 'ph' ? samaTexte ?? [] : chapitresDuDoc(doc, langue)),
+   134→    [doc, langue, samaTexte]
+   135→  )
+   136→  const pdf = pdfDuDoc(doc, langue)
+   137→  const conteneurRef = useRef<HTMLDivElement | null>(null)
+   138→  const cartesRef = useRef<(HTMLElement | null)[]>([])
+   139→
+   140→  const [indexActif, setIndexActif] = useState(() => {
+   141→    const i = chapitreInitial ? chapitres.findIndex((c) => c.id === chapitreInitial) : -1
+   142→    return i >= 0 ? i : 0
+   143→  })
+   144→  const [reglagesOuverts, setReglagesOuverts] = useState(false)
+   145→  const [sommaireOuvert, setSommaireOuvert] = useState(false)
+   146→  const [progression, setProgression] = useState(0)
+   147→  const [scrolle, setScrolle] = useState(false)
+   148→
+   149→  const arabe = langue === 'ar'
+   150→  /* Vue du lecteur : le TEXTE RÉÉCRIT d'abord — encre sur porcelaine,
+   151→     polices et couleurs réglables, évolutif. La page numérisée reste
+   152→     disponible pour lire le livre imprimé à l'identique. La recherche ⌘K
+   153→     ouvre directement le texte au chapitre demandé. */
+   154→  const aLesDeux = Boolean(pdf) && chapitres.length > 0
+   155→  const [vue, setVue] = useState<'doc' | 'texte'>(
+   156→    chapitreInitial || !pdf || chapitres.length > 0 || estSama ? 'texte' : 'doc'
+   157→  )
+   158→  const vueDoc = vue === 'doc' && Boolean(pdf)
+   159→  const theme = THEMES.find((t) => t.id === l.theme) ?? THEMES[0]
+   160→  const accent = ACCENTS.find((a) => a.id === l.accent) ?? ACCENTS[0]
+   161→  const police = arabe
+   162→    ? POLICES_AR.find((p) => p.id === l.policeArabe) ?? POLICES_AR[0]
+   163→    : POLICES_PH.find((p) => p.id === l.police) ?? POLICES_PH[0]
+   164→  const taille = arabe ? l.tailleArabe : l.taille
+   165→
+   166→  /* ─── L'écran ne s'éteint pas pendant qu'on lit ───
+   167→     Un frère qui récite ne touche pas son téléphone pendant de
+   168→     longues minutes. Le verrou d'écran est demandé à l'ouverture,
+   169→     rendu si la page passe à l'arrière-plan, et relâché après un
+   170→     quart d'heure sans le moindre geste — un téléphone oublié
+   171→     écran allumé chauffe. Tout échec est muet. */
+   172→  useEffect(() => {
+   173→    if (!('wakeLock' in navigator)) return
+   174→    let verrou: WakeLockSentinel | null = null
+   175→    let minuteur: number | undefined
+   176→    const REPOS = 15 * 60 * 1000
+   177→
+   178→    const demander = async () => {
+   179→      try {
+   180→        verrou = await navigator.wakeLock.request('screen')
+   181→      } catch {
+   182→        /* appareil qui ne sait pas faire : on lit comme avant */
+   183→      }
+   184→    }
+   185→    const relacher = () => {
+   186→      verrou?.release().catch(() => undefined)
+   187→      verrou = null
+   188→    }
+   189→    const toucher = () => {
+   190→      window.clearTimeout(minuteur)
+   191→      minuteur = window.setTimeout(relacher, REPOS)
+   192→    }
+   193→    const surVisibilite = () => {
+   194→      if (document.visibilityState === 'visible') {
+   195→        demander()
+   196→        toucher()
+   197→      } else {
+   198→        relacher()
+   199→      }
+   200→    }
+   201→    demander()
+   202→    toucher()
+   203→    document.addEventListener('visibilitychange', surVisibilite)
+   204→    window.addEventListener('pointerdown', toucher, { passive: true })
+   205→    return () => {
+   206→      relacher()
+   207→      window.clearTimeout(minuteur)
+   208→      document.removeEventListener('visibilitychange', surVisibilite)
+   209→      window.removeEventListener('pointerdown', toucher)
+   210→    }
+   211→  }, [])
+   212→
+   213→  /* ─── Le corps de la page ne défile pas derrière le lecteur ─── */
+   214→  useEffect(() => {
+   215→    const deplacement = window.scrollY
+   216→    document.body.style.overflow = 'hidden'
+   217→    return () => {
+   218→      document.body.style.overflow = ''
+   219→      window.scrollTo(0, deplacement)
+   220→    }
+   221→  }, [])
+   222→
+   223→  /* ─── Échap ferme le lecteur ─── */
+   224→  useEffect(() => {
+   225→    const surTouche = (e: KeyboardEvent) => {
+   226→      if (e.key === 'Escape') onFermer()
+   227→    }
+   228→    window.addEventListener('keydown', surTouche)
+   229→    return () => window.removeEventListener('keydown', surTouche)
+   230→  }, [onFermer])
+   231→
+   232→  /* ─── Progression de la lecture + affichage du bouton revenir ─── */
+   233→  useEffect(() => {
+   234→    const el = conteneurRef.current
+   235→    if (!el) return
+   236→    const surScroll = () => {
+   237→      const reste = el.scrollHeight - el.clientHeight
+   238→      setProgression(reste > 0 ? Math.min(1, el.scrollTop / reste) : 0)
+   239→      setScrolle(el.scrollTop > 260)
+   240→    }
+   241→    el.addEventListener('scroll', surScroll, { passive: true })
+   242→    surScroll()
+   243→    return () => el.removeEventListener('scroll', surScroll)
+   244→  }, [vueDoc])
+   245→
+   246→  /* ─── Positionner au chapitre demandé à l'ouverture ───
+   247→     (le diwân arrive un instant après : on replace alors) */
+   248→  useEffect(() => {
+   249→    const el = conteneurRef.current
+   250→    if (!el) return
+   251→    if (chapitreInitial) {
+   252→      const i = chapitres.findIndex((c) => c.id === chapitreInitial)
+   253→      const cible = i >= 0 ? cartesRef.current[i] : null
+   254→      if (cible) {
+   255→        el.scrollTo({ top: cible.offsetTop - el.offsetTop - 8 })
+   256→        return
+   257→      }
+   258→    }
+   259→    el.scrollTo({ top: 0 })
+   260→  }, [chapitreInitial, langue, doc.id, chapitres.length])
+   261→
+   262→  const allerAuChapitre = useCallback(
+   263→    (i: number) => {
+   264→      const cible = cartesRef.current[i]
+   265→      if (cible) {
+   266→        conteneurRef.current?.scrollTo({
+   267→          top: cible.offsetTop - (conteneurRef.current?.offsetTop ?? 0) - 8,
+   268→          behavior: 'smooth',
+   269→        })
+   270→      }
+   271→    },
+   272→    []
+   273→  )
+   274→
+   275→  /* ─── Le chapitre visible suit le défilement ─── */
+   276→  useEffect(() => {
+   277→    if (chapitres.length < 2) return
+   278→    const el = conteneurRef.current
+   279→    if (!el) return
+   280→    const observateur = new IntersectionObserver(
+   281→      (entrees) => {
+   282→        for (const e of entrees) {
+   283→          if (e.isIntersecting) {
+   284→            const i = Number((e.target as HTMLElement).dataset.i)
+   285→            if (!Number.isNaN(i)) setIndexActif(i)
+   286→          }
+   287→        }
+   288→      },
+   289→      { root: el, rootMargin: '-15% 0px -60% 0px', threshold: 0 }
+   290→    )
+   291→    cartesRef.current.forEach((c) => c && observateur.observe(c))
+   292→    return () => observateur.disconnect()
+   293→  }, [chapitres.length, langue, doc.id])
+   294→
+   295→  const titre = arabe ? doc.titreAr : doc.titreFr
+   296→
+   297→  return (
+   298→    <motion.div
+   299→      initial={{ opacity: 0 }}
+   300→      animate={{ opacity: 1 }}
+   301→      exit={{ opacity: 0 }}
+   302→      transition={{ duration: 0.22 }}
+   303→      /* mb-0 : parade contre les space-y-* d'un ancêtre (Tailwind v4
+   304→          pose margin-block-end sur :not(:last-child)) — un lecteur plein
+   305→          écran ne doit jamais recevoir de marge, où qu'il vive */
+   306→      className="fixed inset-0 z-[90] mb-0 flex flex-col bg-background grain-papier"
+   307→      role="dialog"
+   308→      aria-modal="true"
+   309→      aria-label={`Lecteur — ${titre}`}
+   310→    >
+   311→      {/* ─── La barre du haut : titre, sommaire, réglages, fermeture ─── */}
+   312→      <header className="relative z-10 flex-none border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90">
+   313→        <div
+   314→          className="flex items-center gap-1 px-2.5"
+   315→          style={{ paddingTop: 'calc(10px + env(safe-area-inset-top))', paddingBottom: 10 }}
+   316→        >
+   317→          {/* Réglages de lecture — le texte seulement */}
+   318→          {!vueDoc && (
+   319→            <button
+   320→              type="button"
+   321→              onClick={() => {
+   322→                setReglagesOuverts((o) => !o)
+   323→                setSommaireOuvert(false)
+   324→              }}
+   325→              aria-expanded={reglagesOuverts}
+   326→              aria-label="Réglages de lecture"
+   327→              className={cn(
+   328→                'grid h-9 w-9 place-items-center rounded-full transition-colors duration-200',
+   329→                reglagesOuverts
+   330→                  ? 'bg-muted text-foreground'
+   331→                  : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
+   332→              )}
+   333→            >
+   334→              <Type className="h-4.5 w-4.5" />
+   335→            </button>
+   336→          )}
+   337→
+   338→          {/* Sommaire des chapitres */}
+   339→          {!vueDoc && chapitres.length > 1 && (
+   340→            <button
+   341→              type="button"
+   342→              onClick={() => {
+   343→                setSommaireOuvert((o) => !o)
+   344→                setReglagesOuverts(false)
+   345→              }}
+   346→              aria-expanded={sommaireOuvert}
+   347→              aria-label="Sommaire du document"
+   348→              className={cn(
+   349→                'grid h-9 w-9 place-items-center rounded-full transition-colors duration-200',
+   350→                sommaireOuvert
+   351→                  ? 'bg-muted text-foreground'
+   352→                  : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
+   353→              )}
+   354→            >
+   355→              <List className="h-4.5 w-4.5" />
+   356→            </button>
+   357→          )}
+   358→
+   359→          {/* Le titre, centré — le nom de la pièce */}
+   360→          <h2
+   361→            className={cn(
+   362→              'min-w-0 flex-1 truncate text-center text-[16px] font-medium text-encre',
+   363→              arabe && 'font-arabic text-[19px]'
+   364→            )}
+   365→            dir={arabe ? 'rtl' : undefined}
+   366→            title={titre}
+   367→          >
+   368→            {titre}
+   369→          </h2>
+   370→
+   371→          {/* Fermeture */}
+   372→          <button
+   373→            type="button"
+   374→            onClick={onFermer}
+   375→            aria-label="Fermer le lecteur"
+   376→            className="grid h-9 w-9 place-items-center rounded-full border border-border text-brouillard transition-colors duration-200 hover:bg-muted/60 hover:text-foreground active:bg-muted"
+   377→          >
+   378→            <X className="h-4.5 w-4.5" />
+   379→          </button>
+   380→        </div>
+   381→
+   382→        {/* Filet de progression de la lecture */}
+   383→        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-border" aria-hidden>
+   384→          <div
+   385→            className="h-full bg-primary transition-[width] duration-150"
+   386→            style={{ width: `${Math.round(progression * 100)}%` }}
+   387→          />
+   388→        </div>
+   389→
+   390→        {/* Bascule Texte / Numérisé — le texte réécrit d'abord (encre
+   391→            sur porcelaine), ou le livre imprimé à l'identique */}
+   392→        {aLesDeux && (
+   393→          <div className="flex justify-center gap-1.5 border-t border-border py-1.5">
+   394→            <button
+   395→              type="button"
+   396→              onClick={() => {
+   397→                setVue('texte')
+   398→                setReglagesOuverts(false)
+   399→                setSommaireOuvert(false)
+   400→              }}
+   401→              aria-pressed={!vueDoc}
+   402→              className={cn(
+   403→                'flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors duration-200 active:scale-[0.98]',
+   404→                !vueDoc
+   405→                  ? 'bg-primary text-primary-foreground'
+   406→                  : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
+   407→              )}
+   408→            >
+   409→              <Type className="h-3.5 w-3.5" /> Texte
+   410→            </button>
+   411→            <button
+   412→              type="button"
+   413→              onClick={() => {
+   414→                setVue('doc')
+   415→                setReglagesOuverts(false)
+   416→                setSommaireOuvert(false)
+   417→              }}
+   418→              aria-pressed={vueDoc}
+   419→              className={cn(
+   420→                'flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors duration-200 active:scale-[0.98]',
+   421→                vueDoc
+   422→                  ? 'bg-primary text-primary-foreground'
+   423→                  : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
+   424→              )}
+   425→            >
+   426→              <BookOpen className="h-3.5 w-3.5" /> Numérisé
+   427→            </button>
+   428→          </div>
+   429→        )}
+   430→
+   431→        {/* ─── Panneau des réglages de lecture ─── */}
+   432→        <AnimatePresence>
+   433→          {reglagesOuverts && (
+   434→            <motion.div
+   435→              initial={{ height: 0, opacity: 0 }}
+   436→              animate={{ height: 'auto', opacity: 1 }}
+   437→              exit={{ height: 0, opacity: 0 }}
+   438→              transition={{ duration: 0.22 }}
+   439→              className="overflow-hidden"
+   440→            >
+   441→              <div className="space-y-3 border-t border-border bg-card px-4 py-4">
+   442→                {/* Police */}
+   443→                <div className="flex items-center justify-between gap-3">
+   444→                  <span className="text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard">Police</span>
+   445→                  <div className="flex gap-1">
+   446→                    {(arabe ? POLICES_AR : POLICES_PH).map((p) => (
+   447→                      <button
+   448→                        key={p.id}
+   449→                        type="button"
+   450→                        onClick={() =>
+   451→                          l.regler(arabe ? { policeArabe: p.id as PoliceArabe } : { police: p.id as PoliceLecture })
+   452→                        }
+   453→                        aria-pressed={(arabe ? l.policeArabe : l.police) === p.id}
+   454→                        className={cn(
+   455→                          'rounded-lg border px-3 py-1.5 transition-colors duration-200',
+   456→                          arabe ? 'font-arabic text-base' : 'text-sm',
+   457→                          (arabe ? l.policeArabe : l.police) === p.id
+   458→                            ? 'border-primary/30 bg-primary/10 font-medium text-primary'
+   459→                            : 'border-transparent text-brouillard hover:bg-muted/60'
+   460→                        )}
+   461→                        style={{ fontFamily: p.css }}
+   462→                      >
+   463→                        {p.nom}
+   464→                      </button>
+   465→                    ))}
+   466→                  </div>
+   467→                </div>
+   468→
+   469→                {/* Taille */}
+   470→                <div className="flex items-center justify-between gap-3">
+   471→                  <span className="text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard">Taille</span>
+   472→                  <div className="flex items-center gap-1.5">
+   473→                    <button
+   474→                      type="button"
+   475→                      onClick={() =>
+   476→                        l.regler(arabe ? { tailleArabe: Math.max(17, l.tailleArabe - 1) } : { taille: Math.max(14, l.taille - 1) })
+   477→                      }
+   478→                      aria-label="Réduire la taille du texte"
+   479→                      className="grid h-8 w-8 place-items-center rounded-lg border border-border text-brouillard transition-colors duration-200 hover:bg-muted/60 hover:text-foreground"
+   480→                    >
+   481→                      <Minus className="h-4 w-4" />
+   482→                    </button>
+   483→                    <span className="w-10 text-center text-xs font-semibold text-secondary-foreground">{taille} px</span>
+   484→                    <button
+   485→                      type="button"
+   486→                      onClick={() =>
+   487→                        l.regler(arabe ? { tailleArabe: Math.min(42, l.tailleArabe + 1) } : { taille: Math.min(30, l.taille + 1) })
+   488→                      }
+   489→                      aria-label="Agrandir la taille du texte"
+   490→                      className="grid h-8 w-8 place-items-center rounded-lg border border-border text-brouillard transition-colors duration-200 hover:bg-muted/60 hover:text-foreground"
+   491→                    >
+   492→                      <Plus className="h-4 w-4" />
+   493→                    </button>
+   494→                  </div>
+   495→                </div>
+   496→
+   497→                {/* Interligne */}
+   498→                <div className="flex items-center justify-between gap-3">
+   499→                  <span className="text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard">Interligne</span>
+   500→                  <div className="flex gap-1">
+   501→                    {INTERLIGNES.map((i) => (
+   502→                      <button
+   503→                        key={i.id}
+   504→                        type="button"
+   505→                        onClick={() => l.regler({ interligne: i.id })}
+   506→                        aria-pressed={l.interligne === i.id}
+   507→                        className={cn(
+   508→                          'rounded-lg border px-3 py-1.5 text-xs transition-colors duration-200',
+   509→                          l.interligne === i.id
+   510→                            ? 'border-primary/30 bg-primary/10 font-medium text-primary'
+   511→                            : 'border-transparent text-brouillard hover:bg-muted/60'
+   512→                        )}
+   513→                      >
+   514→                        {i.nom}
+   515→                      </button>
+   516→                    ))}
+   517→                  </div>
+   518→                </div>
+   519→
+   520→                <div className="flex items-center justify-between gap-3">
+   521→                  {/* Fond de lecture */}
+   522→                  <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard">Fond</span>
+   523→                  <div className="flex gap-1.5">
+   524→                    {THEMES.map((t) => (
+   525→                      <button
+   526→                        key={t.id}
+   527→                        type="button"
+   528→                        onClick={() => l.regler({ theme: t.id })}
+   529→                        aria-pressed={l.theme === t.id}
+   530→                        aria-label={`Fond ${t.nom}`}
+   531→                        className={cn(
+   532→                          'h-7 w-7 rounded-lg border transition-transform hover:scale-105',
+   533→                          l.theme === t.id && 'ring-2 ring-primary ring-offset-1',
+   534→                          t.fond,
+   535→                          t.cadre
+   536→                        )}
+   537→                      />
+   538→                    ))}
+   539→                  </div>
+   540→                </div>
+   541→
+   542→                <div className="flex items-center justify-between gap-3">
+   543→                  {/* Accent */}
+   544→                  <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard">Accent</span>
+   545→                  <div className="flex gap-1.5">
+   546→                    {ACCENTS.map((a) => (
+   547→                      <button
+   548→                        key={a.id}
+   549→                        type="button"
+   550→                        onClick={() => l.regler({ accent: a.id })}
+   551→                        aria-pressed={l.accent === a.id}
+   552→                        aria-label={`Accent ${a.nom}`}
+   553→                        className={cn(
+   554→                          'h-7 w-7 rounded-lg border border-black/10 transition-transform hover:scale-105',
+   555→                          l.accent === a.id && 'ring-2 ring-primary ring-offset-1'
+   556→                        )}
+   557→                        style={{ backgroundColor: a.couleur }}
+   558→                      />
+   559→                    ))}
+   560→                  </div>
+   561→                </div>
+   562→              </div>
+   563→            </motion.div>
+   564→          )}
+   565→        </AnimatePresence>
+   566→
+   567→        {/* ─── Sommaire des chapitres ─── */}
+   568→        <AnimatePresence>
+   569→          {sommaireOuvert && chapitres.length > 1 && (
+   570→            <motion.nav
+   571→              initial={{ height: 0, opacity: 0 }}
+   572→              animate={{ height: 'auto', opacity: 1 }}
+   573→              exit={{ height: 0, opacity: 0 }}
+   574→              transition={{ duration: 0.22 }}
+   575→              className="overflow-hidden"
+   576→              aria-label="Sommaire"
+   577→            >
+   578→              <div
+   579→                className={cn(
+   580→                  'max-h-[45vh] space-y-1 overflow-y-auto border-t border-border bg-card p-2 scrollbar-mince'
+   581→                )}
+   582→              >
+   583→                {chapitres.map((c, i) => (
+   584→                  <button
+   585→                    key={c.id}
+   586→                    type="button"
+   587→                    onClick={() => {
+   588→                      allerAuChapitre(i)
+   589→                      setSommaireOuvert(false)
+   590→                    }}
+   591→                    className={cn(
+   592→                      'flex w-full items-baseline justify-between gap-3 rounded-xl px-3 py-2 text-left transition-colors duration-200',
+   593→                      i === indexActif ? 'bg-primary/10 text-primary' : 'text-encre hover:bg-muted/60'
+   594→                    )}
+   595→                  >
+   596→                    <span className={cn('min-w-0 flex-1 truncate text-sm', arabe && 'font-arabic text-right text-[16px]')}>
+   597→                      {c.titre}
+   598→                    </span>
+   599→                    <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-brouillard">
+   600→                      {i + 1} / {chapitres.length}
+   601→                    </span>
+   602→                  </button>
+   603→                ))}
+   604→              </div>
+   605→            </motion.nav>
+   606→          )}
+   607→        </AnimatePresence>
+   608→      </header>
+   609→
+   610→      {/* ─── Le corps du lecteur ─── */}
+   611→      {vueDoc && pdf ? (
+   612→        /* Le document original, rendu page à page sur canvas par pdf.js —
+   613→           le lecteur natif de Chrome étant bloqué dans les iframes
+   614→           imbriquées (aperçu, PWA), nous dessinons les pages nous-mêmes :
+   615→           la mise en page exacte du livre imprimé, défilement continu */
+   616→        <LecteurPdf src={pdf} titre={titre} onFermer={onFermer} />
+   617→      ) : (
+   618→        /* Le texte : chaque chapitre est une page posée sur le fond */
+   619→        <div
+   620→          ref={conteneurRef}
+   621→          className="scrollbar-mince min-h-0 flex-1 overflow-y-auto overscroll-contain"
+   622→          style={{ WebkitOverflowScrolling: 'touch' }}
+   623→        >
+   624→          <div
+   625→            className={cn(
+   626→              'mx-auto flex w-full max-w-[760px] flex-col items-stretch gap-3 px-2.5 pb-[calc(110px+env(safe-area-inset-bottom))] pt-3 sm:px-4'
+   627→            )}
+   628→          >
+   629→            {estSama && !samaTexte && (
+   630→              /* le diwân arrive : un instant de patience */
+   631→              <div className="flex flex-col items-center gap-3 py-20 text-brouillard">
+   632→                <span
+   633→                  aria-hidden
+   634→                  className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary"
+   635→                />
+   636→                <span className="text-[11px] font-medium uppercase tracking-[0.25em]">
+   637→                  ouverture du diwân…
+   638→                </span>
+   639→              </div>
+   640→            )}
+   641→            {chapitres.map((c, i) => (
+   642→              <article
+   643→                key={c.id}
+   644→                data-i={i}
+   645→                ref={(el) => {
+   646→                  cartesRef.current[i] = el
+   647→                }}
+   648→                dir={arabe ? 'rtl' : undefined}
+   649→                lang={arabe ? 'ar' : undefined}
+   650→                className={cn(
+   651→                  'grain-papier relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7',
+   652→                  theme.fond,
+   653→                  theme.texte,
+   654→                  theme.cadre
+   655→                )}
+   656→              >
+   657→                {/* En-tête du chapitre */}
+   658→                <header className="mb-5 text-center">
+   659→                  <h3
+   660→                    className={cn('leading-tight', arabe ? 'font-arabic text-[30px] font-semibold leading-snug' : 'text-[22px] font-semibold')}
+   661→                    style={{ fontFamily: police.css, color: accent.couleur }}
+   662→                  >
+   663→                    {c.titre}
+   664→                  </h3>
+   665→                  <p
+   666→                    className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.22em] opacity-50"
+   667→                    dir={arabe ? 'ltr' : undefined}
+   668→                  >
+   669→                    {c.sousTitre}
+   670→                  </p>
+   671→                  <div
+   672→                    className="mx-auto mt-3 h-px w-24"
+   673→                    style={{ backgroundColor: accent.couleur, opacity: 0.4 }}
+   674→                    aria-hidden
+   675→                  />
+   676→                </header>
+   677→
+   678→                {/* Le texte sacré */}
+   679→                <div
+   680→                  className={cn(!arabe && 'cahier-texte', arabe && 'kitab-texte text-right')}
+   681→                  style={{
+   682→                    fontFamily: police.css,
+   683→                    fontSize: `${taille}px`,
+   684→                    lineHeight: (INTERLIGNES.find((x) => x.id === l.interligne) ?? INTERLIGNES[1]).valeur,
+   685→                  }}
+   686→                >
+   687→                  {c.texte.split('\n').map((ligne, j) => (
+   688→                    <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
+   689→                  ))}
+   690→                </div>
+   691→
+   692→                {/* Imprimer ce chapitre — pas pour le diwân, qui
+   693→                    s'imprime depuis sa page numérisée */}
+   694→                {!estSama && (
+   695→                  <footer className="mt-6 flex justify-center border-t pt-4" style={{ borderColor: `${accent.couleur}30` }}>
+   696→                    <button
+   697→                      type="button"
+   698→                      onClick={() =>
+   699→                        imprimer({ kind: arabe ? 'kitab' : 'cahier', chapitreId: c.id })
+   700→                      }
+   701→                      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] transition-all active:scale-95"
+   702→                      style={{ color: accent.couleur }}
+   703→                    >
+   704→                      <Printer className="h-3.5 w-3.5" /> Imprimer ce chapitre
+   705→                    </button>
+   706→                  </footer>
+   707→                )}
+   708→              </article>
+   709→            ))}
+   710→
+   711→            {/* La fin du document — pas pendant l'ouverture du diwân */}
+   712→            {!(estSama && !samaTexte) && (
+   713→              <p className="py-2 text-center text-[10px] font-medium uppercase tracking-[0.25em] text-brouillard">
+   714→                · fin du document ·
+   715→              </p>
+   716→            )}
+   717→          </div>
+   718→
+   719→          {/* ─── La barre flottante du bas : revenir + feuilletage ─── */}
+   720→          <div
+   721→            className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center"
+   722→            style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
+   723→          >
+   724→            <div
+   725→              className={cn(
+   726→                'pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-card/90 p-1.5 shadow-lg backdrop-blur transition-all duration-200',
+   727→                scrolle ? 'translate-y-0 opacity-100' : 'translate-y-0 opacity-100'
+   728→              )}
+   729→            >
+   730→              <button
+   731→                type="button"
+   732→                onClick={onFermer}
+   733→                className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium text-brouillard transition-colors duration-200 hover:bg-muted/60 hover:text-foreground"
+   734→              >
+   735→                <ChevronLeft className="h-4 w-4" /> revenir
+   736→              </button>
+   737→
+   738→              {chapitres.length > 1 && (
+   739→                <>
+   740→                  <span className="h-5 w-px bg-border" aria-hidden />
+   741→                  <button
+   742→                    type="button"
+   743→                    onClick={() => allerAuChapitre(Math.max(0, indexActif - 1))}
+   744→                    disabled={indexActif === 0}
+   745→                    aria-label="Chapitre précédent"
+   746→                    className={cn(
+   747→                      'grid h-10 w-10 place-items-center rounded-full transition-colors duration-200',
+   748→                      indexActif === 0
+   749→                        ? 'cursor-not-allowed text-brouillard/40'
+   750→                        : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
+   751→                    )}
+   752→                  >
+   753→                    <ChevronLeft className="h-4.5 w-4.5 rotate-180" />
+   754→                  </button>
+   755→                  <span className="min-w-[3.2em] text-center text-[11px] font-medium tabular-nums text-brouillard">
+   756→                    {indexActif + 1} / {chapitres.length}
+   757→                  </span>
+   758→                  <button
+   759→                    type="button"
+   760→                    onClick={() => allerAuChapitre(Math.min(chapitres.length - 1, indexActif + 1))}
+   761→                    disabled={indexActif === chapitres.length - 1}
+   762→                    aria-label="Chapitre suivant"
+   763→                    className={cn(
+   764→                      'grid h-10 w-10 place-items-center rounded-full transition-colors duration-200',
+   765→                      indexActif === chapitres.length - 1
+   766→                        ? 'cursor-not-allowed text-brouillard/40'
+   767→                        : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
+   768→                    )}
+   769→                  >
+   770→                    <ChevronRight className="h-4.5 w-4.5" />
+   771→                  </button>
+   772→                </>
+   773→              )}
+   774→            </div>
+   775→          </div>
+   776→        </div>
+   777→      )}
+   778→    </motion.div>
+   779→  )
+   780→}
+   781→
+   782→/* ═══ LA SECTION ADHKÂR ═════════════════════════════════════════════ */
+   783→
+   784→export function AdhkarSection() {
+   785→  const l = useLecture()
+   786→  const langue = l.langueAdhkar
+   787→  const arabe = langue === 'ar'
+   788→
+   789→  const [lecteur, setLecteur] = useState<{ doc: DocAdhkar; chapitre?: string } | null>(null)
+   790→
+   791→  /* La recherche globale (⌘K) demande un document précis :
+   792→     le lecteur s'ouvre par l'état dérivé pendant le rendu (motif
+   793→     documenté React, sans effet de bord externe à ce stade), et les
+   794→     mises à jour des stores externes — langue de lecture consommée,
+   795→     demande consommée — se font après coup, dans l'effet. */
+   796→  const demande = useDemandeLecture((s) => s.demande)
+   797→  const [traitee, setTraitee] = useState<{ docId?: string; chapitreId?: string } | null>(null)
+   798→  if (demande && (traitee?.docId !== demande.docId || traitee?.chapitreId !== demande.chapitreId)) {
+   799→    const doc = DOCUMENTS_ADHKAR.find((d) => d.id === demande.docId)
+   800→    setTraitee({ docId: demande.docId, chapitreId: demande.chapitreId })
+   801→    if (doc) {
+   802→      setLecteur({ doc, chapitre: demande.chapitreId })
+   803→    }
+   804→  }
+   805→  useEffect(() => {
+   806→    if (!demande) return
+   807→    if (demande.langue && demande.langue !== langue) {
+   808→      l.regler({ langueAdhkar: demande.langue })
+   809→    }
+   810→    useDemandeLecture.getState().consommer()
+   811→  }, [demande])
+   812→
+   813→  return (
+   814→    <SectionShell
+   815→      titre="Adhkâr"
+   816→      compteur="9 documents · phonétique & arabe"
+   817→      id="adhkar"
+   818→      defaultOpen={false}
+   819→    >
+   820→      <div className="space-y-3">
+   821→        {/* ─── La bascule de langue — phonétique ou arabe ─── */}
+   822→        <div
+   823→          className="grid grid-cols-2 gap-1 rounded-2xl border border-border bg-card p-1"
+   824→          role="group"
+   825→          aria-label="Langue de lecture"
+   826→        >
+   827→          <button
+   828→            type="button"
+   829→            onClick={() => l.regler({ langueAdhkar: 'ph' })}
+   830→            aria-pressed={!arabe}
+   831→            className={cn(
+   832→              'rounded-xl px-4 py-2.5 text-[13px] font-medium uppercase tracking-[0.14em] transition-colors duration-200 active:scale-[0.98]',
+   833→              !arabe
+   834→                ? 'bg-primary text-primary-foreground'
+   835→                : 'text-brouillard hover:bg-muted/60 hover:text-primary'
+   836→            )}
+   837→          >
+   838→            Phonétique
+   839→          </button>
+   840→          <button
+   841→            type="button"
+   842→            onClick={() => l.regler({ langueAdhkar: 'ar' })}
+   843→            aria-pressed={arabe}
+   844→            dir="rtl"
+   845→            className={cn(
+   846→              'rounded-xl px-4 py-2.5 font-arabic text-[17px] font-medium transition-colors duration-200 active:scale-[0.98]',
+   847→              arabe
+   848→                ? 'bg-primary text-primary-foreground'
+   849→                : 'text-brouillard hover:bg-muted/60 hover:text-primary'
+   850→            )}
+   851→          >
+   852→            عربي
+   853→          </button>
+   854→        </div>
+   855→
+   856→        {/* ─── Les neuf documents — une pièce, une porte ─── */}
+   857→        <div className="space-y-2" role="list">
+   858→          {DOCUMENTS_ADHKAR.map((doc, i) => {
+   859→            const titre = arabe ? doc.titreAr : doc.titreFr
+   860→            const detail = arabe ? doc.detailAr : doc.detailFr
+   861→            const nbChapitres = (arabe ? doc.ar?.length : doc.ph?.length) ?? 0
+   862→            const estPdf = Boolean(arabe ? doc.pdfAr : doc.pdfPh)
+   863→            return (
+   864→              <motion.button
+   865→                key={doc.id}
+   866→                type="button"
+   867→                role="listitem"
+   868→                initial={{ opacity: 0, y: 10 }}
+   869→                whileInView={{ opacity: 1, y: 0 }}
+   870→                viewport={{ once: true, margin: '-20px' }}
+   871→                transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.25) }}
+   872→                onClick={() => setLecteur({ doc })}
+   873→                dir={arabe ? 'rtl' : undefined}
+   874→                className={cn(
+   875→                  'carte-precieuse group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:border-primary/30 active:scale-[0.995]',
+   876→                  arabe && 'text-right'
+   877→                )}
+   878→              >
+   879→                {/* Pastille du document */}
+   880→                <span
+   881→                  aria-hidden
+   882→                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border bg-feuille text-[13px] font-medium text-primary transition-colors duration-200 group-hover:bg-lin-clair"
+   883→                >
+   884→                  {i + 1}
+   885→                </span>
+   886→
+   887→                {/* Le nom de la pièce — jamais coupé */}
+   888→                <span className="min-w-0 flex-1">
+   889→                  <span
+   890→                    className={cn(
+   891→                      'block truncate font-display text-[17px] font-medium text-encre',
+   892→                      arabe && 'font-arabic text-[18px]'
+   893→                    )}
+   894→                  >
+   895→                    {titre}
+   896→                  </span>
+   897→                  {/* Détail + badge « morceaux » en flex : jamais collés,
+   898→                      jamais rognés — le bidi ne mélange plus les nombres */}
+   899→                  <span className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-brouillard">
+   900→                    <span className="min-w-0 flex-1 truncate">
+   901→                      {estPdf ? (
+   902→                        <span className="inline-flex items-center gap-1">
+   903→                          <FileDown className="h-3 w-3" aria-hidden /> {detail}
+   904→                        </span>
+   905→                      ) : (
+   906→                        detail
+   907→                      )}
+   908→                    </span>
+   909→                    {nbChapitres > 1 && (
+   910→                      <span className="shrink-0 rounded-full border border-border px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wider text-brouillard">
+   911→                        {nbChapitres} morceaux
+   912→                      </span>
+   913→                    )}
+   914→                  </span>
+   915→                </span>
+   916→
+   917→                {/* Le chevron : on ouvre */}
+   918→                <span
+   919→                  aria-hidden
+   920→                  className={cn(
+   921→                    'shrink-0 text-[17px] leading-none text-brouillard transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary',
+   922→                    arabe && 'rotate-180'
+   923→                  )}
+   924→                >
+   925→                  ›
+   926→                </span>
+   927→              </motion.button>
+   928→            )
+   929→          })}
+   930→        </div>
+   931→
+   932→        {/* Note de fidélité */}
+   933→        <p className="flex items-center justify-center gap-1.5 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-brouillard">
+   934→          <img src="/icons/tasbih.svg" alt="" aria-hidden className="h-3.5 w-3.5" />
+   935→          phonétique du cahier de la zawiya · arabe en riwāyat warsh
+   936→        </p>
+   937→      </div>
+   938→
+   939→      {/* ─── Le lecteur plein écran ─── */}
+   940→      <AnimatePresence>
+   941→        {lecteur && (
+   942→          <LecteurAdhkar
+   943→            key={`${lecteur.doc.id}-${langue}-${lecteur.chapitre ?? 'tête'}`}
+   944→            doc={lecteur.doc}
+   945→            langue={langue}
+   946→            chapitreInitial={lecteur.chapitre}
+   947→            onFermer={() => setLecteur(null)}
+   948→          />
+   949→        )}
+   950→      </AnimatePresence>
+   951→    </SectionShell>
+   952→  )
+   953→}
+   954→

@@ -316,7 +316,7 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
 /* ═══════════════ Section Al-Ijtimâ' groupée par semaine ═══════════════ */
 
 import { useMeetings } from '@/lib/api'
-import { MiniCalendrier } from './mini-calendrier'
+import { SondagesDuIjtima } from './sondages-section'
 
 export function IjtimaSection() {
   const { data: meetings, isLoading } = useMeetings()
@@ -375,8 +375,6 @@ export function IjtimaSection() {
             Réafficher le rappel du prochain ijtimâ'
           </button>
         )}
-        {/* Vue du mois — jours de réunion d'un coup d'œil */}
-        {meetings && meetings.length > 0 && <MiniCalendrier />}
         {semaines.map((s) => (
           <div key={s.label}>
             <div className="mb-2 flex items-center justify-between">
@@ -399,6 +397,9 @@ export function IjtimaSection() {
             Utilise le bouton <CalendarPlus className="inline h-3.5 w-3.5" /> pour en créer une.
           </p>
         )}
+
+        {/* Les sondages de la communauté — au cœur de l'ijtimâ' */}
+        <SondagesDuIjtima />
       </div>
     </SectionShell>
   )

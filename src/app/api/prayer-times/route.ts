@@ -3,7 +3,7 @@ import https from 'https'
 import dns from 'dns'
 
 /**
- * Heures de prière pour Saint-Denis (93), France.
+ * Heures de prière pour Nîmes (30), France.
  * Source : Aladhan API — méthode 12 (UOIF : Union des Organisations Islamiques de France).
  * Cache mémoire local (une requête réseau par jour maximum).
  * NB : fetch() global préfère l'IPv6 qui n'est pas joignable ici — on force
@@ -19,8 +19,8 @@ type DayTimings = {
   Icha: string
 }
 
-const LAT = 48.9362
-const LNG = 2.3574
+const LAT = 43.8367
+const LNG = 4.3601
 const METHOD = 12
 
 const cache = new Map<string, DayTimings>()

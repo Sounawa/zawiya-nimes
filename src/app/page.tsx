@@ -20,6 +20,7 @@ import { AnnuaireSection } from '@/components/zaouia/annuaire-section'
 import { HistoriqueSection } from '@/components/zaouia/historique-section'
 import { AdhkarSection } from '@/components/zaouia/adhkar-section'
 import { QuranSection } from '@/components/zaouia/quran-section'
+import { SalatSection } from '@/components/zaouia/salat-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
 import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
@@ -98,6 +99,7 @@ export default function Page() {
         <AnnuaireSection />
         <HistoriqueSection />
         <AdhkarSection />
+        <SalatSection />
         <QuranSection />
         <ContentSections />
       </main>

@@ -146,7 +146,7 @@ export function SalatSection() {
         {vue === 'mois' && <VueTable jours={joursMois} />}
 
         <p className="text-center text-[10px] uppercase tracking-[0.2em] text-[#b6b1a0]">
-          Saint-Denis · méthode UOIF
+          Nîmes · méthode UOIF
         </p>
       </div>
     </SectionShell>

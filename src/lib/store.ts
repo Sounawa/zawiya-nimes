@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Role } from './types'
+import type { LangueAdhkar } from '@/data/adhkar-docs'
 
 interface UserState {
   /** Prénom saisi à l'entrée — identité locale, comme l'originale */
@@ -94,6 +95,8 @@ interface LectureState {
   interligne: Interligne
   theme: ThemeLecture
   accent: AccentLecture
+  /** langue de lecture des adhkâr — phonétique du cahier ou arabe du kitāb */
+  langueAdhkar: LangueAdhkar
   regler: (p: Partial<Omit<LectureState, 'regler'>>) => void
 }
 
@@ -107,6 +110,7 @@ export const useLecture = create<LectureState>()(
       interligne: 'normal',
       theme: 'ivoire',
       accent: 'or',
+      langueAdhkar: 'ph',
       regler: (p) => set(p),
     }),
     { name: 'zaouia-lecture' }

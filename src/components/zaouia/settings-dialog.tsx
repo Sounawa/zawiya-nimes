@@ -6,7 +6,8 @@ import { BadgeCheck, CalendarDays, MapPin, Plus, Shield, UserRound, Wallet } fro
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, useMembers, useSaveSetting, useSettings } from '@/lib/api'
 import { useUser } from '@/lib/store'
-import type { Member } from '@/lib/types'
+import { peut } from '@/lib/permissions'
+import { ROLE_LABEL, VILLE_LABEL, type Member, type Ville } from '@/lib/types'
 import {
   Dialog,
   DialogContent,
@@ -97,27 +98,49 @@ export function SettingsDialog({
     )
   }
 
-  /* ─── Rôles ─── */
-  const majRole = useMutation({
-    mutationFn: ({ id, role }: { id: string; role: string }) =>
-      api(`/api/members/${id}`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  /* ─── Membres : rôles & groupes ─── */
+  const majMembre = useMutation({
+    mutationFn: ({ id, ...data }: { id: string; role?: string; city?: string }) =>
+      api(`/api/members/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['members'] })
     },
   })
 
+  const [villeAjout, setVilleAjout] = useState<Ville>('NIMES')
+
   const ajouterMembre = useMutation({
     mutationFn: (name: string) =>
-      api('/api/members', { method: 'POST', body: JSON.stringify({ name, role: 'ADMIN' }) }),
+      api('/api/members', {
+        method: 'POST',
+        body: JSON.stringify({ name, ville: villeAjout, role: 'MEMBER' }),
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['members'] })
-      toast({ title: 'Membre ajouté', description: `Sidi ${nouveauNom} a rejoint la communauté.` })
+      toast({
+        title: 'Membre ajouté',
+        description: `Sidi ${nouveauNom} a rejoint la zawiya de ${VILLE_LABEL[villeAjout]}.`,
+      })
       setNouveauNom('')
     },
     onError: () => toast({ title: 'Impossible d\u2019ajouter', variant: 'destructive' }),
   })
 
   const tresorier = (membres ?? []).find((m) => m.role === 'TREASURER')
+  const referent = (membres ?? []).find((m) => m.role === 'REFERENT')
+
+  /* Basculer la zawiya d'un frère — Nîmes ↔ Montpellier */
+  const basculerVille = (m: Member) => {
+    const autre: Ville = m.city === 'NIMES' ? 'MONTPELLIER' : 'NIMES'
+    majMembre.mutate({ id: m.id, city: autre })
+    toast({
+      title: `${m.name} → ${VILLE_LABEL[autre]}`,
+      description:
+        autre === 'MONTPELLIER'
+          ? 'Il ne verra plus la trésorerie ni les outils de publication.'
+          : 'Il retrouve tous les droits des frères de Nîmes.',
+    })
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,7 +150,7 @@ export function SettingsDialog({
             Réglages de la zaouia
           </DialogTitle>
           <DialogDescription>
-            Jours d'ijtima, rôles et trésorerie — ouverts à toute la communauté.
+            Jours d'ijtima et conduite des frères — du ressort du référent.
           </DialogDescription>
         </DialogHeader>
 
@@ -226,87 +249,123 @@ export function SettingsDialog({
           </div>
         </section>
 
-        {/* ─── Rôles ─── */}
-        <section aria-label="Rôles" className="space-y-3">
+        {/* ─── Membres : rôles & groupes ─── */}
+        <section aria-label="Membres" className="space-y-3">
           <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
-            <Shield className="h-4 w-4" /> Rôles de la communauté
+            <Shield className="h-4 w-4" /> Frères de la zaouia
           </h3>
           <p className="rounded-xl bg-sand/60 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-            Tout le monde a les droits d'administration par défaut.
-            Un seul frère peut porter le rôle de <strong className="text-gold-vif">trésorier</strong> —
-            c'est lui qui gère l'argent (cotisations & ziyara).
+            Chaque frère porte un <strong>groupe</strong> (sa zawiya) et un <strong>rôle</strong> :
+            les frères de <strong className="text-primary">Nîmes</strong> publient les annonces, sondages et ijtima' ;
+            ceux de <strong className="text-gold-vif">Montpellier</strong> lisent et participent.
+            Un seul porte la <strong className="text-gold-vif">trésorerie</strong>, un seul la conduite de
+            la zaouia (<strong className="text-primary">référent</strong>) — les nommer remplace le porteur précédent.
           </p>
-          <div className="defile-fin max-h-64 overflow-y-auto rounded-2xl border border-primary/12 bg-card p-2 shadow-sm">
+          <div className="defile-fin max-h-72 overflow-y-auto rounded-2xl border border-primary/12 bg-card p-2 shadow-sm">
             {(membres ?? []).map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 hover:bg-background"
+                className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 rounded-xl px-3 py-2 hover:bg-background"
               >
-                <span className="flex items-center gap-2 text-sm font-medium text-secondary-foreground">
-                  <UserRound className="h-3.5 w-3.5 text-primary/50" />
-                  Sidi {m.name}
-                  {m.role === 'TREASURER' && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-gold-vif">
-                      <Wallet className="h-3 w-3" /> Trésorier
-                    </span>
-                  )}
-                </span>
-                <div className="flex gap-1.5">
+                <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-secondary-foreground">
+                  <UserRound className="h-3.5 w-3.5 shrink-0 text-primary/50" />
+                  <span className="truncate">Sidi {m.name}</span>
                   <button
-                    onClick={() =>
-                      majRole.mutate({
-                        id: m.id,
-                        role: m.role === 'TREASURER' ? 'ADMIN' : 'TREASURER',
-                      })
-                    }
-                    className={cn(
-                      'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
-                      m.role === 'TREASURER'
-                        ? 'bg-accent text-white dark:text-accent-foreground'
-                        : 'bg-sand text-muted-foreground hover:bg-accent/20 hover:text-gold-vif'
-                    )}
+                    onClick={() => basculerVille(m)}
                     title={
-                      tresorier && m.role !== 'TREASURER'
-                        ? `Remplacer ${tresorier.name} comme trésorier`
-                        : 'Donner le rôle de trésorier'
+                      m.city === 'NIMES'
+                        ? 'Basculer vers la zawiya de Montpellier'
+                        : 'Rendre à la zawiya de Nîmes'
                     }
-                  >
-                    Trésorier
-                  </button>
-                  <button
-                    onClick={() => majRole.mutate({ id: m.id, role: 'ADMIN' })}
-                    disabled={m.role === 'ADMIN'}
                     className={cn(
-                      'inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
-                      m.role === 'ADMIN'
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-sand text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                      'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                      m.city === 'NIMES'
+                        ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                        : 'bg-accent/15 text-gold-vif hover:bg-accent/25'
                     )}
                   >
-                    <BadgeCheck className="h-3 w-3" /> Admin
+                    {VILLE_LABEL[m.city] ?? m.city}
                   </button>
+                </span>
+                <div className="flex shrink-0 gap-1.5">
+                  {(
+                    [
+                      { role: 'MEMBER', label: 'Membre' },
+                      { role: 'TREASURER', label: 'Trésorier' },
+                      { role: 'REFERENT', label: 'Référent' },
+                    ] as { role: string; label: string }[]
+                  ).map((r) => (
+                    <button
+                      key={r.role}
+                      onClick={() => majMembre.mutate({ id: m.id, role: r.role })}
+                      className={cn(
+                        'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                        m.role === r.role
+                          ? r.role === 'REFERENT'
+                            ? 'bg-primary text-white'
+                            : r.role === 'TREASURER'
+                              ? 'bg-accent text-white dark:text-accent-foreground'
+                              : 'bg-primary/10 text-primary'
+                          : 'bg-sand text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                      )}
+                      title={
+                        r.role === 'TREASURER' && m.role !== 'TREASURER' && tresorier
+                          ? `Remplacer ${tresorier.name} comme trésorier`
+                          : r.role === 'REFERENT' && m.role !== 'REFERENT' && referent
+                            ? `Remplacer ${referent.name} comme référent`
+                            : r.label
+                      }
+                    >
+                      {r.role === 'TREASURER' && <Wallet className="mr-1 inline h-3 w-3" />}
+                      {r.role === 'REFERENT' && <BadgeCheck className="mr-1 inline h-3 w-3" />}
+                      {r.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
-          {/* Ajouter un membre */}
-          <div className="flex gap-2">
-            <Input
-              value={nouveauNom}
-              onChange={(e) => setNouveauNom(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && nouveauNom.trim()) ajouterMembre.mutate(nouveauNom.trim())
-              }}
-              placeholder="Nouveau frère…"
-              className="rounded-xl border-primary/25 bg-card"
-            />
-            <Button
-              onClick={() => nouveauNom.trim() && ajouterMembre.mutate(nouveauNom.trim())}
-              disabled={ajouterMembre.isPending}
-              className="shrink-0 rounded-xl bg-primary text-white hover:bg-emerald-deep"
-            >
-              <Plus className="mr-1 h-4 w-4" /> Ajouter
-            </Button>
+          {/* Ajouter un frère — dans sa zawiya */}
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={nouveauNom}
+                onChange={(e) => setNouveauNom(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && nouveauNom.trim()) ajouterMembre.mutate(nouveauNom.trim())
+                }}
+                placeholder="Nouveau frère…"
+                className="rounded-xl border-primary/25 bg-card"
+              />
+              <Button
+                onClick={() => nouveauNom.trim() && ajouterMembre.mutate(nouveauNom.trim())}
+                disabled={ajouterMembre.isPending}
+                className="shrink-0 rounded-xl bg-primary text-white hover:bg-emerald-deep"
+              >
+                <Plus className="mr-1 h-4 w-4" /> Ajouter
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-brouillard">
+                Zawiya
+              </span>
+              <div className="flex gap-1.5">
+                {(['NIMES', 'MONTPELLIER'] as Ville[]).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setVilleAjout(v)}
+                    className={cn(
+                      'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                      villeAjout === v
+                        ? 'bg-primary text-white'
+                        : 'bg-sand text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                    )}
+                  >
+                    {VILLE_LABEL[v]}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -316,8 +375,8 @@ export function SettingsDialog({
             <Wallet className="h-4 w-4" /> Trésorerie
           </h3>
           <p className="rounded-xl bg-or-pale px-3 py-2 text-xs leading-relaxed text-gold-vif">
-            La section <strong>Ziyara</strong> (montant donné au Shaykh) n'est visible et modifiable que par le trésorier —
-            c'est lui qui règle les montants depuis sa section dorée.
+            La section <strong>Ziyara</strong> (montant donné au Shaykh) n'est visible et modifiable que
+            par le trésorier — ou par le référent, qui porte toutes les charges.
           </p>
         </section>
       </DialogContent>
@@ -334,7 +393,7 @@ export function ProfileDialog({
   onOpenChange: (v: boolean) => void
 }) {
   const name = useUser((s) => s.name)
-  const role = useUser((s) => s.role)
+  const ville = useUser((s) => s.ville)
   const setName = useUser((s) => s.setName)
   const setMember = useUser((s) => s.setMember)
   const logout = useUser((s) => s.logout)
@@ -343,27 +402,29 @@ export function ProfileDialog({
   const [choixManuel, setChoixManuel] = useState<string | null>(null)
   const choix = choixManuel ?? name ?? ''
 
-  const monMembre: Member | undefined = (membres ?? []).find((m) => m.name === name)
+  /* Les frères de MA zawiya — on y cherche, on y inscrit */
+  const freresVille = (membres ?? []).filter((m) => m.city === ville)
+  const monMembre: Member | undefined = freresVille.find((m) => m.name === name)
 
   const valider = () => {
     const v = choix.trim()
     if (!v) return
     if (monMembre && monMembre.name === v) {
-      setMember(monMembre.id, monMembre.role)
+      setMember(monMembre.id, monMembre.role, monMembre.city)
       onOpenChange(false)
       return
     }
-    // Nouveau prénom : créer le membre puis entrer
+    // Nouveau prénom : s'inscrire dans sa zawiya
     fetch('/api/members', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: v }),
+      body: JSON.stringify({ name: v, ville }),
     })
       .then(async (r) => {
         if (r.ok) {
           const m = (await r.json()) as Member
           setName(v)
-          setMember(m.id, m.role)
+          setMember(m.id, m.role, m.city)
           toast({ title: `Marhaban bik, Sidi ${v}` })
           onOpenChange(false)
         } else {
@@ -381,8 +442,8 @@ export function ProfileDialog({
           <DialogTitle className="font-display text-2xl text-encre">Je suis…</DialogTitle>
           <DialogDescription>
             {monMembre
-              ? `Sidi ${monMembre.name} — ${monMembre.role === 'TREASURER' ? 'trésorier de la zaouia' : 'administrateur'}`
-              : 'Choisis ton prénom pour entrer dans la zaouia.'}
+              ? `Sidi ${monMembre.name} — ${ROLE_LABEL[monMembre.role] ?? 'membre'} de la zawiya de ${VILLE_LABEL[monMembre.city] ?? 'Nîmes'}`
+              : `Choisis ton prénom pour entrer dans la zawiya de ${VILLE_LABEL[ville] ?? 'Nîmes'}.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -401,31 +462,29 @@ export function ProfileDialog({
                 className="w-full rounded-full border border-primary/25 bg-card py-3 pl-5 pr-5 text-center text-lg text-encre outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10"
               />
               <datalist id="prenoms-zaouia">
-                {(membres ?? []).map((m) => (
+                {freresVille.map((m) => (
                   <option key={m.id} value={m.name} />
                 ))}
               </datalist>
             </div>
           </div>
 
-          {/* Suggestions rapides */}
+          {/* Suggestions rapides — les frères de sa zawiya */}
           <div className="flex flex-wrap justify-center gap-1.5">
-            {(membres ?? [])
-              .slice(0, 8)
-              .map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setChoixManuel(m.name)}
-                  className={cn(
-                    'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
-                    choix === m.name
-                      ? 'bg-primary text-white'
-                      : 'bg-card text-primary ring-1 ring-primary/15 hover:bg-primary/5'
-                  )}
-                >
-                  Sidi {m.name}
-                </button>
-              ))}
+            {freresVille.slice(0, 8).map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setChoixManuel(m.name)}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                  choix === m.name
+                    ? 'bg-primary text-white'
+                    : 'bg-card text-primary ring-1 ring-primary/15 hover:bg-primary/5'
+                )}
+              >
+                Sidi {m.name}
+              </button>
+            ))}
           </div>
 
           <Button

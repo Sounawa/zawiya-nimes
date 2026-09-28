@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 // GET /api/settings — tous les réglages
 export async function GET() {
@@ -20,9 +21,11 @@ export async function GET() {
   }
 }
 
-// PUT /api/settings — mettre à jour un réglage (upsert)
+// PUT /api/settings — mettre à jour un réglage (référent seul)
 export async function PUT(req: Request) {
   try {
+    const { refus } = await exiger(req, 'reglages.gerer')
+    if (refus) return refus
     const body = await req.json()
     if (!body.key) return NextResponse.json({ error: 'Clé requise' }, { status: 400 })
     const value = typeof body.value === 'string' ? body.value : JSON.stringify(body.value)

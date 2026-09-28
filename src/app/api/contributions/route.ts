@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
-// GET /api/contributions — toutes les contributions (avec totaux)
+// GET /api/contributions — la trésorerie, réservée à la zawiya de Nîmes
 export async function GET(req: Request) {
   try {
+    const { refus } = await exiger(req, 'cotisations.voir')
+    if (refus) return refus
     const { searchParams } = new URL(req.url)
     const category = searchParams.get('category')
     const where = category ? { category } : {}
@@ -34,9 +37,11 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/contributions — enregistrer une contribution
+// POST /api/contributions — déclarer une somme (zawiya de Nîmes)
 export async function POST(req: Request) {
   try {
+    const { refus } = await exiger(req, 'cotisations.voir')
+    if (refus) return refus
     const body = await req.json()
     if (!body.memberId || !body.amount)
       return NextResponse.json({ error: 'Membre et montant requis' }, { status: 400 })

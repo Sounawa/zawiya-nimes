@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 type Params = { params: Promise<{ id: string }> }
 
-/* ─── PATCH /api/content/:id — modifier une entrée (Adhkâr, etc.) ─── */
+/* ─── PATCH /api/content/:id — modifier une entrée (frères de Nîmes) ─── */
 export async function PATCH(req: Request, { params }: Params) {
   try {
+    const { refus } = await exiger(req, 'contenus.editer')
+    if (refus) return refus
     const { id } = await params
     const body = await req.json()
     const data: Record<string, unknown> = {}
@@ -36,9 +39,11 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 }
 
-/* ─── DELETE /api/content/:id — supprimer une entrée ─── */
+/* ─── DELETE /api/content/:id — supprimer une entrée (frères de Nîmes) ─── */
 export async function DELETE(req: Request, { params }: Params) {
   try {
+    const { refus } = await exiger(req, 'contenus.editer')
+    if (refus) return refus
     const { id } = await params
     let acteur: string | null = null
     try {

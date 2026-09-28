@@ -6,6 +6,8 @@ import { Megaphone, Pencil, Plus, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Announcement } from '@/lib/types'
 import { useCreateAnnouncement, useUpdateAnnouncement } from '@/lib/api'
+import { useUser } from '@/lib/store'
+import { peut } from '@/lib/permissions'
 import { dateCourte } from '@/lib/format'
 import {
   Dialog,
@@ -58,6 +60,10 @@ function CarteAnnonce({
   onModifier: (a: Announcement) => void
 }) {
   const del = useDeleteAnnouncement()
+  const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
+  /* La voix de la zawiya — seuls les frères de Nîmes la portent */
+  const peutGerer = peut(ville, role, 'annonces.creer')
 
   return (
     <motion.article
@@ -126,25 +132,27 @@ function CarteAnnonce({
           </p>
         </div>
 
-        {/* Actions — modifier & supprimer, révélées au survol */}
-        <div className="flex shrink-0 items-center gap-0.5">
-          <button
-            onClick={() => onModifier(a)}
-            aria-label="Modifier l'annonce"
-            title="Modifier l'annonce"
-            className="rounded-full p-2 text-brouillard-clair opacity-0 transition-all hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 group-hover:opacity-100 max-sm:opacity-100"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => del.mutate(a.id)}
-            aria-label="Supprimer l'annonce"
-            title="Supprimer l'annonce"
-            className="rounded-full p-2 text-brouillard-clair opacity-0 transition-all hover:bg-black/5 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 max-sm:opacity-100"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        {/* Actions — modifier & supprimer, réservées aux frères de Nîmes */}
+        {peutGerer && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              onClick={() => onModifier(a)}
+              aria-label="Modifier l'annonce"
+              title="Modifier l'annonce"
+              className="rounded-full p-2 text-brouillard-clair opacity-0 transition-all hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 group-hover:opacity-100 max-sm:opacity-100"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => del.mutate(a.id)}
+              aria-label="Supprimer l'annonce"
+              title="Supprimer l'annonce"
+              className="rounded-full p-2 text-brouillard-clair opacity-0 transition-all hover:bg-black/5 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 max-sm:opacity-100"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </motion.article>
   )
@@ -153,6 +161,9 @@ function CarteAnnonce({
 /* ═══════════════ Section Annonces + création + édition ═══════════════ */
 export function Annonces() {
   const { data: annonces } = useAnnouncements()
+  const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
+  const peutPublier = peut(ville, role, 'annonces.creer')
   const [dialogOuvert, setDialogOuvert] = useState(false)
   const [edition, setEdition] = useState<Announcement | null>(null)
 
@@ -179,12 +190,14 @@ export function Annonces() {
           </p>
           <h2 className="mt-1 font-display text-2xl font-medium text-foreground">Annonces</h2>
         </div>
-        <button
-          onClick={ouvrirCreation}
-          className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-primary ring-1 ring-primary/20 transition-all hover:bg-primary/8 hover:shadow-sm active:scale-95"
-        >
-          <Plus className="h-3.5 w-3.5" /> Annonce
-        </button>
+        {peutPublier && (
+          <button
+            onClick={ouvrirCreation}
+            className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-primary ring-1 ring-primary/20 transition-all hover:bg-primary/8 hover:shadow-sm active:scale-95"
+          >
+            <Plus className="h-3.5 w-3.5" /> Annonce
+          </button>
+        )}
       </div>
 
       {/* Cartes */}
@@ -193,13 +206,18 @@ export function Annonces() {
       ))}
 
       {/* État vide */}
-      {annonces && !annonces.length && (
+      {annonces && !annonces.length && peutPublier && (
         <button
           onClick={ouvrirCreation}
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/30 bg-card/50 p-5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
         >
           <Megaphone className="h-4 w-4" /> Publier une annonce pour la communauté
         </button>
+      )}
+      {annonces && !annonces.length && !peutPublier && (
+        <p className="rounded-2xl border border-dashed border-primary/20 p-4 text-center text-xs text-brouillard">
+          Aucune annonce pour l'instant.
+        </p>
       )}
 
       <AnnonceDialog

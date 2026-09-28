@@ -30,9 +30,15 @@ export function api<T>(url: string, init?: RequestInit): Promise<T> {
       /* corps non JSON — inchangé */
     }
   }
+  /* Le membre courant voyage aussi dans l'en-tête « x-member-id » :
+     le serveur vérifie ses droits (groupe + rôle) avant d'agir. */
+  const memberId = useUser.getState().memberId
   return fetch(url, {
     ...init,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(memberId ? { 'x-member-id': memberId } : {}),
+    },
     body,
   }).then((r) => {
     if (!r.ok) throw new Error('Erreur réseau')

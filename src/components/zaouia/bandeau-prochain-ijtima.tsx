@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CalendarDays, ChevronRight, EyeOff, MapPin, Pencil } from 'lucide-react'
 import { useMeetings } from '@/lib/api'
-import { useNav, useRappelBandeau } from '@/lib/store'
+import { useNav, useRappelBandeau, useUser } from '@/lib/store'
+import { peut } from '@/lib/permissions'
 import { useToast } from '@/hooks/use-toast'
 import { NewMeetingDialog } from './new-meeting-dialog'
 import type { Meeting } from '@/lib/types'
@@ -43,6 +44,10 @@ export function BandeauProchainIjtima() {
   const ouvrir = useNav((s) => s.ouvrir)
   const masques = useRappelBandeau((s) => s.masques)
   const masquer = useRappelBandeau((s) => s.masquer)
+  const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
+  /* Le crayon du bandeau modifie la réunion — frères de Nîmes */
+  const peutRediger = peut(ville, role, 'reunions.rediger')
   const { toast } = useToast()
 
   /* Dialogue de modification de la réunion rappelée */
@@ -168,14 +173,16 @@ export function BandeauProchainIjtima() {
 
       {/* Actions — modifier & masquer le rappel */}
       <div className="flex shrink-0 flex-col justify-center gap-0.5 border-l border-gold/15 py-1 pl-0.5 pr-1.5">
-        <button
-          onClick={ouvrirEdition}
-          aria-label={`Modifier le rappel — ${m.title}`}
-          title="Modifier ce rappel"
-          className="rounded-lg p-2 text-brouillard transition-colors hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
+        {peutRediger && (
+          <button
+            onClick={ouvrirEdition}
+            aria-label={`Modifier le rappel — ${m.title}`}
+            title="Modifier ce rappel"
+            className="rounded-lg p-2 text-brouillard transition-colors hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           onClick={masquerRappel}
           aria-label={`Masquer le rappel — ${m.title}`}

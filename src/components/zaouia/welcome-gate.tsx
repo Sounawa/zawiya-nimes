@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { useUser } from '@/lib/store'
 import { ThemeToggle } from '@/components/zaouia/theme-toggle'
+import type { Ville } from '@/lib/types'
 
 /** PRNG arithmétique pur (mulberry32) — strictement identique serveur/client,
  *  contrairement à Math.sin dont la précision varie selon le moteur JS. */
@@ -125,7 +126,9 @@ function TitreLettres() {
 
 export function WelcomeGate() {
   const setName = useUser((s) => s.setName)
+  const setVille = useUser((s) => s.setVille)
   const [value, setValue] = useState('')
+  const [ville, setVilleChoisie] = useState<Ville>(useUser.getState().ville ?? 'NIMES')
   const [heure, setHeure] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -140,7 +143,10 @@ export function WelcomeGate() {
 
   const entrer = () => {
     const v = value.trim()
-    if (v) setName(v)
+    if (v) {
+      setVille(ville)
+      setName(v)
+    }
   }
 
   return (
@@ -253,7 +259,7 @@ export function WelcomeGate() {
             transition={{ delay: 1.25, duration: 0.9, ease: 'easeOut' }}
             className="mt-1 block font-display text-2xl font-medium text-primary sm:text-3xl"
           >
-            NIMES
+            {ville === 'NIMES' ? 'NIMES' : 'MONTPELLIER'}
           </motion.span>
         </motion.h1>
 
@@ -291,12 +297,74 @@ export function WelcomeGate() {
           </cite>
         </motion.blockquote>
 
+        {/* ─── Choix de la zawiya ─── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+          className="mt-10 w-full"
+        >
+          <label
+            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
+          >
+            Ta zawiya
+          </label>
+          <div
+            role="radiogroup"
+            aria-label="Ta zawiya"
+            className="relative mx-auto flex w-full items-stretch gap-1.5 rounded-full border border-primary/25 bg-card/90 p-1.5 shadow-inner shadow-primary/5 backdrop-blur"
+          >
+            {([
+              { id: 'NIMES', label: 'Nîmes', sub: 'la maison-mère' },
+              { id: 'MONTPELLIER', label: 'Montpellier', sub: 'le groupe frère' },
+            ] as { id: Ville; label: string; sub: string }[]).map((z) => {
+              const actif = ville === z.id
+              return (
+                <button
+                  key={z.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={actif}
+                  onClick={() => setVilleChoisie(z.id)}
+                  className="relative flex-1 rounded-full px-4 py-2.5 text-center transition-all duration-300"
+                >
+                  {actif && (
+                    <motion.span
+                      layoutId="zawiya-choisie"
+                      className="absolute inset-0 rounded-full bg-primary shadow-md shadow-primary/25"
+                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative block">
+                    <span
+                      className={
+                        'block text-sm font-semibold ' +
+                        (actif ? 'text-white' : 'text-secondary-foreground')
+                      }
+                    >
+                      {z.label}
+                    </span>
+                    <span
+                      className={
+                        'block text-[9px] uppercase tracking-[0.2em] ' +
+                        (actif ? 'text-white/70' : 'text-brouillard')
+                      }
+                    >
+                      {z.sub}
+                    </span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </motion.div>
+
         {/* ─── Champ prénom ─── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="mt-10 w-full"
+          className="mt-5 w-full"
         >
           <label
             htmlFor="prenom"

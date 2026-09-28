@@ -8,15 +8,22 @@ datasource db {
 }
 
 // ─── Membres de la zaouia ────────────────────────────────────────────
+// Chaque participant s'inscrit lui-même : prénom + sa zawiya (city).
+// Les droits découlent du groupe et du rôle :
+//   city  : NIMES (droits complets) | MONTPELLIER (lecture + participation)
+//   role  : MEMBER < TREASURER (trésorerie) < REFERENT (gère la zawiya)
 model Member {
   id            String         @id @default(cuid())
-  name          String         @unique
-  role          String         @default("ADMIN") // ADMIN (tous) | TREASURER | MEMBER
+  name          String
+  city          String         @default("NIMES") // NIMES | MONTPELLIER
+  role          String         @default("MEMBER") // MEMBER | TREASURER | REFERENT
   createdAt     DateTime       @default(now())
   attendances   Attendance[]
   contributions Contribution[]
   pollVotes     PollVote[]
   createdPolls  Poll[]         @relation("PollCreator")
+
+  @@unique([name, city])
 }
 
 // ─── Réunions (Ijtima') ─────────────────────────────────────────────

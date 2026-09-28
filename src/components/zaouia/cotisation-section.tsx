@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useContributions } from '@/lib/api'
 import { usePrint, useUser } from '@/lib/store'
+import { peut } from '@/lib/permissions'
 import { useToast } from '@/hooks/use-toast'
 import { euros } from '@/lib/format'
 import { SectionShell } from './ijtima-section'
@@ -238,6 +239,9 @@ function GrapheMensuel({ cotisations }: { cotisations: { amount: number; categor
 export function CotisationSection() {
   const { data, isLoading } = useContributions()
   const role = useUser((s) => s.role)
+  const ville = useUser((s) => s.ville)
+  /* La trésorerie — le trésorier (et le référent, qui peut tout) */
+  const peutGerer = peut(ville, role, 'cotisations.gerer')
   const imprimer = usePrint((s) => s.imprimer)
   const { toast } = useToast()
 
@@ -352,7 +356,7 @@ export function CotisationSection() {
                   <Clock3 className="h-3.5 w-3.5" />+ {euros(totalAttente)} déclarés en attente
                 </p>
               )}
-              {role === 'TREASURER' && totals && (
+              {peutGerer && totals && (
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button
                     onClick={() => {
@@ -381,7 +385,7 @@ export function CotisationSection() {
                   </button>
                 </div>
               )}
-              {role === 'TREASURER' && totals && (
+              {peutGerer && totals && (
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <button
                     onClick={() => imprimer({ kind: 'bilan' })}

@@ -4,6 +4,8 @@ import Image from 'next/image'
 import { motion, useScroll, useSpring } from 'framer-motion'
 import { LogOut, Settings2, UserRound } from 'lucide-react'
 import { useUser } from '@/lib/store'
+import { peut } from '@/lib/permissions'
+import { VILLE_LABEL } from '@/lib/types'
 import { dateLongue } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/zaouia/theme-toggle'
@@ -17,7 +19,11 @@ interface HeaderBarProps {
 export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
   const name = useUser((s) => s.name)
   const role = useUser((s) => s.role)
+  const ville = useUser((s) => s.ville)
   const logout = useUser((s) => s.logout)
+
+  /* Les réglages de la zaouia ne regardent que le référent */
+  const gereReglages = peut(ville, role, 'reglages.gerer')
 
   /* Fil d'or — progression de lecture au-dessus de la corniche */
   const { scrollYProgress } = useScroll()
@@ -54,14 +60,14 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
             <span className="block text-[15px] font-bold tracking-wide text-encre">ZAWIYA</span>
             <span className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.28em] text-primary">
               <span aria-hidden className="text-[7px] text-gold">✦</span>
-              Nimes
+              {VILLE_LABEL[ville] ?? 'Nîmes'}
             </span>
           </span>
         </button>
 
         <div className="flex-1" />
 
-        {/* Utilisateur (+ pastille trésorier) */}
+        {/* Utilisateur (+ pastille de charge) */}
         <Button
           variant="ghost"
           size="sm"
@@ -70,6 +76,11 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
         >
           <UserRound className="h-4 w-4 shrink-0 text-primary" />
           <span className="max-w-24 truncate">{name}</span>
+          {role === 'REFERENT' && (
+            <span className="hidden shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary sm:inline-block">
+              Référent
+            </span>
+          )}
           {role === 'TREASURER' && (
             <span className="hidden shrink-0 rounded-full bg-accent/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-vif sm:inline-block">
               Trésorier
@@ -81,15 +92,19 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
 
         <ThemeToggle />
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onOpenSettings}
-          aria-label="Réglages"
-          className="h-9 w-9 shrink-0 rounded-full text-primary hover:bg-primary/8 sm:h-10 sm:w-10"
-        >
-          <Settings2 className="h-4.5 w-4.5" />
-        </Button>
+        {/* Réglages — réservés au référent de la zaouia */}
+        {gereReglages && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpenSettings}
+            aria-label="Réglages"
+            title="Réglages de la zaouia (référent)"
+            className="h-9 w-9 shrink-0 rounded-full text-primary hover:bg-primary/8 sm:h-10 sm:w-10"
+          >
+            <Settings2 className="h-4.5 w-4.5" />
+          </Button>
+        )}
 
         <Button
           variant="ghost"
@@ -116,7 +131,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           <span className="truncate">
             {dateLongue(new Date())}
             <span className="mx-1.5 text-gold">·</span>
-            <span className="text-primary">Nîmes</span>
+            <span className="text-primary">{VILLE_LABEL[ville] ?? 'Nîmes'}</span>
           </span>
           <span className="shrink-0 text-[8px] text-gold" aria-hidden>
             ✦

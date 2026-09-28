@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 // GET /api/announcements
 export async function GET() {
@@ -14,9 +15,11 @@ export async function GET() {
   }
 }
 
-// POST /api/announcements
+// POST /api/announcements — la voix de la zawiya : frères de Nîmes
 export async function POST(req: Request) {
   try {
+    const { refus } = await exiger(req, 'annonces.creer')
+    if (refus) return refus
     const body = await req.json()
     if (!body.text) return NextResponse.json({ error: 'Texte requis' }, { status: 400 })
     const announcement = await db.announcement.create({

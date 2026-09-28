@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
+import { exiger } from '@/lib/auth-serveur'
 
 // GET /api/polls — tous les sondages
 export async function GET() {
@@ -19,9 +20,11 @@ export async function GET() {
   }
 }
 
-// POST /api/polls — créer un sondage
+// POST /api/polls — créer un sondage (frères de Nîmes)
 export async function POST(req: Request) {
   try {
+    const { refus } = await exiger(req, 'sondages.creer')
+    if (refus) return refus
     const body = await req.json()
     if (!body.question)
       return NextResponse.json({ error: 'Question requise' }, { status: 400 })

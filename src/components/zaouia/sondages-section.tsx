@@ -11,6 +11,7 @@ import {
   useVote,
 } from '@/lib/api'
 import { useUser } from '@/lib/store'
+import { peut } from '@/lib/permissions'
 import { parsePollOptions, type Poll, type PollVote } from '@/lib/types'
 import { dateCourte } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -55,6 +56,10 @@ function CarteSondage({ poll }: { poll: Poll }) {
   const del = useDeletePoll()
   const maj = useUpdatePoll()
   const memberId = useUser((s) => s.memberId)
+  const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
+  /* Les sondages de la zawiya — seuls les frères de Nîmes les créent */
+  const peutGerer = peut(ville, role, 'sondages.creer')
   const [voirVotants, setVoirVotants] = useState<string | null>(null)
   const [editionOuverte, setEditionOuverte] = useState(false)
 
@@ -137,23 +142,25 @@ function CarteSondage({ poll }: { poll: Poll }) {
             )}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-0.5">
-          <button
-            onClick={() => setEditionOuverte(true)}
-            aria-label="Modifier le sondage"
-            title="Modifier le sondage"
-            className="rounded-full p-2 text-brouillard-clair transition-colors hover:bg-gold/10 hover:text-gold"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => del.mutate(poll.id)}
-            aria-label="Supprimer le sondage"
-            className="rounded-full p-2 text-brouillard-clair transition-colors hover:bg-destructive/10 hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        {peutGerer && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              onClick={() => setEditionOuverte(true)}
+              aria-label="Modifier le sondage"
+              title="Modifier le sondage"
+              className="rounded-full p-2 text-brouillard-clair transition-colors hover:bg-gold/10 hover:text-gold"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => del.mutate(poll.id)}
+              aria-label="Supprimer le sondage"
+              className="rounded-full p-2 text-brouillard-clair transition-colors hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Options */}
@@ -321,6 +328,9 @@ function CarteSondage({ poll }: { poll: Poll }) {
 /* ═══════════════ Les sondages — intégrés à la section Al-Ijtimâ' ═══════════════ */
 export function SondagesDuIjtima() {
   const { data: polls, isLoading } = usePolls()
+  const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
+  const peutCreer = peut(ville, role, 'sondages.creer')
   const [ouvert, setOuvert] = useState(false)
 
   return (
@@ -348,12 +358,14 @@ export function SondagesDuIjtima() {
               Aucun sondage pour l'instant.
             </p>
           )}
-          <button
-            onClick={() => setOuvert(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/45 bg-or-pale/40 p-3 text-xs font-bold uppercase tracking-[0.18em] text-gold-vif transition-colors hover:border-gold/70 hover:bg-or-pale/70"
-          >
-            <Plus className="h-4 w-4" /> Nouveau sondage
-          </button>
+          {peutCreer && (
+            <button
+              onClick={() => setOuvert(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/45 bg-or-pale/40 p-3 text-xs font-bold uppercase tracking-[0.18em] text-gold-vif transition-colors hover:border-gold/70 hover:bg-or-pale/70"
+            >
+              <Plus className="h-4 w-4" /> Nouveau sondage
+            </button>
+          )}
         </div>
       )}
       <NouveauSondageDialog open={ouvert} onOpenChange={setOuvert} />

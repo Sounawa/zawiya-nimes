@@ -648,3 +648,21 @@ Stage Summary:
 - TOUTES les écritures arabes du site sont en SCHEHERAZADE (défaut + migration des réglages enregistrés) — Amiri reste choisissable dans le sélecteur du lecteur
 - La Wāqi‘a (k03) N'ÉTAIT PAS dans le document : elle garde sa version actuelle — si la zawiya envoie son texte Warsh de la Wāqi‘a (ou de Taha, présent dans le document mais non demandé), l'extraction prendra 5 minutes
 - Anomalie connue mineure : le mot س۬يٓـَٔتْ (Mulk 67:28) porte une marque inhabituelle (ـ۬ sur le sīn) — tel quel dans le document Word de la zawiya, conservé fidèlement
+
+---
+Task ID: round-22-fath-9-mulk-10
+Agent: Z.ai Code (session principale)
+Task: « JE T AI DEMAND2 DE RAJOUTE UNE SECTION POUR AL FATH DONC MET LE A L ONGLET 9 ET SOURATE AL MULK A LA 10 » — Al-Fath en onglet 9, Al-Mulk en onglet 10
+
+Work Log:
+- DEMANDE PRÉCISÉE : le round 21 avait mis la carte « Surat al-Fath » juste après Ya-Sin (position 3) ; l'utilisateur veut les DEUX sourates en fin de liste — Al-Fath = onglet 9, Al-Mulk = onglet 10 (les cartes de la section Adhkâr portent des pastilles numérotées ; sama est filtré, il a sa propre section)
+- src/data/adhkar-docs.ts : DOCUMENTS_ADHKAR réordonné — les neuf pièces d'origine (kitab 1, yasin 2, nasiri 3, waqia 4, latif 5, jazr 6, mashishiyya 7, dalail 8) puis les sections à part : fath en 9ᵉ position (déplacé depuis la 3ᵉ) et NOUVELLE entrée mulk en 10ᵉ position ; commentaires d'en-tête actualisés
+- La carte mulk : titreFr « Surat al-Mulk », titreAr « سُورَةُ المُلْك », detail « la royauté — riwāyat Warsh », ar: depuisKitab(['k04']) — le texte Warsh du cahier d'ijtimā' ; PAS de ph (aucune transcription phonétique de Mulk dans le cahier)
+- src/components/zaouia/adhkar-section.tsx : (1) lecteur ouvert dans la langue DISPONIBLE — si un doc n'a pas de version dans la langue courante (Mulk en phonétique), le lecteur s'ouvre dans l'autre langue au lieu d'une page vide ; (2) badge « عربي » discret sur la carte Mulk en mode phonétique pour l'annoncer ; (3) compteur de section « 10 documents · phonétique & arabe »
+- QA AGENT-BROWSER : pastilles DOM vérifiées 1→10 (9 = Surat al-Fath, 10 = Surat al-Mulk, confirmé deux fois en phonétique et en arabe) ; carte Mulk cliquée en mode PHONÉTIQUE → lecteur s'ouvre en ARABE avec le texte Warsh complet (تَبَٰرَكَ اَ۬لذِے بِيَدِهِ…, س۬يٓـَٔتْ, فَامْشُواْ, مَّعِينٖ غَوْراٗ) ; carte Fath cliquée → phonétique du cahier (ch12) puis bascule عَرَبِي → Warsh k02 complet (شَغَلَتْنَا, اَ۬لْمُومِنِينَ, فِے×N) ; police calculée du texte coranique = « Scheherazade New » ; VLM : « texte arabe correct et complet, tous les tashkil et symboles de fin de verset visibles, aucun caractère manquant » ; mobile 390×844 : scrollWidth 390/390 exact, footer sticky en bas ; 0 erreur console ; lint 0 erreur ; commit d1f0460
+
+Stage Summary:
+- Al-FATH est l'ONGLET 9 et AL-MULK l'ONGLET 10 de la section Adhkâr — les deux sections à part ferment la marche après les pièces d'origine du site
+- Al-Mulk a maintenant SA carte autonome (elle n'existait que dans la wadhifa et le kitāb) ; n'existant qu'en arabe, un badge عربي l'annonce et son lecteur s'ouvre directement en Warsh quelle que soit la langue de lecture
+- La WADHIFA n'a pas bougé (w-fath ch12 + w-mulk k04 restent dans le groupe quotidien, ordre du cahier imprimé)
+- Restes/pistes : si la zawiya fournit un jour la transcription phonétique de Mulk, l'ajouter à cahier.ts et renseigner ph: sur la carte ; Taha (P0 du document Word) reste disponible si une section est demandée

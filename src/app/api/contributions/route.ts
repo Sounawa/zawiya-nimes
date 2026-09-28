@@ -18,6 +18,8 @@ export async function GET(req: Request) {
       _sum: { amount: true },
     })
     const caisse = Object.fromEntries(totals.map((t) => [t.category, t._sum.amount || 0]))
+    // La répartition confirmé / en attente se calcule côté client :
+    // les contributions arrivent avec confirmedAt / confirmedBy
     return NextResponse.json({
       contributions,
       totals: {
@@ -52,6 +54,10 @@ export async function POST(req: Request) {
         note: body.note || null,
         date: body.date ? new Date(body.date) : new Date(),
         recordedBy: body.recordedBy || null,
+        // Une déclaration de participant démarre en attente ; seule une
+        // saisie marquée confirmée (référent qui a vu la somme) est validée
+        confirmedAt: body.confirmed ? new Date() : null,
+        confirmedBy: body.confirmed ? body.recordedBy || 'référent' : null,
       },
       include: { member: true },
     })

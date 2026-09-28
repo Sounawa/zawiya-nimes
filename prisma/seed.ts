@@ -142,6 +142,9 @@ async function main() {
     [14, 15], [15, 20], [16, 25],
   ]
   for (const [idx, amount] of cotisations) {
+    // Les 3 dernières restent « en attente » : déclarations de participants
+    // pas encore confirmées par le référent cotisations
+    const confirmee = idx <= 13
     await db.contribution.create({
       data: {
         memberId: members[idx].id,
@@ -149,6 +152,8 @@ async function main() {
         category: 'COTISATION',
         note: 'Cotisation mensuelle',
         recordedBy: members[idx].name,
+        confirmedAt: confirmee ? new Date() : null,
+        confirmedBy: confirmee ? 'Trésorier' : null,
       },
     })
   }
@@ -163,6 +168,8 @@ async function main() {
         category: 'ZIYARA',
         note: 'Ziyara pour le Shaykh',
         recordedBy: members[idx].name,
+        confirmedAt: new Date(),
+        confirmedBy: 'Trésorier',
       },
     })
   }

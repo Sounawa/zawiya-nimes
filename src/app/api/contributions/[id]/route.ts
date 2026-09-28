@@ -23,6 +23,14 @@ export async function PATCH(req: Request, { params }: Params) {
     if (body.category) data.category = body.category
     if (body.note !== undefined) data.note = body.note
     if (body.date) data.date = new Date(body.date)
+    // Confirmation du référent cotisations : « la personne a donné »
+    if (body.confirm === true) {
+      data.confirmedAt = new Date()
+      data.confirmedBy = body.actor || body.recordedBy || 'référent'
+    } else if (body.confirm === false) {
+      data.confirmedAt = null
+      data.confirmedBy = null
+    }
     const contribution = await db.contribution.update({
       where: { id },
       data,
@@ -31,7 +39,12 @@ export async function PATCH(req: Request, { params }: Params) {
     await journaliser({
       kind: 'CONTRIBUTION',
       action: 'UPDATE',
-      label: `${libelleCategorie(contribution.category)} de ${contribution.member.name} corrigée`,
+      label:
+        body.confirm === true
+          ? `Somme de ${contribution.member.name} confirmée par le référent`
+          : body.confirm === false
+            ? `Confirmation retirée à ${contribution.member.name}`
+            : `${libelleCategorie(contribution.category)} de ${contribution.member.name} corrigée`,
       actor: body.actor || null,
     })
     return NextResponse.json(contribution)

@@ -54,6 +54,8 @@ export interface Contribution {
   date: string
   note: string | null
   recordedBy: string | null
+  confirmedAt: string | null // null = déclarée, en attente du référent
+  confirmedBy: string | null
   createdAt: string
 }
 

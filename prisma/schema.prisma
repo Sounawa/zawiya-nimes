@@ -52,16 +52,21 @@ model Attendance {
 }
 
 // ─── Contributions (cotisations & ziyara) ───────────────────────────
+// Nouveau modèle : chaque participant DÉCLARE la somme qu'il a mise
+// (confirmedAt = null → en attente). Le référent cotisations (trésorier)
+// voit la liste des cotisants et CONFIRME que la personne a donné.
 model Contribution {
-  id         String   @id @default(cuid())
-  memberId   String
-  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  amount     Float
-  category   String   @default("COTISATION") // COTISATION | ZIYARA | DON
-  date       DateTime @default(now())
-  note       String?
-  recordedBy String?
-  createdAt  DateTime @default(now())
+  id          String    @id @default(cuid())
+  memberId    String
+  member      Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount      Float
+  category    String    @default("COTISATION") // COTISATION | ZIYARA | DON
+  date        DateTime  @default(now())
+  note        String?
+  recordedBy  String?
+  confirmedAt DateTime? // null = déclarée, en attente de confirmation
+  confirmedBy String? // prénom du référent qui a vu la somme
+  createdAt   DateTime  @default(now())
 }
 
 // ─── Sondages (qui vient ?) ────────────────────────────────────────

@@ -151,6 +151,22 @@ export function useDeleteContribution() {
   })
 }
 
+/* Confirmer / retirer la confirmation du référent cotisations */
+export function useConfirmContribution() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, confirm, actor }: { id: string; confirm: boolean; actor?: string }) =>
+      api<Contribution>(`/api/contributions/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ confirm, actor }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contributions'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+    },
+  })
+}
+
 /* ─── Sondages ─── */
 export function usePolls() {
   return useQuery({

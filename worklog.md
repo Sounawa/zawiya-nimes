@@ -469,3 +469,38 @@ Stage Summary:
 - Lecteur adhkâr : plus de barre flottante inutile, cartes sans références de pages, phrase Latif complète, Munfarija en vers centrés aérés
 - Style andalou maintenant visible : frise de zellige sous l'en-tête, équerres d'or sur les cartes, filigranes renforcés — confirmé par VLM jour et nuit
 - Restes : rien de bloquant — pistes : import du programme par défaut depuis PROG_DEFAUT du site original (Repas/Taqwiya) si la zawiya veut des heures pré-remplies ; les votes anciens gardent personnes=0 (comptés 1) jusqu'à ce que chacun re-précise
+
+---
+Task ID: round-16-cotisations-declaratives-andalous-geometrie
+Agent: Z.ai Code (session principale)
+Task: Nouveau lot utilisateur — (1) accroître encore le côté andalou avec de vraies formes géométriques ; (2) rendre le bandeau plus andalou ; (3) cotisations simplifiées : chaque participant déclare la somme qu'il a mis, le référent cotisations a la liste des cotisants et confirme « il a donné » (fonction ouverte à tous pour le moment, à réserver au trésorier plus tard)
+
+Work Log:
+- COTISATIONS — NOUVEAU MODÈLE DÉCLARATIF :
+  · Prisma Contribution + confirmedAt/confirmedBy (null = déclarée en attente) + db:push ; migration one-shot scripts/migre-confirmations.ts : les 26 saisies existantes (vues par le trésorier) passent confirmées ; seed.ts mis à jour (les 3 dernières entrées restent en attente pour la démo)
+  · API : POST /api/contributions accepte confirmed (référent) ; PATCH /api/contributions/:id accepte { confirm: true/false, actor } avec libellés d'audit dédiés ; hook useConfirmContribution dans api.ts ; type Contribution + confirmedAt/confirmedBy
+  · MA COTISATION (composant MaCotisation, en tête de section, pour chacun) : champ « Combien as-tu mis ? » + jetons octogonaux 5/10/20/50 (tuile-khatim-sm, plaque emboîtée — le border natif serait amputé par le clip), segmenté Cotisation/Don, note facultative, bouton « Déclarer ma somme » → entrée en attente ; sous le formulaire : « Tes sommes de {mois} » avec total, badge reçu/en attente par somme ; prénom inconnu → toast explicatif
+  · LE REGISTRE DU RÉFÉRENT (composant RegistreReferent) : liste des cotisants de la période (regroupés par frère : pastille-arche initiale, N sommes, total, statut par somme) ; bouton octogonal doré « Il a donné ✓ » qui confirme TOUTES ses sommes en attente (Promise.all de PATCH confirm) ; re-clic sur le BadgeCheck vert = retirer la confirmation ; compteurs « N reçus · M à confirmer » ; ligne « X frères n'ont encore rien déclaré » ; mention « ouvert à tous pour le moment » ; constante RESERVER_AU_TRESORIER=false dans le composant — passer à true pour réserver les boutons au rôle TREASURER (la liste restera visible)
+  · Carte CAISSE : le grand compteur = total confirmé (« Confirmées par le référent ») + ligne dorée « + X € déclarés en attente » (Clock3) ; filigrane-girih remplace le pattern-lattice neutralisé ; exports trésorier conservés, CSV + colonne « Confirmé (par qui) » ; pastilles de période déplacées de l'historique vers le registre (état partagé), l'historique affiche le libellé de la période
+  · LigneContribution : prop confirme?: boolean|null (undefined = ziyara sans badge) → badge « reçu » vert (BadgeCheck) ou « à confirmer » doré (Clock3) dans l'historique
+- BANDEAU ANDALOU (header-bar.tsx) :
+  · Logo en tuile octogonale de zellige : tuile-khatim-sm double (cadre gradient or → plaque blanche 1,5 px) remplaçant le cercle
+  · Fond SEBKA : réseau de losanges stuc (SVG data-URI, trait 0.8, masque né du bord droit — s'éteint avant le titre) en calque pointer-events-none
+  · Date spirituelle entre FILETS D'OR ✦ … ✦ (ornement-filet) au lieu du simple « · »
+  · CORNICE À MERLONS : frise-merlons (créneaux pointus nasrides, SVG 12×7, filet supérieur) remplace la bande-zellige 5 px ; le fil d'or de progression remonte à bottom-[7px] pour rester lisible au-dessus de la corniche
+  · Titre : petit ✦ doré devant « NIMES »
+- GÉOMÉTRIE GÉNÉRALE (globals.css, toujours dans @layer components) :
+  · .tuile-khatim-sm — octogone 7 px pour petits boutons
+  · .sebka — claustras de losanges jour/nuit (#a5824a / #c9a45c, opacité .055/.07)
+  · .frise-merlons — merlons pointus + border-top or (opacité .42/.34)
+  · .filigrane-girih — octagramme + sangles (rect + rect rotate 45 + croix de liaison), stroke #17553f/#4f9678, opacité .08/.09 — sur la carte caisse
+- QA AGENT-BROWSER (jour + nuit + mobile 390 + desktop 1280) :
+  · Flux cotisations complet : déclaration 20 € (jeton) → « en attente » + bouton « Il a donné » → confirmation (475→495 €, badge reçu) → retrait (retour en attente, 455/40) → re-confirmation → suppression de l'entrée de test → retour à l'état propre 475 € ; filtre période Sept. 26 OK (« 2 frères n'ont encore rien déclaré »)
+  · Bandeau validé par VLM : logo octogonal doré ✓, créneaux pointus ✓, sebka discrète ✓, date entre filets ✦ ✓, aucun défaut ; nuit : contrastes bons, identité or+vert préservée ; mobile : scrollWidth 390 = 0 débordement, footer 844/844 en bas de page, bandeau dégagé
+  · Régressions : Ziyara (Abde trésorier) lignes OK sans badge, 6 sections, exports CSV/print intacts ; 0 erreur page, 0 erreur console, dev.log propre ; lint 0 erreur ; tsc : seuls examples/ et skills/ préexistants
+
+Stage Summary:
+- Cotisations : chacun déclare sa somme (jetons 5-50 €), le référent voit la liste des cotisants et confirme « il a donné » — ouvert à tous aujourd'hui, un seul booléen à inverser (RESERVER_AU_TRESORIER) pour le réserver au trésorier
+- La caisse ne compte que le confirmé ; les déclarations en attente sont affichées à part
+- Bandeau : tuile octogonale dorée, sebka, date entre filets d'or, corniche de merlons nasrides — l'identité al-Andalus est maintenant structurante (géométrie réelle : zellige, sebka, girih, merlons) tout en restant mate et lisible jour/nuit
+- Restes : rien de bloquant — pistes : réserver la confirmation au trésorier quand la zawiya le décidera ; heures pré-remplies du programme si demandé ; votes anciens toujours personnes=0

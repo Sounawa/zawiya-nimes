@@ -41,23 +41,24 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
       <div aria-hidden className="sebka pointer-events-none absolute inset-0" />
 
       <div className="relative mx-auto flex max-w-3xl items-center gap-1.5 px-3 py-3 sm:gap-3 sm:px-4">
-        {/* Logo — tuile octogonale de zellige, filet d'or emboîté */}
+        {/* Logo — cartouche de zellige allongé, la calligraphie de la tariqa */}
         <button
           onClick={onOpenProfile}
           className="flex items-center gap-3 rounded-2xl p-1 pr-1 transition-colors hover:bg-primary/5 sm:pr-3"
           aria-label="Profil"
         >
           <motion.div
-            whileHover={{ rotate: 6, scale: 1.05 }}
+            whileHover={{ scale: 1.06 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-            className="tuile-khatim-sm h-12 w-12 shrink-0 bg-gradient-to-b from-gold-clair via-gold to-gold-vif p-[1.5px] shadow-sm"
+            className="cartouche-khatim h-[58px] w-[72px] shrink-0 bg-gradient-to-b from-gold-clair via-gold to-gold-vif p-[1.5px] shadow-sm sm:h-16 sm:w-20"
           >
-            <span className="tuile-khatim-sm relative block h-full w-full bg-white">
+            <span className="cartouche-khatim relative block h-full w-full bg-white">
               <Image
                 src="/tariqa.png"
-                alt="Sceau de la zawiya"
+                alt="Calligraphie de la zawiya — la Basmala calligraphiée"
                 fill
-                sizes="48px"
+                priority
+                sizes="80px"
                 className="object-contain p-1"
               />
             </span>

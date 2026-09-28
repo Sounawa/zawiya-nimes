@@ -423,6 +423,24 @@ body::after {
   );
 }
 
+/* ─── Le cartouche khātim — octogone allongé de la bannière ───
+   La calligraphie de la tariqa est plus large que haute : le
+   cartouche étire la découpe du zellige pour l'accueillir sans
+   l'écraser, comme une plaque de stuc entre deux merlons. La
+   double plaque (cadre d'or + ivoire) garde le filet entier. */
+.cartouche-khatim {
+  clip-path: polygon(
+    11px 0,
+    calc(100% - 11px) 0,
+    100% 11px,
+    100% calc(100% - 11px),
+    calc(100% - 11px) 100%,
+    11px 100%,
+    0 calc(100% - 11px),
+    0 11px
+  );
+}
+
 /* ─── La sebka — filet de losanges de stuc ───
    Les claustras de l'Alhambra : un réseau de losanges au trait
    d'un cheveu, en réserve dorée derrière le bandeau. Le masque

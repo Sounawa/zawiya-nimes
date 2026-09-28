@@ -1,0 +1,719 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import Image from 'next/image'
+     6→import { useQueryClient } from '@tanstack/react-query'
+     7→import { cn } from '@/lib/utils'
+     8→import { useUser } from '@/lib/store'
+     9→import { ThemeToggle } from '@/components/zaouia/theme-toggle'
+    10→import { VILLE_LABEL, type Ville } from '@/lib/types'
+    11→
+    12→/** PRNG arithmétique pur (mulberry32) — strictement identique serveur/client,
+    13→ *  contrairement à Math.sin dont la précision varie selon le moteur JS. */
+    14→function mulberry32(graine: number) {
+    15→  return () => {
+    16→    graine |= 0
+    17→    graine = (graine + 0x6d2b79f5) | 0
+    18→    let t = Math.imul(graine ^ (graine >>> 15), 1 | graine)
+    19→    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    20→    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    21→  }
+    22→}
+    23→
+    24→/** Particules de lumière dorée qui montent autour du logo */
+    25→function Particules() {
+    26→  const particules = Array.from({ length: 14 }, (_, i) => {
+    27→    const rnd = mulberry32(42 + i * 7)
+    28→    return {
+    29→      id: i,
+    30→      left: 8 + rnd() * 84,
+    31→      size: 4 + rnd() * 7,
+    32→      delay: rnd() * 4,
+    33→      duree: 3.2 + rnd() * 2.6,
+    34→    }
+    35→  })
+    36→  return (
+    37→    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    38→      {particules.map((p) => (
+    39→        <span
+    40→          key={p.id}
+    41→          className="particle"
+    42→          style={{
+    43→            left: `${p.left}%`,
+    44→            bottom: '12%',
+    45→            width: p.size,
+    46→            height: p.size,
+    47→            animationDelay: `${p.delay}s`,
+    48→            animationDuration: `${p.duree}s`,
+    49→          }}
+    50→        />
+    51→      ))}
+    52→    </div>
+    53→  )
+    54→}
+    55→
+    56→/** Étoiles scintillantes dans le ciel de la page d'accueil */
+    57→function Etoiles() {
+    58→  const etoiles = Array.from({ length: 18 }, (_, i) => {
+    59→    const rnd = mulberry32(7 + i * 13)
+    60→    return {
+    61→      id: i,
+    62→      top: 4 + rnd() * 88,
+    63→      left: 3 + rnd() * 94,
+    64→      size: 1.5 + rnd() * 2.5,
+    65→      delay: rnd() * 5,
+    66→      duree: 2.4 + rnd() * 3.2,
+    67→    }
+    68→  })
+    69→  return (
+    70→    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    71→      {etoiles.map((e) => (
+    72→        <span
+    73→          key={e.id}
+    74→          className="etoile"
+    75→          style={{
+    76→            top: `${e.top}%`,
+    77→            left: `${e.left}%`,
+    78→            width: e.size,
+    79→            height: e.size,
+    80→            animationDelay: `${e.delay}s`,
+    81→            animationDuration: `${e.duree}s`,
+    82→          }}
+    83→        />
+    84→      ))}
+    85→    </div>
+    86→  )
+    87→}
+    88→
+    89→/** Rayons de lumière dorés qui tournent lentement derrière la calligraphie.
+    90→ *  Cercle parfait — remplis le parent centré, l'ellipse est évitée
+    91→ *  (un ovale en rotation donnerait un balancement disgracieux). */
+    92→function RayonsLumiere() {
+    93→  return (
+    94→    <motion.div
+    95→      aria-hidden
+    96→      className="pointer-events-none h-full w-full"
+    97→      animate={{ rotate: 360 }}
+    98→      transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+    99→      style={{
+   100→        background:
+   101→          'conic-gradient(from 0deg, transparent 0deg, rgba(201,162,75,0.10) 12deg, transparent 24deg, transparent 60deg, rgba(201,162,75,0.07) 72deg, transparent 84deg, transparent 150deg, rgba(11,93,66,0.08) 162deg, transparent 174deg, transparent 240deg, rgba(201,162,75,0.09) 252deg, transparent 264deg, transparent 320deg, rgba(11,93,66,0.06) 332deg, transparent 344deg)',
+   102→        borderRadius: '9999px',
+   103→        WebkitMaskImage: 'radial-gradient(circle, black 30%, transparent 72%)',
+   104→        maskImage: 'radial-gradient(circle, black 30%, transparent 72%)',
+   105→      }}
+   106→    />
+   107→  )
+   108→}
+   109→
+   110→/** Le titre « ZAWIYA » révélé lettre par lettre avec un reflet doré */
+   111→function TitreLettres() {
+   112→  const lettres = 'ZAWIYA'.split('')
+   113→  return (
+   114→    <span className="block font-display text-5xl font-semibold tracking-[0.18em] text-encre sm:text-6xl" aria-label="Zawiya">
+   115→      {lettres.map((l, i) => (
+   116→        <motion.span
+   117→          key={i}
+   118→          className="text-shimmer inline-block"
+   119→          initial={{ opacity: 0, y: 26, rotateX: -70, filter: 'blur(6px)' }}
+   120→          animate={{ opacity: 1, y: 0, rotateX: 0, filter: 'blur(0px)' }}
+   121→          transition={{ delay: 0.55 + i * 0.09, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+   122→          aria-hidden
+   123→        >
+   124→          {l}
+   125→        </motion.span>
+   126→      ))}
+   127→    </span>
+   128→  )
+   129→}
+   130→
+   131→/* ─── L'état d'un prénom à la porte ───
+   132→   VERIFIE  : on ne sait pas encore (prénom trop court ou en vérification)
+   133→   INCONNU  : personne ne porte ce prénom dans cette zawiya
+   134→   SANS_CODE: connu sans code — le premier passage le pose
+   135→   PRET     : connu avec code — il faut le taper
+   136→   ATTENTE  : inscription faite, validation du référent en cours
+   137→   BLOQUE   : accès révoqué par le référent */
+   138→type EtatPorte = 'VERIFIE' | 'INCONNU' | 'SANS_CODE' | 'PRET' | 'ATTENTE' | 'BLOQUE'
+   139→
+   140→const ZAWIYAS: { id: Ville; label: string; sub: string }[] = [
+   141→  { id: 'NIMES', label: 'Nîmes', sub: 'la maison-mère' },
+   142→  { id: 'AVIGNON', label: 'Avignon', sub: 'le groupe frère' },
+   143→  { id: 'MONTPELLIER', label: 'Montpellier', sub: 'le groupe frère' },
+   144→]
+   145→
+   146→export function WelcomeGate() {
+   147→  const setName = useUser((s) => s.setName)
+   148→  const setVille = useUser((s) => s.setVille)
+   149→  const setMember = useUser((s) => s.setMember)
+   150→  const qc = useQueryClient()
+   151→
+   152→  const [value, setValue] = useState('')
+   153→  /* La zawiya persistée de l'appareil, lue sans écart d'hydratation :
+   154→     le serveur ne rend que Nîmes (son seul instantané), la vraie zawiya
+   155→     arrive à l'hydratation ; le choix d'une tuile prend la main dès le
+   156→     premier clic et prime sur ce qui est persisté. */
+   157→  const [villeChoisie, setVilleChoisie] = useState<Ville | null>(null)
+   158→  const villeDAppareil = useSyncExternalStore(
+   159→    useUser.subscribe,
+   160→    () => useUser.getState().ville,
+   161→    () => 'NIMES' as Ville
+   162→  )
+   163→  const ville = villeChoisie ?? villeDAppareil
+   164→  const [code, setCode] = useState('')
+   165→  const [etat, setEtat] = useState<EtatPorte>('VERIFIE')
+   166→  const [erreur, setErreur] = useState<string | null>(null)
+   167→  const [envoi, setEnvoi] = useState(false)
+   168→  const [heure, setHeure] = useState('')
+   169→  const inputRef = useRef<HTMLInputElement>(null)
+   170→  const codeRef = useRef<HTMLInputElement>(null)
+   171→
+   172→  useEffect(() => {
+   173→    inputRef.current?.focus()
+   174→    const tick = () =>
+   175→      setHeure(new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date()))
+   176→    tick()
+   177→    const t = setInterval(tick, 10_000)
+   178→    return () => clearInterval(t)
+   179→  }, [])
+   180→
+   181→  /* L'état du prénom dans la zawiya choisie — debounced, discret */
+   182→  useEffect(() => {
+   183→    const v = value.trim()
+   184→    setErreur(null)
+   185→    if (v.length < 2) {
+   186→      setEtat('VERIFIE')
+   187→      return
+   188→    }
+   189→    const t = setTimeout(() => {
+   190→      fetch(`/api/auth/etat?name=${encodeURIComponent(v)}&ville=${ville}`)
+   191→        .then((r) => r.json())
+   192→        .then((d: { etat?: EtatPorte }) => setEtat(d?.etat ?? 'INCONNU'))
+   193→        .catch(() => setEtat('VERIFIE'))
+   194→    }, 350)
+   195→    return () => clearTimeout(t)
+   196→  }, [value, ville])
+   197→
+   198→  /* Vérifier à nouveau — après validation du référent */
+   199→  const reverifier = () => {
+   200→    const v = value.trim()
+   201→    if (!v) return
+   202→    fetch(`/api/auth/etat?name=${encodeURIComponent(v)}&ville=${ville}`)
+   203→      .then((r) => r.json())
+   204→      .then((d: { etat?: EtatPorte }) => setEtat(d?.etat ?? 'INCONNU'))
+   205→      .catch(() => {})
+   206→  }
+   207→
+   208→  const entrer = async () => {
+   209→    const v = value.trim()
+   210→    if (!v || envoi) return
+   211→    setErreur(null)
+   212→    setEnvoi(true)
+   213→    try {
+   214→      const r = await fetch('/api/auth/entrer', {
+   215→        method: 'POST',
+   216→        headers: { 'Content-Type': 'application/json' },
+   217→        body: JSON.stringify({ name: v, ville, pin: code.trim() }),
+   218→      })
+   219→      const d = await r.json()
+   220→      /* Entré — le frère passe la porte */
+   221→      if (r.ok && d?.id) {
+   222→        setVille(ville)
+   223→        setName(v)
+   224→        setMember(d.id, d.role, d.city, d.perms)
+   225→        qc.invalidateQueries({ queryKey: ['members'] })
+   226→        return
+   227→      }
+   228→      /* Inscription enregistrée, validation en cours */
+   229→      if (d?.attente) {
+   230→        setEtat('ATTENTE')
+   231→        return
+   232→      }
+   233→      /* Code incorrect, accès révoqué, champs invalides… */
+   234→      if (d?.mauvaisCode) setCode('')
+   235→      setErreur(d?.error ?? 'Impossible d’entrer — réessaie.')
+   236→    } catch {
+   237→      setErreur('Erreur réseau — réessaie.')
+   238→    } finally {
+   239→      setEnvoi(false)
+   240→    }
+   241→  }
+   242→
+   243→  /* ─── Écran d'attente : la demande est envoyée, le référent valide ─── */
+   244→  if (etat === 'ATTENTE') {
+   245→    return (
+   246→      <motion.div
+   247→        className="fixed inset-0 z-50 flex min-h-screen flex-col items-center overflow-y-auto bg-background px-6 py-8"
+   248→        exit={{ opacity: 0, scale: 1.04 }}
+   249→        transition={{ duration: 0.6, ease: 'easeInOut' }}
+   250→      >
+   251→        <div className="pattern-arabesque absolute inset-0" aria-hidden />
+   252→        <Etoiles />
+   253→        <div
+   254→          className="absolute inset-0"
+   255→          aria-hidden
+   256→          style={{
+   257→            background:
+   258→              'radial-gradient(ellipse 70% 45% at 50% 38%, rgba(201,162,75,0.14), transparent 70%)',
+   259→          }}
+   260→        />
+   261→        <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
+   262→          {/* Sablier doré */}
+   263→          <motion.div
+   264→            initial={{ opacity: 0, scale: 0.6 }}
+   265→            animate={{ opacity: 1, scale: 1 }}
+   266→            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+   267→            className="halo-dore relative mb-7 grid h-28 w-28 place-items-center rounded-full bg-white shadow-[0_20px_60px_-15px_rgba(11,93,66,0.35)] ring-1 ring-primary/10"
+   268→          >
+   269→            <motion.svg
+   270→              viewBox="0 0 24 24"
+   271→              className="h-12 w-12 text-primary"
+   272→              fill="none"
+   273→              stroke="currentColor"
+   274→              strokeWidth="1.6"
+   275→              strokeLinecap="round"
+   276→              strokeLinejoin="round"
+   277→              animate={{ rotate: [0, 0, 180, 180, 360, 360] }}
+   278→              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+   279→              aria-hidden
+   280→            >
+   281→              <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+   282→            </motion.svg>
+   283→          </motion.div>
+   284→
+   285→          <motion.h1
+   286→            initial={{ opacity: 0, y: 14 }}
+   287→            animate={{ opacity: 1, y: 0 }}
+   288→            transition={{ delay: 0.25, duration: 0.6 }}
+   289→            className="text-center font-display text-3xl font-medium text-encre"
+   290→          >
+   291→            Inscription enregistrée
+   292→          </motion.h1>
+   293→          <motion.p
+   294→            initial={{ opacity: 0 }}
+   295→            animate={{ opacity: 1 }}
+   296→            transition={{ delay: 0.4, duration: 0.6 }}
+   297→            className="mt-4 max-w-xs text-center font-display text-lg italic leading-relaxed text-muted-foreground"
+   298→          >
+   299→            Marhaban bik, Sidi {value.trim()}. Le référent de la zawiya de{' '}
+   300→            {VILLE_LABEL[ville]} va ouvrir ton accès — repasse dans un instant.
+   301→          </motion.p>
+   302→
+   303→          <motion.div
+   304→            initial={{ opacity: 0, y: 14 }}
+   305→            animate={{ opacity: 1, y: 0 }}
+   306→            transition={{ delay: 0.55, duration: 0.5 }}
+   307→            className="mt-9 flex w-full flex-col gap-2"
+   308→          >
+   309→            <button
+   310→              onClick={reverifier}
+   311→              className="w-full rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-[0.15em] text-white shadow-md shadow-primary/25 transition-all hover:bg-emerald-deep active:scale-95"
+   312→            >
+   313→              J’ai été validé — actualiser
+   314→            </button>
+   315→            <button
+   316→              onClick={() => {
+   317→                setEtat('VERIFIE')
+   318→                setValue('')
+   319→                setCode('')
+   320→              }}
+   321→              className="w-full rounded-full py-3 text-xs font-semibold uppercase tracking-[0.2em] text-brouillard transition-colors hover:text-primary"
+   322→            >
+   323→              Changer de prénom
+   324→            </button>
+   325→          </motion.div>
+   326→        </div>
+   327→
+   328→        <motion.p
+   329→          initial={{ opacity: 0 }}
+   330→          animate={{ opacity: 1 }}
+   331→          transition={{ delay: 0.8 }}
+   332→          className="relative z-10 mt-8 text-xs tracking-widest text-brouillard"
+   333→        >
+   334→          {heure ? `${heure} · ${VILLE_LABEL[ville]}` : VILLE_LABEL[ville]}
+   335→        </motion.p>
+   336→      </motion.div>
+   337→    )
+   338→  }
+   339→
+   340→  /* Libellé du champ code selon l'état du prénom */
+   341→  const libelleCode =
+   342→    etat === 'PRET'
+   343→      ? 'Ton code personnel'
+   344→      : etat === 'SANS_CODE'
+   345→        ? 'Choisis ton code'
+   346→        : 'Choisis un code'
+   347→  const aideCode =
+   348→    etat === 'PRET'
+   349→      ? 'Les 4 à 6 chiffres choisis à ton premier passage.'
+   350→      : '4 à 6 chiffres — ils ouvriront l’application à chaque visite.'
+   351→  const peutSoumettre =
+   352→    value.trim().length >= 1 && /^\d{4,6}$/.test(code.trim()) && etat !== 'BLOQUE'
+   353→
+   354→  return (
+   355→    <motion.div
+   356→      className="fixed inset-0 z-50 flex min-h-screen flex-col items-center overflow-y-auto bg-background px-6 py-8"
+   357→      exit={{ opacity: 0, scale: 1.04 }}
+   358→      transition={{ duration: 0.6, ease: 'easeInOut' }}
+   359→    >
+   360→      {/* Motif arabisant + ciel étoilé en fond */}
+   361→      <div className="pattern-arabesque absolute inset-0" aria-hidden />
+   362→      <Etoiles />
+   363→
+   364→      {/* Bascule jour / nuit — discrète, sous l'ornement d'angle */}
+   365→      <div className="absolute right-3 top-24 z-20 sm:right-4">
+   366→        <ThemeToggle />
+   367→      </div>
+   368→      <div
+   369→        className="absolute inset-0"
+   370→        aria-hidden
+   371→        style={{
+   372→          background:
+   373→            'radial-gradient(ellipse 70% 45% at 50% 38%, rgba(201,162,75,0.14), transparent 70%)',
+   374→        }}
+   375→      />
+   376→
+   377→      {/* Ornements d'angle */}
+   378→      <svg aria-hidden className="absolute left-4 top-4 h-16 w-16 text-primary/15" viewBox="0 0 64 64" fill="none">
+   379→        <path d="M2 62V22C2 10 10 2 22 2h40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+   380→        <circle cx="10" cy="54" r="3" fill="currentColor" />
+   381→      </svg>
+   382→      <svg aria-hidden className="absolute right-4 top-4 h-16 w-16 rotate-90 text-primary/15" viewBox="0 0 64 64" fill="none">
+   383→        <path d="M2 62V22C2 10 10 2 22 2h40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+   384→        <circle cx="10" cy="54" r="3" fill="currentColor" />
+   385→      </svg>
+   386→      <svg aria-hidden className="absolute bottom-4 left-4 h-16 w-16 -rotate-90 text-primary/15" viewBox="0 0 64 64" fill="none">
+   387→        <path d="M2 62V22C2 10 10 2 22 2h40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+   388→        <circle cx="10" cy="54" r="3" fill="currentColor" />
+   389→      </svg>
+   390→      <svg aria-hidden className="absolute bottom-4 right-4 h-16 w-16 rotate-180 text-primary/15" viewBox="0 0 64 64" fill="none">
+   391→        <path d="M2 62V22C2 10 10 2 22 2h40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+   392→        <circle cx="10" cy="54" r="3" fill="currentColor" />
+   393→      </svg>
+   394→
+   395→        {/* La calligraphie de la tariqa, posée un peu plus bas dans la composition */}
+   396→      <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
+   397→        {/* ─── L'emblème calligraphié ─── */}
+   398→        <motion.div
+   399→          initial={{ opacity: 0, scale: 0.6, y: 30 }}
+   400→          animate={{ opacity: 1, scale: 1, y: 0 }}
+   401→          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+   402→          className="relative mb-7"
+   403→        >
+   404→          <Particules />
+   405→          {/* Rayons de lumière tournants — cercle centré derrière la calligraphie */}
+   406→          <div
+   407→            aria-hidden
+   408→            className="pointer-events-none absolute left-1/2 top-1/2 h-[23rem] w-[23rem] -translate-x-1/2 -translate-y-1/2 sm:h-[26rem] sm:w-[26rem]"
+   409→          >
+   410→            <RayonsLumiere />
+   411→          </div>
+   412→          {/* Anneau pointillé doré — cercle centré, tourne lentement */}
+   413→          <div aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
+   414→            <motion.div
+   415→              className="h-[21rem] w-[21rem] rounded-full border border-dashed border-gold/40 sm:h-[24rem] sm:w-[24rem]"
+   416→              animate={{ rotate: 360 }}
+   417→              transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+   418→            />
+   419→          </div>
+   420→          {/* Anneau ovale qui respire — épouse la calligraphie */}
+   421→          <motion.div
+   422→            className="absolute -inset-x-10 -inset-y-8 rounded-[999px] border border-primary/20"
+   423→            animate={{ scale: [1, 1.045, 1], opacity: [0.45, 0.85, 0.45] }}
+   424→            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+   425→            aria-hidden
+   426→          />
+   427→          {/* Plaque de nuit — la lune d'ivoire porte la calligraphie verte.
+   428→              Le jour, la calligraphie flotte sur le papier crème ; la nuit,
+   429→              l'ivoire plein la garde lisible (le vert sur le vert-noir
+   430→              s'éteindrait, un voile translucide pire encore : sa lueur
+   431→              égalerait presque celle des lettres). */}
+   432→          <div
+   433→            aria-hidden
+   434→            className="pointer-events-none absolute -inset-x-7 -inset-y-6 hidden rounded-[999px] bg-gradient-to-b from-[#faf8f1] to-[#ece5d3] shadow-[0_18px_50px_-12px_rgba(0,0,0,0.5)] ring-1 ring-gold/25 dark:block"
+   435→          />
+   436→          {/* La calligraphie — fond transparent, elle flotte sur le papier */}
+   437→          <motion.div
+   438→            animate={{ y: [0, -8, 0], rotate: [0, 1.5, 0] }}
+   439→            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+   440→            className="relative w-72 sm:w-80"
+   441→          >
+   442→            <Image
+   443→              src="/tariqa.png"
+   444→              alt="Calligraphie de la zawiya — la Basmala calligraphiée"
+   445→              width={520}
+   446→              height={413}
+   447→              priority
+   448→              sizes="(min-width: 640px) 320px, 288px"
+   449→              className="h-auto w-full drop-shadow-[0_14px_28px_rgba(11,93,66,0.22)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+   450→            />
+   451→          </motion.div>
+   452→          {/* Étoile à 8 branches tournante — le petit sceau d'or */}
+   453→          <motion.svg
+   454→            className="absolute -right-2 top-2 h-8 w-8 text-gold"
+   455→            viewBox="0 0 24 24"
+   456→            fill="currentColor"
+   457→            animate={{ rotate: 360 }}
+   458→            transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
+   459→            aria-hidden
+   460→          >
+   461→            <path d="M12 0l2.4 7.2L22 4.8l-4.8 7.2L24 12l-6.8 0l4.8 7.2-7.6-2.4L12 24l-2.4-7.2L2 19.2 6.8 12 0 12l6.8 0L2 4.8l7.6 2.4z" opacity="0.85" />
+   462→          </motion.svg>
+   463→        </motion.div>
+   464→
+   465→        {/* ─── Titre ─── */}
+   466→        <motion.h1
+   467→          initial={{ opacity: 0, y: 18 }}
+   468→          animate={{ opacity: 1, y: 0 }}
+   469→          transition={{ delay: 0.35, duration: 0.7 }}
+   470→          className="text-center"
+   471→        >
+   472→          <TitreLettres />
+   473→          <motion.span
+   474→            initial={{ opacity: 0, letterSpacing: '0.8em' }}
+   475→            animate={{ opacity: 1, letterSpacing: '0.42em' }}
+   476→            transition={{ delay: 1.25, duration: 0.9, ease: 'easeOut' }}
+   477→            className="mt-1 block font-display text-2xl font-medium text-primary sm:text-3xl"
+   478→          >
+   479→            {(VILLE_LABEL[ville] ?? ville).toUpperCase()}
+   480→          </motion.span>
+   481→        </motion.h1>
+   482→
+   483→        {/* Séparateur orné */}
+   484→        <motion.div
+   485→          initial={{ opacity: 0, scaleX: 0 }}
+   486→          animate={{ opacity: 1, scaleX: 1 }}
+   487→          transition={{ delay: 1.5, duration: 0.7 }}
+   488→          aria-hidden
+   489→          className="mt-5 flex items-center gap-3"
+   490→        >
+   491→          <span className="h-px w-16 bg-gradient-to-r from-transparent to-accent/60" />
+   492→          <motion.span
+   493→            animate={{ rotate: [0, 180, 360] }}
+   494→            transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+   495→            className="text-gold"
+   496→          >
+   497→            ✦
+   498→          </motion.span>
+   499→          <span className="h-px w-16 bg-gradient-to-l from-transparent to-accent/60" />
+   500→        </motion.div>
+   501→
+   502→        {/* ─── Citation ─── */}
+   503→        <motion.blockquote
+   504→          initial={{ opacity: 0 }}
+   505→          animate={{ opacity: 1 }}
+   506→          transition={{ delay: 0.6, duration: 0.8 }}
+   507→          className="mt-6 max-w-xs text-center"
+   508→        >
+   509→          <p className="font-display text-lg italic leading-relaxed text-muted-foreground">
+   510→            «&nbsp;Nous sommes tous issus de la même lumière.&nbsp;»
+   511→          </p>
+   512→          <cite className="mt-2 block text-[11px] font-semibold uppercase tracking-[0.3em] text-gold not-italic">
+   513→            Sidi Hamza
+   514→          </cite>
+   515→        </motion.blockquote>
+   516→
+   517→        {/* ─── Choix de la zawiya (3 groupes) ─── */}
+   518→        <motion.div
+   519→          initial={{ opacity: 0, y: 16 }}
+   520→          animate={{ opacity: 1, y: 0 }}
+   521→          transition={{ delay: 0.7, duration: 0.6 }}
+   522→          className="mt-9 w-full"
+   523→        >
+   524→          <label
+   525→            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
+   526→          >
+   527→            Ta zawiya
+   528→          </label>
+   529→          <div
+   530→            role="radiogroup"
+   531→            aria-label="Ta zawiya"
+   532→            className="relative mx-auto flex w-full items-stretch gap-1 rounded-2xl border border-primary/25 bg-card/90 p-1.5 shadow-inner shadow-primary/5 backdrop-blur sm:rounded-full"
+   533→          >
+   534→            {ZAWIYAS.map((z) => {
+   535→              const actif = ville === z.id
+   536→              return (
+   537→                <button
+   538→                  key={z.id}
+   539→                  type="button"
+   540→                  role="radio"
+   541→                  aria-checked={actif}
+   542→                  onClick={() => setVilleChoisie(z.id)}
+   543→                  className="relative flex-1 rounded-full px-2 py-2.5 text-center transition-all duration-300 sm:px-3"
+   544→                >
+   545→                  {actif && (
+   546→                    <motion.span
+   547→                      layoutId="zawiya-choisie"
+   548→                      className="absolute inset-0 rounded-full bg-primary shadow-md shadow-primary/25"
+   549→                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+   550→                    />
+   551→                  )}
+   552→                  <span className="relative block">
+   553→                    <span
+   554→                      className={
+   555→                        'block text-[13px] font-semibold sm:text-sm ' +
+   556→                        (actif ? 'text-white' : 'text-secondary-foreground')
+   557→                      }
+   558→                    >
+   559→                      {z.label}
+   560→                    </span>
+   561→                    <span
+   562→                      className={
+   563→                        'mt-0.5 block text-[8px] uppercase tracking-[0.15em] sm:text-[9px] sm:tracking-[0.2em] ' +
+   564→                        (actif ? 'text-white/70' : 'text-brouillard')
+   565→                      }
+   566→                    >
+   567→                      {z.sub}
+   568→                    </span>
+   569→                  </span>
+   570→                </button>
+   571→              )
+   572→            })}
+   573→          </div>
+   574→        </motion.div>
+   575→
+   576→        {/* ─── Champ prénom ─── */}
+   577→        <motion.div
+   578→          initial={{ opacity: 0, y: 16 }}
+   579→          animate={{ opacity: 1, y: 0 }}
+   580→          transition={{ delay: 0.8, duration: 0.6 }}
+   581→          className="mt-5 w-full"
+   582→        >
+   583→          <label
+   584→            htmlFor="prenom"
+   585→            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
+   586→          >
+   587→            Prénom
+   588→          </label>
+   589→          <div className="relative">
+   590→            <input
+   591→              id="prenom"
+   592→              ref={inputRef}
+   593→              value={value}
+   594→              onChange={(e) => setValue(e.target.value)}
+   595→              onKeyDown={(e) => {
+   596→                if (e.key === 'Enter' && /^\d{4,6}$/.test(code)) codeRef.current?.focus()
+   597→              }}
+   598→              placeholder="Ton prénom…"
+   599→              autoComplete="given-name"
+   600→              className="w-full rounded-full border border-primary/25 bg-card/90 py-4 pl-6 pr-6 text-center text-lg text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:text-brouillard/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
+   601→            />
+   602→            {etat === 'PRET' && (
+   603→              <span
+   604→                className="absolute right-5 top-1/2 -translate-y-1/2 text-primary"
+   605→                title="Prénom connu — le code personnel ouvre la porte"
+   606→                aria-label="Prénom connu"
+   607→              >
+   608→                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+   609→                  <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+   610→                </svg>
+   611→              </span>
+   612→            )}
+   613→          </div>
+   614→        </motion.div>
+   615→
+   616→        {/* ─── Code personnel ─── */}
+   617→        <motion.div
+   618→          initial={{ opacity: 0, y: 16 }}
+   619→          animate={{ opacity: 1, y: 0 }}
+   620→          transition={{ delay: 0.9, duration: 0.6 }}
+   621→          className="mt-4 w-full"
+   622→        >
+   623→          <label
+   624→            htmlFor="code"
+   625→            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
+   626→          >
+   627→            {libelleCode}
+   628→          </label>
+   629→          <div className="relative">
+   630→            <input
+   631→              id="code"
+   632→              ref={codeRef}
+   633→              value={code}
+   634→              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+   635→              onKeyDown={(e) => e.key === 'Enter' && peutSoumettre && entrer()}
+   636→              placeholder="••••"
+   637→              type="password"
+   638→              inputMode="numeric"
+   639→              autoComplete="off"
+   640→              aria-label={libelleCode}
+   641→              className={cn(
+   642→                'w-full rounded-full border bg-card/90 py-3.5 text-center text-xl tracking-[0.6em] text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:tracking-[0.4em] placeholder:text-brouillard/50 focus:ring-4 focus:ring-primary/10',
+   643→                erreur || etat === 'BLOQUE'
+   644→                  ? 'border-accent focus:border-accent'
+   645→                  : 'border-primary/25 focus:border-primary'
+   646→              )}
+   647→            />
+   648→            <motion.button
+   649→              onClick={entrer}
+   650→              whileHover={{ scale: 1.06 }}
+   651→              whileTap={{ scale: 0.94 }}
+   652→              disabled={!peutSoumettre || envoi}
+   653→              aria-label="Entrer"
+   654→              className="absolute right-1.5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full text-primary-foreground transition-all disabled:border disabled:border-border disabled:bg-card/60 disabled:text-brouillard enabled:bg-primary enabled:shadow-md enabled:shadow-primary/25"
+   655→            >
+   656→              {envoi ? (
+   657→                <motion.span
+   658→                  className="block h-5 w-5 rounded-full border-2 border-white/40 border-t-white"
+   659→                  animate={{ rotate: 360 }}
+   660→                  transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+   661→                  aria-hidden
+   662→                />
+   663→              ) : (
+   664→                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+   665→                  <path d="M5 12h14M13 6l6 6-6 6" />
+   666→                </svg>
+   667→              )}
+   668→            </motion.button>
+   669→          </div>
+   670→          <AnimatePresence>
+   671→            {(erreur || etat === 'BLOQUE') && (
+   672→              <motion.p
+   673→                initial={{ opacity: 0, y: -4 }}
+   674→                animate={{ opacity: 1, y: 0 }}
+   675→                exit={{ opacity: 0 }}
+   676→                role="alert"
+   677→                className="mt-2.5 text-center text-xs font-medium text-gold-vif"
+   678→              >
+   679→                {erreur ??
+   680→                  'Cet accès a été révoqué — contacte le référent de la zaouia.'}
+   681→              </motion.p>
+   682→            )}
+   683→            {!erreur && etat !== 'BLOQUE' && (
+   684→              <motion.p
+   685→                initial={{ opacity: 0 }}
+   686→                animate={{ opacity: 1 }}
+   687→                exit={{ opacity: 0 }}
+   688→                className="mt-2.5 text-center text-[11px] leading-relaxed text-brouillard"
+   689→              >
+   690→                {aideCode}
+   691→              </motion.p>
+   692→            )}
+   693→          </AnimatePresence>
+   694→        </motion.div>
+   695→
+   696→        {/* ─── Heure discrète ─── */}
+   697→        <motion.p
+   698→          initial={{ opacity: 0 }}
+   699→          animate={{ opacity: 1 }}
+   700→          transition={{ delay: 1.1 }}
+   701→          className="mt-7 text-xs tracking-widest text-brouillard"
+   702→        >
+   703→          {heure ? `${heure} · ${VILLE_LABEL[ville]}` : VILLE_LABEL[ville]}
+   704→        </motion.p>
+   705→      </div>
+   706→
+   707→      {/* Vague décorative du bas */}
+   708→      <svg
+   709→        aria-hidden
+   710→        className="pointer-events-none absolute bottom-0 left-0 w-full text-primary/[0.05]"
+   711→        viewBox="0 0 1440 120"
+   712→        preserveAspectRatio="none"
+   713→      >
+   714→        <path d="M0 60 C240 110 480 10 720 60 C960 110 1200 10 1440 60 L1440 120 L0 120 Z" fill="currentColor" />
+   715→      </svg>
+   716→    </motion.div>
+   717→  )
+   718→}
+   719→

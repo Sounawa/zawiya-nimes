@@ -775,70 +775,40 @@ export function ProfileDialog({
   const setMember = useUser((s) => s.setMember)
   const logout = useUser((s) => s.logout)
   const { data: membres } = useMembers()
-  const qc = useQueryClient()
   const { toast } = useToast()
   const [choixManuel, setChoixManuel] = useState<string | null>(null)
-  const [code, setCode] = useState('')
-  const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   const choix = choixManuel ?? name ?? ''
 
   /* Les frères de MA zawiya — on y cherche, on y entre */
   const freresVille = (membres ?? []).filter((m) => m.city === ville && m.status === 'ACTIVE')
   const monMembre: Member | undefined = freresVille.find((m) => m.name === name)
-  const cible: Member | undefined = freresVille.find((m) => m.name === choix)
   const cestMoi = monMembre !== undefined && choix.trim() === monMembre.name
 
-  const valider = async () => {
+  const valider = () => {
     const v = choix.trim()
-    if (!v || envoi) return
-    setErreur(null)
+    if (!v) return
 
-    /* Rester soi-même — rien à vérifier */
+    /* Rester soi-même — rien à faire */
     if (cestMoi) {
       onOpenChange(false)
       return
     }
 
-    /* Entrer sous un autre prénom : il faut son code (ou en poser un) */
-    setEnvoi(true)
-    try {
-      const r = await fetch('/api/auth/entrer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: v, ville, pin: code.trim() }),
-      })
-      const d = await r.json()
-      if (r.ok && d?.id) {
-        setName(v)
-        setMember(d.id, d.role, d.city, d.perms)
-        qc.invalidateQueries({ queryKey: ['members'] })
-        toast({ title: `Marhaban bik, Sidi ${v}` })
-        setCode('')
-        setChoixManuel(null)
-        onOpenChange(false)
-        return
-      }
-      if (d?.attente) {
-        toast({
-          title: 'Demande envoyée',
-          description: 'Le référent va valider cette inscription.',
-        })
-        setCode('')
-        return
-      }
-      if (d?.mauvaisCode) setCode('')
-      setErreur(d?.error ?? 'Impossible d’entrer.')
-    } catch {
-      setErreur('Erreur réseau — réessaie.')
-    } finally {
-      setEnvoi(false)
+    /* La porte est ouverte : on entre sans code — la sécurité
+       reviendra avec les champs de la porte d'entrée. */
+    const frere = freresVille.find((m) => m.name === v)
+    if (!frere) {
+      setErreur('Ce prénom n’est pas inscrit à la zawiya.')
+      return
     }
+    setName(frere.name)
+    setMember(frere.id, frere.role, frere.city, frere.perms)
+    setChoixManuel(null)
+    setErreur(null)
+    toast({ title: `Marhaban bik, Sidi ${frere.name}` })
+    onOpenChange(false)
   }
-
-  const libelleCode = cible
-    ? `Le code personnel de Sidi ${cible.name}`
-    : 'Choisis un code (4 à 6 chiffres)'
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -891,40 +861,19 @@ export function ProfileDialog({
             ))}
           </div>
 
-          {/* Le code personnel — pour prendre ce prénom */}
-          {!cestMoi && choix.trim().length >= 1 && (
-            <div className="space-y-1.5">
-              <Label className="text-[11px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
-                {libelleCode}
-              </Label>
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                onKeyDown={(e) => e.key === 'Enter' && valider()}
-                placeholder="••••"
-                type="password"
-                inputMode="numeric"
-                autoComplete="off"
-                aria-label={libelleCode}
-                className={cn(
-                  'w-full rounded-full border bg-card py-3 text-center text-lg tracking-[0.6em] text-encre outline-none transition-all placeholder:tracking-[0.4em] placeholder:text-brouillard/50 focus:ring-4 focus:ring-primary/10',
-                  erreur ? 'border-accent focus:border-accent' : 'border-primary/25 focus:border-primary'
-                )}
-              />
-              {erreur && (
-                <p role="alert" className="text-center text-xs font-medium text-gold-vif">
-                  {erreur}
-                </p>
-              )}
-            </div>
+          {/* La porte est ouverte — aucun code n’est demandé */}
+          {erreur && (
+            <p role="alert" className="text-center text-xs font-medium text-gold-vif">
+              {erreur}
+            </p>
           )}
 
           <Button
             onClick={valider}
-            disabled={envoi || (!cestMoi && !/^\d{4,6}$/.test(code.trim()))}
+            disabled={!choix.trim()}
             className="w-full rounded-full bg-primary py-3 text-white hover:bg-emerald-deep"
           >
-            {envoi ? 'Un instant…' : cestMoi ? 'Fermer' : 'Entrer'}
+            {cestMoi ? 'Fermer' : 'Entrer'}
           </Button>
 
           {monMembre && (
@@ -933,7 +882,7 @@ export function ProfileDialog({
               onClick={() => {
                 logout()
                 setChoixManuel(null)
-                setCode('')
+                setErreur(null)
                 onOpenChange(false)
               }}
               className="w-full rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive"

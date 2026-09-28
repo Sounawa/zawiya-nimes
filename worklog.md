@@ -578,3 +578,30 @@ Stage Summary:
 - Annonces : destinataires par zawiya (toutes / sélection multiple) avec filtrage serveur et badge doré d'audience
 - Trésorerie masquée (SECTION_TRESORERIE=false) — réactivable d'un drapeau, déjà branchée sur le rôle trésorier
 - Restes/pistes : rien de bloquant — à valider en usage réel : la validation d'inscription par le référent (testée en UI sur TestAvignon : OK) ; plus tard : ciblage par ville pour les sondages et réunions si besoin, section trésorerie à rouvrir quand le trésorier sera nommé
+
+---
+Task ID: round-19-logo-authentique
+Agent: Z.ai Code (session principale)
+Task: « voila le logo que je dois voir des la premiere page ET SUR LA BANNIERE SUR LA SECONDE PAGE » — le vrai logo de la tariqa doit orner la porte d'entrée ET la bannière
+
+Work Log:
+- RETROUVÉ LE LOGO AUTHENTIQUE : le logo original de l'app (calligraphie arabe, Basmala en Thuluth, vert émeraude #006030 avec petits accents or/rouge/turquoise, 520×413, fond TRANSPARENT 79,5 %) dormait dans git au commit 2bd5ed5 (round 1) — il avait été remplacé au round icônes par l'étoile khatim générée. Récupéré par `git show 2bd5ed5:public/tariqa.png` ; l'étoile générée est préservée en public/khatim.png (favicon/logo.png/icônes PWA restent l'étoile — la calligraphie serait illisible à 16-32 px)
+- PAGE 1 — PORTE D'ENTRÉE (welcome-gate.tsx) : la calligraphie flotte désormais en GRAND FORMAT LIBRE (w-72 sm:w-80, drop-shadow verte) sur le papier crème — plus de médaillon circulaire blanc qui l'écrasait ; RayonsLumiere réécrit en cercle parfait autonome (h-full w-full dans un parent 23rem/26rem centré — un ovale en rotation balancerait) ; anneau pointillé doré = cercle centré via grid place-items-center (le rotate framer écraserient les -translate-x/y Tailwind) ; anneau ovale qui respire (-inset-x-10 -inset-y-8) épouse la calligraphie ; étoile d'or 8 branches conservée en haut à droite ; Particules intactes
+- MODE NUIT PORTE : premier essai = voile d'ivoire translucide (radial 13 %) — ABANDONNÉ après calcul : le fond veilé (L≈0,124) égalerait presque la calligraphie verte (L≈0,082-0,138) → contraste 1,08:1, pire que sans voile (3,4:1) ; remplacé par la PLAQUE D'IVOIRE PLEINE (rounded-[999px] ovale, gradient #faf8f1→#ece5d3, filet or/25, ombre profonde) cachée le jour (hidden dark:block) → contraste 5:1 la nuit, effet « lune d'ivoire » ; drop-shadow nuit assombrie
+- PAGE 2 — BANNIÈRE (header-bar.tsx) : la tuile octogonale carrée h-12 laissait la calligraphie (ratio 1,26:1) à ~40 px — remplacée par le CARTOUCHE-KHATIM, octogone ALLONGÉ (angles 11 px) taillé pour le ratio de la calligraphie : h-[58px] w-[72px] mobile / h-16 w-20 desktop (l'app d'origine affichait 85×74), double plaque emboîtée cadre d'or + ivoire, hover scale 1.06 ; logo prioritaire (LCP) ; classe .cartouche-khatim ajoutée dans globals.css @layer components à côté de .tuile-khatim-sm
+- SW : VERSION 'zawiya-v4'→'zawiya-v5' (le precache de /tariqa.png doit se rafraîchir)
+- FIX HYDRATATION (2 bugs latents découverts au passage, préexistants du round 17) : ① page.tsx rendait la PORTE côté serveur mais l'APP côté client pour un frère connecté (store persisté relu avant hydratation) → erreur React + flash ; ② la porte rendait NIMES serveur vs MONTPELLIER client pour un visiteur de l'autre zawiya → garde d'hydratation canonique useSyncExternalStore : monte = souscrireRien/() => true/() => false dans page.tsx (l'instantané serveur fait régner la porte pendant l'hydratation, l'instantané client révèle l'app ensuite, sans écart — la promesse de l'API) ; ville de la porte = villeChoisie ?? villeDAppareil où villeDAppareil = useSyncExternalStore(useUser.subscribe, () => getState().ville, () => 'NIMES') — le serveur rend Nîmes, la zawiya persistée arrive à l'hydratation, le clic sur une tuile prime ; setState-in-effect interdit par la règle react-hooks (déjà rencontrée au round ThemeToggle) d'où ce pattern
+- QA AGENT-BROWSER (contextes neufs pour chaque cas — les listes d'erreurs s'accumulent sinon) :
+  · PORTE jour : calligraphie « grande et très visible », flotte librement sur le crème, aucun défaut (VLM) ; nuit : plaque d'ivoire « contraste excellent, lisibilité parfaite, effet luxueux » — le calcul et le VLM convergent
+  · BANNIÈRE jour : cartouche « fin et raffiné, aspect prestigieux », calligraphie ni coupée ni écrasée ; nuit : « l'ivoire ressort magnifiquement sur le fond sombre » ; zoom ×2 : traits nets, octogone régulier, padding suffisant
+  · MOBILE 390 : scrollWidth 390/390 exact, aucun chevauchement logo/boutons, cartouche entièrement visible jour et nuit
+  · HYDRATATION : cas connecté Abde → 0 erreur (app révélée proprement) ; cas visiteur Montpellier → 0 erreur (ZAWIYA MONTPELLIER après hydratation) ; flux connexion complet → 0 erreur ; LCP tariqa.png réglé (priority)
+  · dev.log sans erreur ni 500 ; lint 0 erreur ; commit créé
+- Nettoyage : localStorage/état de test remis à zéro (Abde peut entrer avec 0000)
+
+Stage Summary:
+- Le LOGO AUTHENTIQUE de la tariqa (calligraphie de la Basmala, celui de l'app d'origine) est restauré et orne les deux pages : en grand sur la porte d'entrée (flottant sur le crème le jour, sur une lune d'ivoire la nuit) et dans un cartouche octogonal doré bien visible sur la bannière (~65×52 px mobile, 80×64 desktop)
+- L'étoile khatim générée reste aux endroits où la calligraphie serait illisible : favicon, icônes PWA, notifications — et est archivée en public/khatim.png
+- Deux erreurs d'hydratation latentes corrigées (frère connecté + visiteur d'une autre zawiya) via la garde useSyncExternalStore — la promesse de l'API : jamais d'écart d'hydratation, la porte règne pendant l'hydratation puis s'efface pour le frère déjà entré
+- Si l'utilisateur fournit UN AUTRE fichier de logo un jour (pièce jointe qui n'arrive pas jusqu'ici, c'est arrivé au round 1) : le remplacer = écraser public/tariqa.png et re-bumper la version SW
+- Restes : rien de bloquant — pistes : grossir encore la calligraphie de la bannière si demandé (l'app d'origine allait jusqu'à 85 px), option « plaques d'or » décoratives autour du cartouche, avis du frère sur la plaque d'ivoire nocturne

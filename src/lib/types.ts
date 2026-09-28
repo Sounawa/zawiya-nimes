@@ -176,3 +176,22 @@ export function parsePollOptions(p: Poll): string[] {
     return []
   }
 }
+
+/* ─── Heures de prière (Aladhan, méthode UOIF) ─── */
+export type Timings = {
+  Fajr: string
+  Chourouq: string
+  Dohr: string
+  Asr: string
+  Maghreb: string
+  Icha: string
+}
+
+export const PRIERES: { key: keyof Timings; label: string }[] = [
+  { key: 'Fajr', label: 'Fajr' },
+  { key: 'Chourouq', label: 'Chourouq' },
+  { key: 'Dohr', label: 'Dohr' },
+  { key: 'Asr', label: 'Asr' },
+  { key: 'Maghreb', label: 'Maghreb' },
+  { key: 'Icha', label: 'Icha' },
+]

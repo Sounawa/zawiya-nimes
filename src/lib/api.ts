@@ -11,6 +11,7 @@ import type {
   Meeting,
   Member,
   Poll,
+  Timings,
 } from './types'
 
 export function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -213,6 +214,22 @@ export function useContent(section: string) {
   return useQuery({
     queryKey: ['content', section],
     queryFn: () => api<ContentItem[]>(`/api/content?section=${section}`),
+  })
+}
+
+/* ─── Heures de prière — Nîmes, méthode UOIF (Aladhan) ─── */
+export type ReponsePrieres = {
+  date: string
+  timings?: Timings
+  days?: Record<string, Timings>
+}
+
+export function usePrayerTimes(scope: 'jour' | 'semaine' | 'mois') {
+  return useQuery({
+    queryKey: ['prayer-times', scope],
+    queryFn: () => api<ReponsePrieres>(`/api/prayer-times?scope=${scope}`),
+    /* Les heures ne changent pas dans la journée — une visite suffit */
+    staleTime: 6 * 60 * 60 * 1000,
   })
 }
 

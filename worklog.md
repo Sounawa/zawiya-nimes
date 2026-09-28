@@ -626,3 +626,25 @@ Stage Summary:
 - La porte est OUVERTE : un seul bouton ENTRER fait entrer comme référent de Nîmes (tous les droits) — parfait pour tester ; la sécurité (zawiya/prénom/code) reviendra en réinstallant les champs de l'ancienne porte (git 0e35ac0), les routes API n'ont pas bougé
 - Le changement d'identité dans « Je suis… » ne demande plus de code non plus
 - Restes/pistes : obtenir le LIEN du logo de l'utilisateur (coller en texte brut) ; remettre la sécurité quand il le demandera ; le bouton ENTRER pourrait affiner son libellé si souhaité
+
+---
+Task ID: round-21-warsh-scheherazade
+Agent: Z.ai Code (session principale)
+Task: « ALORS MET YASIN, AL MULK ET DANS UNE AUTRE SECTION APART TU MET AL FATH QUE TU AS RECUPERE DANS MON DOCUMENT » + toutes les écritures arabes du site en Scheherazade
+
+Work Log:
+- DOCUMENT WE.TRANSFER RÉCUPÉRÉ (lien collé en texte brut, la session précédente l'avait déjà téléchargé) : « cahier ijtima'.docx » — 106 paragraphes, dont 3 flots coraniques complets en riwāyat Warsh (orthographe du mushaf maghrébin : اَ۬ wasla, ۦ petit yā, ٞ petit wāw Warsh, maghrébi فِے pour فِى, nūn lues, signes de waqf ۖ ۗ ۘ ۙ ۚ)
+- CONTENU ANALYSÉ : P0 = Taha complet (135 versets — NON demandé, laissé de côté), P1 = Yasin complet (82 v.), P2 = Al-Fath (29 v.) + Al-Mulk (31 v.) enchaînés — AL-WĀQI‘A N'EST PAS DANS LE DOCUMENT (k03 conserve donc sa version vérifiée Warsh-patchée)
+- EXTRACTION SCRIPTÉE : découpe par numéros de versets « (N) » avec vérification stricte de continuité (82/29/31 versets exacts), remplacement des numéros par les séparateurs ۞ du site, blocs ﴾...﴿ aux mêmes frontières que les anciennes versions (Yasin 1-11/12-31/32-49/50-69/70-82 · Fath 1-10/11-29 · Mulk 1-31), en-tête a'ūdhu + basmala Warsh (بِسْمِ اللهِ اَ۬لرَّحْمَٰنِ اَ۬لرَّحِيمِ), khatm سُبْحَانَ رَبِّكَ conservé
+- KITĀB MIS À JOUR (src/data/kitab-arabe.ts) : k01 Yasin, k02 Al-Fath, k04 Al-Mulk remplacés mot pour mot ; en-tête du fichier documentant la provenance (« cahier d'ijtimā' » de la zawiya) ; lectures Warsh vérifiées point par point : يُّرِدْنِ (36:23) · اَ۟دْخُلِ (36:26) · فَلَا يُحْزِنكَ (36:76) · شَغَلَتْنَآ (48:11) · فَامْشُواْ (67:15) · تَدَّعُونَ (67:28)
+- SECTION À PART AL-FATH (src/data/adhkar-docs.ts) : nouveau document autonome « Surat al-Fath — سُورَةُ الفَتْح · l'ouverture de la victoire — riwāyat Warsh » inséré juste après « Surat Ya-Sin » (phonétique du cahier ch12 + arabe k02 Warsh, sans PDF) — le wadhifa garde aussi sa pratique w-fath, désormais en Warsh
+- SCHEHERAZADE PARTOUT : layout.tsx — var --font-arabic = Scheherazade_New (et --font-arabic2 = Amiri en réserve) → la classe .font-arabic de TOUT le site (lecteur, cartes, recherche ⌘K, impression) porte désormais Scheherazade ; POLICES_AR du lecteur réordonnées (شهرزاد en premier) ; print-sheet remappé ; store useLecture : défaut policeArabe 'scheherazade' + MIGRATION persist v0→v1 (les frères ayant Amiri enregistré passent à Scheherazade une fois — ils peuvent revenir via le sélecteur)
+- SW bumpé zawiya-v6 → v7
+- QA AGENT-BROWSER : carte « Surat al-Fath » visible après Ya-Sin → ouverture phonétique (cahier) puis bascule عَرَبِي → AL-FATH WARSH AFFICHÉ (اَ۬لْمُومِنِينَ، فِے، شَغَلَتْنَآ) ; YASIN WARSH (بسم الله اَ۬لرَّحْمَٰنِ, يَسِٓۖ, 10× فِے, يُّرِدْنِ, اَ۟دْخُلِ, فَلَا يُحْزِنكَ — l'ancien Hafs يُؤْمِنُونَ absent) ; MULK WARSH complet dans le DOM (67:27 العلم عند الله · 67:28 تدعون · 67:30 معين + غورا) ; police calculée du texte coranique ET des cartes ET du toggle = « Scheherazade New » ; VLM sur capture : « tous les glyphes Warsh rendent proprement, aucun tofu, Scheherazade élégante et respectueuse » ; 0 erreur console ; mobile 390×844 scrollWidth 390/390 ; dev.log sans erreur ; lint et tsc propres ; commit e5eb5f2
+
+Stage Summary:
+- YASIN, AL-FATH et AL-MULK sont désormais le texte EXACT du cahier de la zawiya en riwāyat Warsh — l'ancienne orthographe Hafs/égyptienne a disparu de ces trois sourates (wadhifa + cartes autonomes + impression)
+- AL-FATH a sa section à part : carte autonome « Surat al-Fath » dans les Adhkâr, juste après « Surat Ya-Sin » (aussi en phonétique du cahier)
+- TOUTES les écritures arabes du site sont en SCHEHERAZADE (défaut + migration des réglages enregistrés) — Amiri reste choisissable dans le sélecteur du lecteur
+- La Wāqi‘a (k03) N'ÉTAIT PAS dans le document : elle garde sa version actuelle — si la zawiya envoie son texte Warsh de la Wāqi‘a (ou de Taha, présent dans le document mais non demandé), l'extraction prendra 5 minutes
+- Anomalie connue mineure : le mot س۬يٓـَٔتْ (Mulk 67:28) porte une marque inhabituelle (ـ۬ sur le sīn) — tel quel dans le document Word de la zawiya, conservé fidèlement

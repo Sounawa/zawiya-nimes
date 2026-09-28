@@ -282,17 +282,68 @@
   border-radius: 999px 999px 9px 9px / 74% 74% 12% 12%;
 }
 
+/* ─── Les coins andalous — équerres d'encadrement ───
+   Deux équerres d'or mat, haut-gauche et bas-droite : le geste de
+   l'enlumineur qui règle une planche. Elles habitent les cartes
+   précieuses et les en-têtes de section — visibles, jamais criardes. */
+.coins-andalous {
+  position: relative;
+}
+.coins-andalous::before,
+.coins-andalous::after {
+  content: "";
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--gold);
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+.coins-andalous::before {
+  top: 6px;
+  left: 6px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 5px;
+}
+.coins-andalous::after {
+  bottom: 6px;
+  right: 6px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 5px;
+}
+.coins-andalous:hover::before,
+.coins-andalous:hover::after,
+.group:hover .coins-andalous::before,
+.group:hover .coins-andalous::after {
+  opacity: 0.85;
+  width: 17px;
+  height: 17px;
+}
+.dark .coins-andalous::before,
+.dark .coins-andalous::after {
+  opacity: 0.4;
+}
+.dark .coins-andalous:hover::before,
+.dark .coins-andalous:hover::after,
+.dark .group:hover .coins-andalous::before,
+.dark .group:hover .coins-andalous::after {
+  opacity: 0.8;
+}
+
 /* ─── Le filigrane khātim — zellige en réserve ───
    Étoile à huit pans posée en filigrane sur les grandes cartes
    (samā'…) : deux carrés entrelacés, trait d'un cheveu. */
 .filigrane-khatim {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%2317553f' stroke-width='1'%3E%3Crect x='16' y='16' width='24' height='24'/%3E%3Crect x='16' y='16' width='24' height='24' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 56px 56px;
-  opacity: 0.05;
+  opacity: 0.08;
 }
 .dark .filigrane-khatim {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%234f9678' stroke-width='1'%3E%3Crect x='16' y='16' width='24' height='24'/%3E%3Crect x='16' y='16' width='24' height='24' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
-  opacity: 0.06;
+  opacity: 0.09;
 }
 
 /* ─── L'en-tête de section — constellation khātim à droite ───
@@ -301,13 +352,13 @@
 .entete-khatim {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 46 46'%3E%3Cg fill='none' stroke='%2317553f' stroke-width='1'%3E%3Crect x='13' y='13' width='20' height='20'/%3E%3Crect x='13' y='13' width='20' height='20' transform='rotate(45 23 23)'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 46px 46px;
-  opacity: 0.055;
+  opacity: 0.09;
   -webkit-mask-image: linear-gradient(to left, black 30%, transparent 72%);
   mask-image: linear-gradient(to left, black 30%, transparent 72%);
 }
 .dark .entete-khatim {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 46 46'%3E%3Cg fill='none' stroke='%234f9678' stroke-width='1'%3E%3Crect x='13' y='13' width='20' height='20'/%3E%3Crect x='13' y='13' width='20' height='20' transform='rotate(45 23 23)'/%3E%3C/g%3E%3C/svg%3E");
-  opacity: 0.075;
+  opacity: 0.12;
 }
 
 /* ─── Le papier watermarké — khātim partout, presque rien ─── */
@@ -317,13 +368,13 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%232c4a3c' stroke-width='0.8'%3E%3Crect x='26' y='26' width='32' height='32'/%3E%3Crect x='26' y='26' width='32' height='32' transform='rotate(45 42 42)'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%232c4a3c' stroke-width='0.9'%3E%3Crect x='26' y='26' width='32' height='32'/%3E%3Crect x='26' y='26' width='32' height='32' transform='rotate(45 42 42)'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 84px 84px;
-  opacity: 0.03;
+  opacity: 0.05;
 }
 .dark body::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%233f5c4e' stroke-width='0.8'%3E%3Crect x='26' y='26' width='32' height='32'/%3E%3Crect x='26' y='26' width='32' height='32' transform='rotate(45 42 42)'/%3E%3C/g%3E%3C/svg%3E");
-  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%233f5c4e' stroke-width='0.9'%3E%3Crect x='26' y='26' width='32' height='32'/%3E%3Crect x='26' y='26' width='32' height='32' transform='rotate(45 42 42)'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.065;
 }
 
 /* ─── L'ornement de mihrab — filets et étoile des titres ─── */
@@ -335,6 +386,23 @@ body::after {
 }
 .ornement-filet:last-child {
   background: linear-gradient(to left, transparent, currentColor);
+}
+
+/* ─── La bande de zellige — frise de losanges ───
+   Sous l'en-tête de l'application, une frise d'or mat : des
+   losanges entrelacés comme les denticules d'une corniche
+   andalouse. Cinq pixels, jamais plus. */
+.bande-zellige {
+  background: repeating-conic-gradient(
+    from 45deg,
+    color-mix(in oklab, var(--gold) 55%, transparent) 0 25%,
+    transparent 0 50%
+  );
+  background-size: 9px 9px;
+  opacity: 0.4;
+}
+.dark .bande-zellige {
+  opacity: 0.3;
 }
 
 /* ─── La page de lecture — plaque de manuscrit ───
@@ -351,19 +419,19 @@ body::after {
 
 /* ─── La qaṣīda — distiques deux colonnes, pleine largeur ───
    Le Nasiri ou la Munfarija s'étale comme dans le kitāb imprimé :
-   hémistiche à droite, hémistiche à gauche, ۞ au centre — chaque
-   vers justifié sur SA colonne (text-align-last l'étire même
-   s'il ne replie pas). */
+   hémistiche à droite, hémistiche à gauche, ۞ au centre. Chaque
+   hémistique est CENTRÉ dans sa colonne : justifié, un vers court
+   laissait des espaces démesurées entre les mots — centré, le vers
+   respire comme sur la planche du diwân. */
 .poesie-vers {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: baseline;
-  column-gap: 1.1rem;
+  column-gap: 0.9rem;
 }
 .poesie-shatr {
   display: block;
-  text-align: justify;
-  text-align-last: justify;
+  text-align: center;
 }
 .poesie-fasl {
   display: block;

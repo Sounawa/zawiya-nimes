@@ -174,10 +174,14 @@ export function useCreatePoll() {
 export function useVote() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { pollId: string; memberId: string; choice: string }) =>
+    mutationFn: (data: { pollId: string; memberId: string; choice: string; personnes?: number }) =>
       api(`/api/polls/${data.pollId}/vote`, {
         method: 'POST',
-        body: JSON.stringify({ memberId: data.memberId, choice: data.choice }),
+        body: JSON.stringify({
+          memberId: data.memberId,
+          choice: data.choice,
+          personnes: data.personnes ?? 0,
+        }),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['polls'] })

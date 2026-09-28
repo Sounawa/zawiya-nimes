@@ -6,8 +6,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   BookOpen,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   FileDown,
   List,
   Minus,
@@ -151,7 +149,7 @@ function BasculeAndalouse<T extends string>({
                     'tuile-khatim absolute inset-0 transition-opacity duration-300',
                     actif
                       ? 'bg-gradient-to-br from-gold via-accent to-gold-vif opacity-100'
-                      : 'bg-gold/45 opacity-70'
+                      : 'bg-gold/60 opacity-80'
                   )}
                 />
                 {/* La plaque : vert profond ou porcelaine */}
@@ -310,7 +308,6 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
      si la recherche ⌘K demande directement une pratique. */
   const [sommaireCarte, setSommaireCarte] = useState(!chapitreInitial)
   const [progression, setProgression] = useState(0)
-  const [scrolle, setScrolle] = useState(false)
 
   const arabe = langue === 'ar'
   /* Vue du lecteur : le TEXTE RÉÉCRIT d'abord — encre sur porcelaine,
@@ -395,14 +392,13 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
     return () => window.removeEventListener('keydown', surTouche)
   }, [onFermer])
 
-  /* ─── Progression de la lecture + affichage du bouton revenir ─── */
+  /* ─── Progression de la lecture ─── */
   useEffect(() => {
     const el = conteneurRef.current
     if (!el) return
     const surScroll = () => {
       const reste = el.scrollHeight - el.clientHeight
       setProgression(reste > 0 ? Math.min(1, el.scrollTop / reste) : 0)
-      setScrolle(el.scrollTop > 260)
     }
     el.addEventListener('scroll', surScroll, { passive: true })
     surScroll()
@@ -1049,64 +1045,6 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
               </p>
             )}
           </div>
-
-          {/* ─── La barre flottante du bas : revenir + feuilletage ─── */}
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center"
-            style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
-          >
-            <div
-              className={cn(
-                'pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-card/90 p-1.5 shadow-lg backdrop-blur transition-all duration-200',
-                scrolle ? 'translate-y-0 opacity-100' : 'translate-y-0 opacity-100'
-              )}
-            >
-              <button
-                type="button"
-                onClick={onFermer}
-                className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium text-brouillard transition-colors duration-200 hover:bg-muted/60 hover:text-foreground"
-              >
-                <ChevronLeft className="h-4 w-4" /> revenir
-              </button>
-
-              {chapitres.length > 1 && (
-                <>
-                  <span className="h-5 w-px bg-border" aria-hidden />
-                  <button
-                    type="button"
-                    onClick={() => allerAuChapitre(Math.max(0, indexActif - 1))}
-                    disabled={indexActif === 0}
-                    aria-label="Chapitre précédent"
-                    className={cn(
-                      'grid h-10 w-10 place-items-center rounded-full transition-colors duration-200',
-                      indexActif === 0
-                        ? 'cursor-not-allowed text-brouillard/40'
-                        : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
-                    )}
-                  >
-                    <ChevronLeft className="h-4.5 w-4.5 rotate-180" />
-                  </button>
-                  <span className="min-w-[3.2em] text-center text-[11px] font-medium tabular-nums text-brouillard">
-                    {indexActif + 1} / {chapitres.length}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => allerAuChapitre(Math.min(chapitres.length - 1, indexActif + 1))}
-                    disabled={indexActif === chapitres.length - 1}
-                    aria-label="Chapitre suivant"
-                    className={cn(
-                      'grid h-10 w-10 place-items-center rounded-full transition-colors duration-200',
-                      indexActif === chapitres.length - 1
-                        ? 'cursor-not-allowed text-brouillard/40'
-                        : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
-                    )}
-                  >
-                    <ChevronRight className="h-4.5 w-4.5" />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
         </div>
       )}
     </motion.div>
@@ -1184,7 +1122,7 @@ export function AdhkarSection() {
                 onClick={() => setLecteur({ doc })}
                 dir={arabe ? 'rtl' : undefined}
                 className={cn(
-                  'carte-precieuse group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:border-primary/30 active:scale-[0.995]',
+                  'carte-precieuse coins-andalous group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 hover:border-primary/30 active:scale-[0.995]',
                   arabe && 'text-right'
                 )}
               >
@@ -1208,7 +1146,9 @@ export function AdhkarSection() {
                   </span>
                   {/* Détail + badge « morceaux » en flex : jamais collés,
                       jamais rognés — le bidi ne mélange plus les nombres */}
+                  {(detail || nbChapitres > 1) && (
                   <span className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-brouillard">
+                    {detail && (
                     <span className="min-w-0 flex-1 truncate">
                       {estPdf ? (
                         <span className="inline-flex items-center gap-1">
@@ -1218,12 +1158,14 @@ export function AdhkarSection() {
                         detail
                       )}
                     </span>
+                    )}
                     {nbChapitres > 1 && (
                       <span className="shrink-0 rounded-full border border-border px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wider text-brouillard">
                         {nbChapitres} {doc.pratiques ? 'pratiques' : 'morceaux'}
                       </span>
                     )}
                   </span>
+                  )}
                 </span>
 
                 {/* Le chevron : on ouvre */}
@@ -1295,7 +1237,7 @@ export function SamaSection() {
         transition={{ duration: 0.35 }}
         whileTap={{ scale: 0.985 }}
         className={cn(
-          'carte-precieuse group relative flex w-full flex-col items-center overflow-hidden px-6 py-9 text-center transition-all duration-200 hover:border-primary/30 hover:shadow-md',
+          'carte-precieuse coins-andalous group relative flex w-full flex-col items-center overflow-hidden px-6 py-9 text-center transition-all duration-200 hover:border-primary/30 hover:shadow-md',
           arabe && 'text-right'
         )}
       >

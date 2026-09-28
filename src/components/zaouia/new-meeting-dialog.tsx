@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { CalendarDays, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, ListPlus, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -27,23 +28,29 @@ import { useToast } from '@/hooks/use-toast'
 import { JOURS_COMPLETS, parseProgram, type Meeting, type ProgramLine } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
+/* Deux modèles, pas un de plus : l'ijtima' du soir, ou la sadaqa. */
 const MODELES = [
-  { nom: "Al-Ijtimâ' du samedi", icon: '🕌', duree: '19:30' },
-  { nom: 'Latîf al-Kabîr', icon: '✦', duree: '19:30' },
-  { nom: 'Wadhifa du lundi', icon: '📖', duree: '20:00' },
-  { nom: "Sadaqa de l'Ijtimâ'", icon: '🍽️', duree: '19:30' },
+  { nom: "Al-Ijtimâ'", icon: '🕌', duree: '19:30' },
+  { nom: 'Sadaqa', icon: '🍽️', duree: '19:30' },
 ]
 
-const ICONES = ['🕌', '✦', '📖', '🍽️', '🎵', '🌙', '🌿', '⭐', '💫', '🕊️']
+/* Les moments du programme — le menu déroulant de la réunion.
+   Dans l'ordre du soir, tel que la zawiya les vit. */
+const MOMENTS: { label: string; icon: string }[] = [
+  { label: 'Salât al-Maghreb', icon: '🕌' },
+  { label: 'Salât al-Isha', icon: '🌙' },
+  { label: 'Taqwiya', icon: '📖' },
+  { label: 'Wadhifa', icon: '📿' },
+  { label: 'Latif ibn Hajar', icon: '🤲' },
+]
 
-const NUM_JOUR: Record<string, number> = {
-  Dimanche: 0, Lundi: 1, Mardi: 2, Mercredi: 3, Jeudi: 4, Vendredi: 5, Samedi: 6,
+/** Le moment connu porte son icône ; un mot inconnu garde la mosquée */
+function iconeDe(label: string): string {
+  return MOMENTS.find((m) => m.label.toLowerCase() === label.toLowerCase())?.icon ?? '🕌'
 }
 
-interface Ligne {
-  time: string
-  label: string
-  icon: string
+const NUM_JOUR: Record<string, number> = {
+  Lundi: 1, Mardi: 2, Mercredi: 3, Jeudi: 4, Vendredi: 5, Samedi: 6, Dimanche: 0,
 }
 
 export function NewMeetingDialog({
@@ -68,23 +75,25 @@ export function NewMeetingDialog({
   const lieuDefaut = settings?.app_config?.lieu ?? ''
   const villeDefaut = settings?.app_config?.ville || 'Nîmes'
 
-  const [modele, setModele] = useState<string>('— aucun —')
+  const [modele, setModele] = useState<string>(MODELES[0].nom)
   const [ville, setVille] = useState('')
   const [date, setDate] = useState('')
   const [jourChoisi, setJourChoisi] = useState<string>('')
-  const [titre, setTitre] = useState('')
-  const [icon, setIcon] = useState('🕌')
+  const [titre, setTitre] = useState<string>(MODELES[0].nom)
+  const [icon, setIcon] = useState<string>(MODELES[0].icon)
   const [adresse, setAdresse] = useState('')
   const [debut, setDebut] = useState('19:30')
   const [fin, setFin] = useState('22:15')
   const [annonce, setAnnonce] = useState('')
-  const [mot, setMot] = useState('')
-  const [invites, setInvites] = useState('')
-  const [programme, setProgramme] = useState<Ligne[]>([])
+  /* Le programme : inclus par défaut, la personne choisit de le mettre ou pas */
+  const [avecProgramme, setAvecProgramme] = useState(true)
+  const [programme, setProgramme] = useState<ProgramLine[]>(
+    MOMENTS.map((m) => ({ time: '', label: m.label, icon: m.icon }))
+  )
 
   /* Pré-remplir pendant le rendu (motif React officiel) :
      — édition : champs depuis la réunion existante
-     — création : jour d'ijtima actif le plus proche + lieu enregistré dans les réglages */
+     — création : jour d'ijtima actif le plus proche + lieu enregistré */
   const [prerempli, setPrerempli] = useState(false)
   if (open && !prerempli) {
     if (edition && meeting) {
@@ -100,8 +109,15 @@ export function NewMeetingDialog({
       setDebut(meeting.startTime ?? '19:30')
       setFin(meeting.endTime ?? '22:15')
       setAnnonce(meeting.announcement ?? '')
-      setMot(meeting.word ?? '')
-      setProgramme(parseProgram(meeting))
+      const prog = parseProgram(meeting)
+      setProgramme(
+        prog.length
+          ? prog.map((l) => ({ ...l, icon: l.icon || iconeDe(l.label) }))
+          : MOMENTS.map((m) => ({ time: '', label: m.label, icon: m.icon }))
+      )
+      setAvecProgramme(prog.length > 0)
+      /* Le modèle reconnu, sinon une réunion d'un autre nom */
+      setModele(MODELES.find((m) => m.nom === meeting.title)?.nom ?? '— autre —')
     } else {
       setVille(villeDefaut)
       setAdresse(lieuDefaut)
@@ -140,7 +156,6 @@ export function NewMeetingDialog({
 
   const appliquerModele = (nom: string) => {
     setModele(nom)
-    if (nom === '— aucun —') return
     const m = MODELES.find((x) => x.nom === nom)
     if (m) {
       setTitre(m.nom)
@@ -149,8 +164,17 @@ export function NewMeetingDialog({
     }
   }
 
-  const ajouterLigne = () => setProgramme((p) => [...p, { time: '', label: '', icon: '🕌' }])
-  const majLigne = (i: number, patch: Partial<Ligne>) =>
+  const ajouterMoment = (label: string) => {
+    const moment = MOMENTS.find((m) => m.label === label)
+    if (!moment) return
+    setProgramme((p) =>
+      p.some((l) => l.label.toLowerCase() === label.toLowerCase())
+        ? p
+        : [...p, { time: '', label: moment.label, icon: moment.icon }]
+    )
+  }
+
+  const majLigne = (i: number, patch: Partial<ProgramLine>) =>
     setProgramme((p) => p.map((l, j) => (j === i ? { ...l, ...patch } : l)))
   const retirerLigne = (i: number) =>
     setProgramme((p) => p.filter((_, j) => j !== i))
@@ -159,14 +183,16 @@ export function NewMeetingDialog({
     if (!titre.trim() || !date) {
       toast({
         title: 'Champs manquants',
-        description: 'Le titre et le jour (ou la date) sont nécessaires.',
+        description: 'Le jour (ou la date) est nécessaire.',
         variant: 'destructive',
       })
       return
     }
-    const programmePropre: ProgramLine[] = programme
-      .filter((l) => l.label.trim())
-      .map((l) => ({ time: l.time || '—', label: l.label.trim(), icon: l.icon }))
+    const programmePropre: ProgramLine[] = avecProgramme
+      ? programme
+          .filter((l) => l.label.trim())
+          .map((l) => ({ time: l.time || '—', label: l.label.trim(), icon: l.icon }))
+      : []
     const payload = {
       title: titre.trim(),
       icon,
@@ -176,7 +202,7 @@ export function NewMeetingDialog({
       startTime: debut || null,
       endTime: fin || null,
       announcement: annonce.trim() || null,
-      word: mot.trim() || null,
+      word: null,
       program: programmePropre.length ? programmePropre : null,
     }
     if (edition && meeting) {
@@ -209,22 +235,19 @@ export function NewMeetingDialog({
   }
 
   const reset = () => {
-    setModele('— aucun —')
-    setTitre('')
+    setModele(MODELES[0].nom)
+    setTitre(MODELES[0].nom)
+    setIcon(MODELES[0].icon)
     setAnnonce('')
-    setMot('')
-    setInvites('')
-    setProgramme([])
+    setAvecProgramme(true)
+    setProgramme(MOMENTS.map((m) => ({ time: '', label: m.label, icon: m.icon })))
     setJourChoisi('')
     setPrerempli(false)
   }
 
-  // Jours des réglages d'abord (actifs marqués), puis les autres
+  // Les jours de la semaine, dans l'ordre — ceux des réglages marqués « · »
   const joursReglages = jours.filter((j) => j.actif).map((j) => j.label)
-  const tousLesJours = [
-    ...joursReglages,
-    ...JOURS_COMPLETS.filter((j) => !joursReglages.includes(j)),
-  ]
+  const tousLesJours = JOURS_COMPLETS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -237,13 +260,12 @@ export function NewMeetingDialog({
           <DialogDescription>
             {edition
               ? 'Ajuste le jour, le lieu, le programme — tout est modifiable.'
-              : 'Choisis le jour et le lieu — un modèle préremplit le reste.'}
+              : 'Choisis le modèle et le jour — le programme est prêt.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Modèle — création seule */}
-          {!edition && (
+          {/* ─── Le modèle : Al-Ijtimâ' ou Sadaqa ─── */}
           <div className="space-y-1.5">
             <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Modèle
@@ -253,21 +275,22 @@ export function NewMeetingDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="— aucun —">— aucun —</SelectItem>
                 {MODELES.map((m) => (
                   <SelectItem key={m.nom} value={m.nom}>
                     {m.icon} {m.nom}
                   </SelectItem>
                 ))}
+                {modele === '— autre —' && (
+                  <SelectItem value="— autre —">— autre —</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
-          )}
 
-          {/* ─── Le jour : pastilles rapides ─── */}
+          {/* ─── Le jour : pastilles dans l'ordre de la semaine ─── */}
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              <CalendarDays className="h-3.5 w-3.5" /> Jour de l'ijtima
+              <CalendarDays className="h-3.5 w-3.5" /> Jour de la semaine
             </Label>
             <div className="flex flex-wrap gap-1.5">
               {tousLesJours.map((j) => (
@@ -295,7 +318,7 @@ export function NewMeetingDialog({
             </p>
           </div>
 
-          {/* ─── Le lieu : ville + adresse ─── */}
+          {/* ─── Le lieu : ville + adresse + date précise ─── */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -319,55 +342,6 @@ export function NewMeetingDialog({
             />
           </div>
 
-          {/* Objet */}
-          <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Objet de l'ishtima
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                value={titre}
-                onChange={(e) => setTitre(e.target.value)}
-                placeholder="Al-Ijtimâ' du samedi…"
-                className="rounded-xl border-primary/25 bg-card"
-              />
-              <div className="flex shrink-0 items-center gap-1 rounded-xl border border-primary/25 bg-card px-2">
-                {ICONES.slice(0, 5).map((ic) => (
-                  <button
-                    key={ic}
-                    type="button"
-                    onClick={() => setIcon(ic)}
-                    aria-label={`Icône ${ic}`}
-                    className={
-                      icon === ic
-                        ? 'rounded-lg bg-primary/12 p-1 text-lg'
-                        : 'rounded-lg p-1 text-lg opacity-50 transition-opacity hover:opacity-100'
-                    }
-                  >
-                    {ic}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-1 pt-1">
-              {ICONES.slice(5).map((ic) => (
-                <button
-                  key={ic}
-                  type="button"
-                  onClick={() => setIcon(ic)}
-                  aria-label={`Icône ${ic}`}
-                  className={
-                    icon === ic
-                      ? 'rounded-lg bg-primary/12 p-1 text-lg'
-                      : 'rounded-lg p-1 text-lg opacity-50 transition-opacity hover:opacity-100'
-                  }
-                >
-                  {ic}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Début</Label>
@@ -386,62 +360,87 @@ export function NewMeetingDialog({
             <Textarea value={annonce} onChange={(e) => setAnnonce(e.target.value)} rows={2} className="rounded-xl border-accent/40 bg-ivoire" />
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Le mot <span className="normal-case text-brouillard-clair">(facultatif)</span>
-            </Label>
-            <Input value={mot} onChange={(e) => setMot(e.target.value)} className="rounded-xl border-primary/25 bg-card" />
-          </div>
+          {/* ─── Le programme : inclus par défaut, au choix ─── */}
+          <div className="space-y-2.5 rounded-2xl border border-primary/15 bg-card/60 p-3.5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  Programme
+                </Label>
+                <p className="mt-0.5 text-[10.5px] text-brouillard">
+                  {avecProgramme
+                    ? 'Il figurera dans la réunion — retire les moments inutiles.'
+                    : 'La réunion paraîtra sans programme.'}
+                </p>
+              </div>
+              <Switch
+                checked={avecProgramme}
+                onCheckedChange={setAvecProgramme}
+                aria-label="Inclure le programme"
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Invités <span className="normal-case text-brouillard-clair">(un par ligne — « Lyon - 5 » = 5)</span>
-            </Label>
-            <Textarea value={invites} onChange={(e) => setInvites(e.target.value)} rows={2} placeholder={'Lyon - 5 foqaras\nSi Mustapha'} className="rounded-xl border-primary/25 bg-card" />
-          </div>
+            {avecProgramme && (
+              <>
+                {programme.length > 0 && (
+                  <ul className="space-y-1.5">
+                    {programme.map((l, i) => (
+                      <motion.li
+                        key={`${l.label}-${i}`}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2"
+                      >
+                        <Input
+                          type="time"
+                          value={l.time}
+                          onChange={(e) => majLigne(i, { time: e.target.value })}
+                          className="w-28 rounded-xl border-primary/25 bg-card"
+                          aria-label="Heure du moment"
+                        />
+                        <span aria-hidden className="w-6 shrink-0 text-center text-lg">
+                          {l.icon}
+                        </span>
+                        <Input
+                          value={l.label}
+                          onChange={(e) => majLigne(i, { label: e.target.value })}
+                          className="flex-1 rounded-xl border-primary/25 bg-card"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => retirerLigne(i)}
+                          aria-label={`Retirer ${l.label}`}
+                          className="rounded-full p-2 text-destructive/60 hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </motion.li>
+                    ))}
+                  </ul>
+                )}
 
-          {/* Programme */}
-          <div className="space-y-2">
-            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Programme</Label>
-            {programme.map((l, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
-                <Input
-                  type="time"
-                  value={l.time}
-                  onChange={(e) => majLigne(i, { time: e.target.value })}
-                  className="w-28 rounded-xl border-primary/25 bg-card"
-                />
-                <Input
-                  value={l.icon}
-                  onChange={(e) => majLigne(i, { icon: e.target.value })}
-                  className="w-14 rounded-xl border-primary/25 bg-card text-center"
-                  aria-label="Icône"
-                />
-                <Input
-                  value={l.label}
-                  onChange={(e) => majLigne(i, { label: e.target.value })}
-                  placeholder="Salât al-Maghreb…"
-                  className="flex-1 rounded-xl border-primary/25 bg-card"
-                />
-                <button
-                  type="button"
-                  onClick={() => retirerLigne(i)}
-                  aria-label="Retirer la ligne"
-                  className="rounded-full p-2 text-destructive/60 hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </motion.div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={ajouterLigne}
-              className="gap-1.5 rounded-full border-dashed border-primary/40 text-primary hover:bg-primary/5"
-            >
-              <Plus className="h-3.5 w-3.5" /> Ajouter une ligne
-            </Button>
+                {/* Le menu déroulant des moments */}
+                <Select onValueChange={ajouterMoment}>
+                  <SelectTrigger className="w-full rounded-xl border-dashed border-primary/40 bg-card text-primary">
+                    <span className="flex items-center gap-1.5 text-[12.5px] font-semibold">
+                      <ListPlus className="h-3.5 w-3.5" /> Ajouter un moment au programme
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MOMENTS.map((m) => (
+                      <SelectItem key={m.label} value={m.label}>
+                        {m.icon} {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!programme.length && (
+                  <p className="text-[10.5px] text-brouillard-clair">
+                    Plus aucun moment — ajoutes-en un, ou éteins le programme.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         </div>
 

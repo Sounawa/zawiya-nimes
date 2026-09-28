@@ -157,12 +157,6 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
                 </p>
               )}
 
-              {meeting.word && (
-                <p className="font-display text-lg italic text-primary">
-                  «&nbsp;{meeting.word}&nbsp;»
-                </p>
-              )}
-
               {/* Programme */}
               {programme.length > 0 && (
                 <div className="rounded-xl bg-background p-3">
@@ -457,7 +451,7 @@ export function SectionShell({
         onClick={basculer}
         aria-expanded={ouvert}
         className={cn(
-          'group relative mb-3 flex w-full items-center justify-between overflow-hidden rounded-2xl border border-primary/12 bg-card px-4 py-3 shadow-sm transition-all hover:border-primary/25 hover:shadow-md active:scale-[0.995]',
+          'coins-andalous group relative mb-3 flex w-full items-center justify-between overflow-hidden rounded-2xl border border-primary/12 bg-card px-4 py-3 shadow-sm transition-all hover:border-primary/25 hover:shadow-md active:scale-[0.995]',
           ouvert && 'border-primary/25 shadow-md'
         )}
       >

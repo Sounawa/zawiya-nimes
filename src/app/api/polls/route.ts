@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Question requise' }, { status: 400 })
     const options = Array.isArray(body.options) && body.options.length
       ? body.options.filter((o: unknown) => typeof o === 'string' && o.trim())
-      : ['Je viens', 'Je ne viens pas', "Inch'Allah"]
+      : ['Je viens', 'Je ne viens pas']
     const poll = await db.poll.create({
       data: {
         question: body.question,

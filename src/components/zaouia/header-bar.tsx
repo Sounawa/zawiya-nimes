@@ -109,6 +109,9 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
         style={{ scaleX: progression }}
         className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-primary via-accent to-gold-clair"
       />
+
+      {/* Frise de zellige — la corniche andalouse de l'en-tête */}
+      <div aria-hidden className="bande-zellige h-[5px] w-full" />
     </header>
   )
 }

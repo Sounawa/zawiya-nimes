@@ -86,6 +86,7 @@ model PollVote {
   memberId  String
   member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
   choice    String
+  personnes Int      @default(0) // « Je viens » : 0 = pas concerné, 1 = seul, 2–5 = accompagné
   createdAt DateTime @default(now())
 
   @@unique([pollId, memberId])

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BarChart3, Check, Lock, LockOpen, Pencil, Plus, Trash2, Users, Vote } from 'lucide-react'
+import { Check, Lock, LockOpen, Pencil, Plus, Trash2, Users, Vote } from 'lucide-react'
 import {
   useCreatePoll,
   useDeletePoll,
@@ -11,7 +11,7 @@ import {
   useVote,
 } from '@/lib/api'
 import { useUser } from '@/lib/store'
-import { parsePollOptions, type Poll } from '@/lib/types'
+import { parsePollOptions, type Poll, type PollVote } from '@/lib/types'
 import { dateCourte } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,9 +31,22 @@ import { cn } from '@/lib/utils'
 /* ═══════════════ Un sondage ═══════════════ */
 
 /** Normalise les apostrophes typographiques (’ U+2019) en apostrophes droites —
- *  évite que des votes « Inch’Allah » ne comptent pas face à l’option « Inch'Allah ». */
+ *  évite que des votes ne comptent pas face à l'option écrite autrement. */
 function normChoix(s: string): string {
   return s.replace(/[\u2018\u2019']/g, "'")
+}
+
+/** Une réponse est une « venue » quand elle dit qu'on vient —
+ *  c'est elle, et elle seule, qui ouvre la question « seul ou accompagné ? » */
+function estVenue(opt: string): boolean {
+  const t = normChoix(opt).toLowerCase()
+  if (/\b(pas|non|ne viens|absent|excus)\b/.test(t)) return false
+  return /\b(viens|vient|présent|present|serai|là|la)\b/.test(t)
+}
+
+/** « 1 » seul, « +N » accompagné — la mention lisible du vote */
+function mentionPersonnes(n: number): string {
+  return n <= 1 ? 'seul' : `+${n - 1}`
 }
 
 function CarteSondage({ poll }: { poll: Poll }) {
@@ -45,22 +58,58 @@ function CarteSondage({ poll }: { poll: Poll }) {
   const [voirVotants, setVoirVotants] = useState<string | null>(null)
   const [editionOuverte, setEditionOuverte] = useState(false)
 
-  const monVote = poll.votes.find((v) => v.memberId === memberId)?.choice
-  const monVoteNormalise = monVote ? normChoix(monVote) : null
+  const monVote = poll.votes.find((v) => v.memberId === memberId) ?? null
+  const monVoteNormalise = monVote?.choice ? normChoix(monVote.choice) : null
   const totalVotes = poll.votes.length
   const ferme = poll.closesAt && new Date(poll.closesAt) < new Date()
 
   const compteur = (opt: string) =>
     poll.votes.filter((v) => normChoix(v.choice) === normChoix(opt)).length
 
+  /** Les personnes promises sur une réponse « venue » :
+      chaque votant compte pour lui-même et ses accompagnants. */
+  const personnesSur = (opt: string) =>
+    poll.votes
+      .filter((v) => normChoix(v.choice) === normChoix(opt))
+      .reduce((s, v) => s + (v.personnes > 0 ? v.personnes : 1), 0)
+
+  /** Les personnes promises sur les réponses « venue » : les votes
+      hérités (avant la mention) comptent pour une personne. */
+  const totalPersonnes = poll.votes
+    .filter((v) => options.some((o) => estVenue(o) && normChoix(o) === normChoix(v.choice)))
+    .reduce((s, v) => s + (v.personnes > 0 ? v.personnes : 1), 0)
+
   /* L'option qui mène — marquée d'une étoile d'or */
   const maxVoix = Math.max(0, ...options.map(compteur))
   const leader =
     totalVotes > 0 && maxVoix > 0 ? options.find((o) => compteur(o) === maxVoix) ?? null : null
 
-  const voter = (opt: string) => {
+  /* Voter : la venue emmène sa question « seul ou accompagné »,
+     le clic sur une réponse déjà portée (même effectif) retire le vote. */
+  const voter = (opt: string, personnes?: number) => {
     if (!memberId || ferme) return
-    vote.mutate({ pollId: poll.id, memberId, choice: opt })
+    if (!estVenue(opt)) {
+      vote.mutate({ pollId: poll.id, memberId, choice: opt, personnes: 0 })
+      return
+    }
+    if (personnes !== undefined) {
+      /* Un jeton déjà actif ne re-clique rien : on ne retire pas
+         un vote en voulant le confirmer. */
+      if (monVoteNormalise === normChoix(opt) && (monVote?.personnes ?? 0) === personnes) return
+      vote.mutate({ pollId: poll.id, memberId, choice: opt, personnes })
+      return
+    }
+    if (monVoteNormalise === normChoix(opt)) {
+      /* Même réponse, même effectif : l'API y reconnaît un retrait */
+      vote.mutate({
+        pollId: poll.id,
+        memberId,
+        choice: opt,
+        personnes: monVote?.personnes ?? 1,
+      })
+    } else {
+      vote.mutate({ pollId: poll.id, memberId, choice: opt, personnes: 1 })
+    }
   }
 
   return (
@@ -113,6 +162,8 @@ function CarteSondage({ poll }: { poll: Poll }) {
           const n = compteur(opt)
           const pct = totalVotes ? Math.round((n / totalVotes) * 100) : 0
           const estMonVote = monVoteNormalise === normChoix(opt)
+          const venue = estVenue(opt)
+          const pers = personnesSur(opt)
           return (
             <div key={opt}>
               <button
@@ -150,11 +201,48 @@ function CarteSondage({ poll }: { poll: Poll }) {
                       </span>
                     )}
                   </span>
-                  <span className="text-xs font-bold tabular-nums text-muted-foreground">
-                    {n} <span className="text-brouillard-clair">· {pct}%</span>
+                  <span className="flex items-baseline gap-1.5 text-xs font-bold tabular-nums text-muted-foreground">
+                    <span>{n}</span>
+                    {venue && n > 0 && (
+                      <span className="text-[10.5px] font-semibold text-primary/70">
+                        · {pers} pers.
+                      </span>
+                    )}
+                    <span className="text-brouillard-clair">· {pct}%</span>
                   </span>
                 </span>
               </button>
+
+              {/* Seul ou accompagné — la mention propre à la venue */}
+              {venue && estMonVote && !ferme && (
+                <div className="mt-1.5 pl-1">
+                  <p className="mb-1 pl-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-brouillard">
+                    Tu viens seul ou accompagné ?
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {[1, 2, 3, 4, 5].map((nb) => {
+                      const actif = (monVote?.personnes ?? 0) === nb
+                      return (
+                        <button
+                          key={nb}
+                          type="button"
+                          onClick={() => voter(opt, nb)}
+                          disabled={!memberId}
+                          aria-pressed={actif}
+                          className={cn(
+                            'rounded-full px-3 py-1 text-[11.5px] font-semibold transition-all active:scale-95',
+                            actif
+                              ? 'bg-primary text-white shadow-sm shadow-primary/25'
+                              : 'bg-primary/6 text-primary ring-1 ring-primary/20 hover:bg-primary/12'
+                          )}
+                        >
+                          {nb === 1 ? 'Seul' : `${nb} pers.`}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Votants */}
               <AnimatePresence>
@@ -170,6 +258,11 @@ function CarteSondage({ poll }: { poll: Poll }) {
                       .map((v) => (
                         <li key={v.id} className="py-0.5 text-xs text-muted-foreground">
                           Sidi {v.member.name}
+                          {venue && v.personnes > 1 && (
+                            <span className="ml-1.5 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-gold-vif">
+                              {v.personnes} pers.
+                            </span>
+                          )}
                         </li>
                       ))}
                     {n === 0 && <li className="py-0.5 text-xs text-brouillard-clair">Personne…</li>}
@@ -189,12 +282,16 @@ function CarteSondage({ poll }: { poll: Poll }) {
         >
           <Users className="h-3.5 w-3.5" />
           {totalVotes} vote{totalVotes > 1 ? 's' : ''}
+          {totalPersonnes > 0 && (
+            <span className="font-semibold text-primary">· {totalPersonnes} personnes</span>
+          )}
           <span className="text-brouillard-clair">· voir qui</span>
         </button>
         <div className="flex items-center gap-1.5">
           {monVote && (
             <span className="hidden rounded-full bg-primary/8 px-2.5 py-1 font-semibold text-primary sm:inline">
-              ton vote : {monVote}
+              ton vote : {monVote.choice}
+              {estVenue(monVote.choice) && ` (${mentionPersonnes(monVote.personnes || 1)})`}
             </span>
           )}
           <button
@@ -255,7 +352,7 @@ export function SondagesDuIjtima() {
             onClick={() => setOuvert(true)}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/45 bg-or-pale/40 p-3 text-xs font-bold uppercase tracking-[0.18em] text-gold-vif transition-colors hover:border-gold/70 hover:bg-or-pale/70"
           >
-            <Plus className="h-4 w-4" /> Nouveau sondage — « qui vient ? »
+            <Plus className="h-4 w-4" /> Nouveau sondage
           </button>
         </div>
       )}
@@ -283,7 +380,7 @@ function NouveauSondageDialog({
 
   const [question, setQuestion] = useState(poll?.question ?? '')
   const [options, setOptions] = useState(
-    poll ? parsePollOptions(poll).join('\n') : "Je viens\nJe ne viens pas\nInch'Allah"
+    poll ? parsePollOptions(poll).join('\n') : 'Je viens\nJe ne viens pas'
   )
 
   /* Votes existants qui ne correspondront plus à aucune réponse */
@@ -326,7 +423,7 @@ function NouveauSondageDialog({
           onSuccess: () => {
             toast({ title: 'Sondage créé' })
             setQuestion('')
-            setOptions("Je viens\nJe ne viens pas\nInch'Allah")
+            setOptions('Je viens\nJe ne viens pas')
             onOpenChange(false)
           },
         }
@@ -363,7 +460,7 @@ function NouveauSondageDialog({
             <Input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Qui vient à l'ijtima' de samedi ?"
+              placeholder="Qui vient samedi pour la Sadaqa ?"
               className="rounded-xl border-primary/25 bg-card"
             />
           </div>
@@ -377,6 +474,10 @@ function NouveauSondageDialog({
               rows={4}
               className="rounded-xl border-primary/25 bg-card"
             />
+            <p className="text-[10.5px] leading-relaxed text-brouillard">
+              Une réponse qui dit qu'on vient ouvre la question « seul ou accompagné ? »
+              (1 à 5 personnes).
+            </p>
             {edition && votesPerdus > 0 && (
               <p className="rounded-lg bg-corail-pale px-3 py-2 text-xs font-medium text-destructive">
                 ⚠︎ {votesPerdus} vote{votesPerdus > 1 ? 's' : ''} ne correspond

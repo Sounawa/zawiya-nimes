@@ -91,6 +91,8 @@ export interface PollVote {
   pollId: string
   memberId: string
   choice: string
+  /** réponse « venue » : 1 = seul, 2–5 = accompagné ; 0 = sans objet */
+  personnes: number
   member: Member
 }
 

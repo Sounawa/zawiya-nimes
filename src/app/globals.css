@@ -3,6 +3,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ═══════════════════════════════════════════════════════════════════
+   PORCELAINE & ENCRE — le design system de la zawiya.
+
+   Une porcelaine chaude unie (#f6f4ef), l'encre verte pour le texte,
+   UNE couleur d'action vert profond (#17553f), l'or MAT (#a5824a)
+   réservé aux filets. La nuit : encre verte #0e1411, cartes #17211a,
+   vert clair #4f9678. Un seul grain de papier partout, léger.
+   ═══════════════════════════════════════════════════════════════════ */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -68,132 +77,136 @@
 :root {
   --radius: 1rem;
 
-  /* ─── Palette Zawiya — lumière d'ivoire, vert profond, or ─── */
-  --background: #fbf9f4;
-  --foreground: #1d2b24;
+  /* ─── Porcelaine & encre — jour ─── */
+  --background: #f6f4ef;
+  --foreground: #22302a;
 
   --card: #ffffff;
-  --card-foreground: #1d2b24;
+  --card-foreground: #22302a;
 
   --popover: #ffffff;
-  --popover-foreground: #1d2b24;
+  --popover-foreground: #22302a;
 
-  /* Vert émeraude profond */
-  --primary: #0b5d42;
-  --primary-foreground: #f6f4ec;
+  /* LE vert profond — unique couleur d'action */
+  --primary: #17553f;
+  --primary-foreground: #f4f2ec;
 
-  /* Ivoire sable */
-  --secondary: #efe9dc;
+  /* Porcelaine ombrée */
+  --secondary: #edebe4;
   --secondary-foreground: #33453a;
 
-  --muted: #f1ece0;
-  --muted-foreground: #78877d;
+  --muted: #efede6;
+  --muted-foreground: #79857b;
 
-  /* Or doux */
-  --accent: #c9a24b;
-  --accent-foreground: #3d2f0e;
+  /* Or MAT — filets seulement */
+  --accent: #a5824a;
+  --accent-foreground: #fdf9f0;
 
   --destructive: #b3452f;
-  --border: #e4ddcc;
-  --input: #e4ddcc;
-  --ring: #0b5d42;
+  --border: #e5e2d8;
+  --input: #e5e2d8;
+  --ring: #17553f;
 
-  --chart-1: #0b5d42;
-  --chart-2: #c9a24b;
+  --chart-1: #17553f;
+  --chart-2: #a5824a;
   --chart-3: #4a7c6b;
   --chart-4: #8a6d2f;
   --chart-5: #2f4d3e;
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #1d2b24;
-  --sidebar-primary: #0b5d42;
-  --sidebar-primary-foreground: #f6f4ec;
-  --sidebar-accent: #efe9dc;
+  --sidebar-foreground: #22302a;
+  --sidebar-primary: #17553f;
+  --sidebar-primary-foreground: #f4f2ec;
+  --sidebar-accent: #edebe4;
   --sidebar-accent-foreground: #33453a;
-  --sidebar-border: #e4ddcc;
-  --sidebar-ring: #0b5d42;
+  --sidebar-border: #e5e2d8;
+  --sidebar-ring: #17553f;
 
-  /* Couleurs dédiées */
-  --gold: #b8923a;
-  --gold-soft: #e9d9ae;
-  --gold-vif: #a3781f;
-  --gold-clair: #e2c98a;
-  --cream: #faf6ec;
-  --emerald-deep: #0b3d2e;
-  --forest: #14532d;
-  --sand: #efe9dc;
+  /* Nuances — or mat, sauges calmes */
+  --gold: #a5824a;
+  --gold-soft: #efe6d2;
+  --gold-vif: #8f713c;
+  --gold-clair: #e3d4b4;
+  --cream: #f9f7f1;
+  --emerald-deep: #103d2c;
+  --forest: #17553f;
+  --sand: #eeebe3;
 
-  /* Nuances de la palette — encre, brumes, lins et feuilles */
-  --encre: #123c2d;
-  --brouillard: #a09a87;
-  --brouillard-clair: #b6b1a0;
-  --lin: #c9d6cc;
-  --lin-clair: #dde5de;
-  --feuille: #f4f8f4;
-  --ivoire: #fdfcf8;
-  --or-pale: #fdf6e7;
-  --or-moyen: #f6ecd4;
-  --corail-pale: #fdf0e7;
-  --sable-vif: #e4dcc8;
+  /* Encre, brumes, lins et feuilles */
+  --encre: #202923;
+  --brouillard: #8f9a90;
+  --brouillard-clair: #b0b8ac;
+  --lin: #d4ddd4;
+  --lin-clair: #e3e8e1;
+  --feuille: #f2f5f0;
+  --ivoire: #faf9f4;
+  --or-pale: #f4eede;
+  --or-moyen: #ebe1c8;
+  --corail-pale: #f7ede4;
+  --sable-vif: #e2dccb;
   --sauge: #4a7c6b;
   --sauge-clair: #7ba28f;
+
+  /* Le grain de papier — UN seul, léger */
+  --grain-papier: 0.016;
 }
 
-/* ─── Mode nuit : forêt profonde, or de lune ─── */
+/* ─── Nuit : encre verte, vert clair ─── */
 .dark {
-  --background: #10201a;
-  --foreground: #ece9dd;
-  --card: #182b22;
-  --card-foreground: #ece9dd;
-  --popover: #1b2f25;
-  --popover-foreground: #ece9dd;
-  /* Vert profond légèrement éclairci — le texte blanc reste lisible */
-  --primary: #1d7a55;
-  --primary-foreground: #f2f7f0;
-  --secondary: #1e3428;
+  --background: #0e1411;
+  --foreground: #e4e8e0;
+  --card: #17211a;
+  --card-foreground: #e4e8e0;
+  --popover: #1a2620;
+  --popover-foreground: #e4e8e0;
+  --primary: #4f9678;
+  --primary-foreground: #0d1512;
+  --secondary: #1d2822;
   --secondary-foreground: #d8e5dc;
-  --muted: #1e3428;
-  --muted-foreground: #9ab0a3;
-  --accent: #d5b76a;
+  --muted: #1d2822;
+  --muted-foreground: #a8b2a9;
+  --accent: #c9a45c;
   --accent-foreground: #241c07;
   --destructive: #e08a72;
-  --border: #35493c;
-  --input: #3d5849;
-  --ring: #2e8f68;
-  --chart-1: #2e8f68;
-  --chart-2: #d5b76a;
+  --border: #2a342c;
+  --input: #324036;
+  --ring: #4f9678;
+  --chart-1: #4f9678;
+  --chart-2: #c9a45c;
   --chart-3: #4a7c6b;
   --chart-4: #8a6d2f;
   --chart-5: #2f4d3e;
-  --sidebar: #16281f;
-  --sidebar-foreground: #ece9dd;
-  --sidebar-primary: #2e8f68;
-  --sidebar-primary-foreground: #0c1a13;
-  --sidebar-accent: #1e3428;
+  --sidebar: #141d17;
+  --sidebar-foreground: #e4e8e0;
+  --sidebar-primary: #4f9678;
+  --sidebar-primary-foreground: #0d1512;
+  --sidebar-accent: #1d2822;
   --sidebar-accent-foreground: #d8e5dc;
-  --sidebar-border: #2a3d31;
-  --sidebar-ring: #2e8f68;
-  --gold: #d5b76a;
+  --sidebar-border: #26312a;
+  --sidebar-ring: #4f9678;
+  --gold: #c9a45c;
   --gold-soft: #3d3411;
-  --gold-vif: #e8d592;
-  --gold-clair: #e8d592;
-  --cream: #16281f;
-  --emerald-deep: #14503a;
+  --gold-vif: #dfcd90;
+  --gold-clair: #dfcd90;
+  --cream: #141e18;
+  --emerald-deep: #12362a;
   --forest: #2e7d5f;
-  --sand: #24382c;
+  --sand: #1d2822;
+  /* L'encre devient claire la nuit — le lecteur PDF la lit */
   --encre: #e9f1e9;
-  --brouillard: #adc0b3;
-  --brouillard-clair: #a1b2a4;
-  --lin: #2a3d32;
-  --lin-clair: #223529;
-  --feuille: #182a20;
-  --ivoire: #1a2c22;
+  --brouillard: #a8b2a9;
+  --brouillard-clair: #8fa198;
+  --lin: #26312a;
+  --lin-clair: #1f2a23;
+  --feuille: #182119;
+  --ivoire: #1a241d;
   --or-pale: #2b2413;
   --or-moyen: #33291a;
   --corail-pale: #33221c;
-  --sable-vif: #2e4234;
-  --sauge: #7fa893;
+  --sable-vif: #2a342c;
+  --sauge: #6f9c85;
   --sauge-clair: #4a7c6b;
+  --grain-papier: 0.03;
 }
 
 @layer base {
@@ -205,12 +218,12 @@
     font-feature-settings: "ss01", "cv05";
   }
   ::selection {
-    background: #0b5d42;
-    color: #f6f4ec;
+    background: #17553f;
+    color: #f4f2ec;
   }
   .dark ::selection {
-    background: #d5b76a;
-    color: #241c07;
+    background: #4f9678;
+    color: #0d1512;
   }
 }
 
@@ -222,7 +235,50 @@
   font-family: var(--font-arabic), serif;
 }
 
-/* Petit« sceau » décoratif des titres */
+/* ─── Le grain de papier — un seul, partout le même ─────────────── */
+.grain-papier,
+body {
+  position: relative;
+}
+body::before,
+.grain-papier::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: var(--grain-papier);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23b)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+.grain-papier > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ─── La carte précieuse — porcelaine : blanc, hairline, calme ─── */
+.carte-precieuse {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px 0 rgb(34 48 42 / 0.04);
+}
+
+/* ─── Le bouton précieux — vert plein, sobre ─── */
+.btn-precieux {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.btn-precieux:hover {
+  background: color-mix(in oklab, var(--primary) 90%, white);
+}
+.btn-precieux:active {
+  transform: scale(0.97);
+}
+
+/* ─── Petit sceau des titres — ✦ discret en or mat ─── */
 .sceau {
   position: relative;
   display: inline-flex;
@@ -236,85 +292,61 @@
   transform: translateY(-0.1em);
 }
 
-/* Motifs géométriques islamiques subtils */
-.pattern-lattice {
-  background-image: radial-gradient(circle at 1px 1px, rgba(11, 93, 66, 0.08) 1px, transparent 0);
-  background-size: 22px 22px;
-}
-.dark .pattern-lattice {
-  background-image: radial-gradient(circle at 1px 1px, rgba(127, 200, 169, 0.10) 1px, transparent 0);
-}
-.pattern-arabesque {
-  background-image:
-    radial-gradient(circle at 0 0, transparent 14px, rgba(201, 162, 75, 0.06) 15px, transparent 16px),
-    radial-gradient(circle at 100% 100%, transparent 14px, rgba(201, 162, 75, 0.06) 15px, transparent 16px);
-  background-size: 32px 32px;
-}
-.dark .pattern-arabesque {
-  background-image:
-    radial-gradient(circle at 0 0, transparent 14px, rgba(213, 183, 106, 0.08) 15px, transparent 16px),
-    radial-gradient(circle at 100% 100%, transparent 14px, rgba(213, 183, 106, 0.08) 15px, transparent 16px);
-}
-/* Khatim — étoile à huit branches, géométrie classique */
-.pattern-khatim {
-  background-image:
-    linear-gradient(45deg, rgba(11, 93, 66, 0.05) 25%, transparent 25%, transparent 75%, rgba(11, 93, 66, 0.05) 75%),
-    linear-gradient(-45deg, rgba(11, 93, 66, 0.05) 25%, transparent 25%, transparent 75%, rgba(11, 93, 66, 0.05) 75%);
-  background-size: 28px 28px;
-  background-position: 0 0, 14px 14px;
-}
-.dark .pattern-khatim {
-  background-image:
-    linear-gradient(45deg, rgba(127, 200, 169, 0.06) 25%, transparent 25%, transparent 75%, rgba(127, 200, 169, 0.06) 75%),
-    linear-gradient(-45deg, rgba(127, 200, 169, 0.06) 25%, transparent 25%, transparent 75%, rgba(127, 200, 169, 0.06) 75%);
-}
-/* Bandeau décoratif horizontal — séparateur orné */
+/* ─── Bandeau de colophon — filet simple ─── */
 .bandeau-orne {
-  background-image:
-    repeating-linear-gradient(90deg, transparent 0 6px, rgba(184, 146, 58, 0.16) 6px 7px, transparent 7px 13px);
   height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--border),
+    transparent
+  );
 }
-.dark .bandeau-orne {
-  background-image:
-    repeating-linear-gradient(90deg, transparent 0 6px, rgba(213, 183, 106, 0.22) 6px 7px, transparent 7px 13px);
+
+/* ─── Classes ornementales neutralisées (porcelaine : le calme) ─── */
+.text-shimmer,
+.text-shimmer-or,
+.halo-dore,
+.particle,
+.etoile,
+.fab-ring,
+.float-soft,
+.chevron-pulse,
+.pattern-lattice,
+.pattern-arabesque,
+.pattern-khatim,
+.pattern-khatim-porte,
+.porte-nuit {
+  animation: none;
+  background-image: none;
+  box-shadow: none;
+  opacity: 1;
 }
 
 /* ─── Défilement interne fin (listes bornées) ─── */
 .defile-fin {
   scrollbar-width: thin;
-  scrollbar-color: #d8d0bd transparent;
-}
-.dark .defile-fin {
-  scrollbar-color: #3a5245 transparent;
+  scrollbar-color: var(--lin) transparent;
 }
 .defile-fin::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 .defile-fin::-webkit-scrollbar-track {
   background: transparent;
 }
 .defile-fin::-webkit-scrollbar-thumb {
-  background: #ddd5c2;
-  border-radius: 6px;
-  border: none;
-}
-.dark .defile-fin::-webkit-scrollbar-thumb {
-  background: #3a5245;
+  background: var(--lin);
+  border-radius: 8px;
 }
 .defile-fin::-webkit-scrollbar-thumb:hover {
-  background: #c3b896;
-}
-.dark .defile-fin::-webkit-scrollbar-thumb:hover {
-  background: #4c6a58;
+  background: var(--brouillard);
 }
 
 /* ─── Bandeau horizontal de chapitres (cahier / kitāb) ─── */
 .scrollbar-mince {
   scrollbar-width: thin;
-  scrollbar-color: #d8d0bd transparent;
-}
-.dark .scrollbar-mince {
-  scrollbar-color: #3a5245 transparent;
+  scrollbar-color: var(--lin) transparent;
 }
 .scrollbar-mince::-webkit-scrollbar {
   height: 4px;
@@ -323,120 +355,34 @@
   background: transparent;
 }
 .scrollbar-mince::-webkit-scrollbar-thumb {
-  background: #ddd5c2;
-  border-radius: 6px;
-}
-.dark .scrollbar-mince::-webkit-scrollbar-thumb {
-  background: #3a5245;
+  background: var(--lin);
+  border-radius: 8px;
 }
 
-/* ─── Navigation clavier — anneau doré visible ─── */
+/* ─── Navigation clavier — anneau visible ─── */
 :focus-visible {
-  outline: 2px solid rgba(184, 146, 58, 0.75);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: 6px;
 }
 
 /* ─── Mobile — pas de flash au toucher ─── */
-button, a, [role="button"] {
+* {
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
 }
 
 /* ─── Respect des préférences de mouvement réduit ─── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* Halo doré animé pour le logo */
-@keyframes halo-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(201, 162, 75, 0.35), 0 0 40px rgba(201, 162, 75, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 0 14px rgba(201, 162, 75, 0), 0 0 70px rgba(201, 162, 75, 0.3);
-  }
-}
-.halo-dore {
-  animation: halo-pulse 3.5s ease-in-out infinite;
-}
-
-@keyframes float-soft {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(1.5deg); }
-}
-.float-soft {
-  animation: float-soft 5s ease-in-out infinite;
-}
-
-@keyframes shimmer-gold {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-.text-shimmer {
-  background: linear-gradient(120deg, #0b5d42 20%, #b8923a 40%, #0b5d42 60%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer-gold 6s linear infinite;
-}
-.dark .text-shimmer {
-  background: linear-gradient(120deg, #8fd4b4 20%, #e8d592 40%, #8fd4b4 60%);
-  background-size: 200% auto;
-}
-
-/* Particules de lumière */
-@keyframes rise-particle {
-  0% { transform: translateY(0) scale(1); opacity: 0; }
-  10% { opacity: 0.7; }
-  90% { opacity: 0.4; }
-  100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
-}
-.particle {
-  position: absolute;
-  border-radius: 9999px;
-  background: radial-gradient(circle, rgba(201, 162, 75, 0.8), rgba(201, 162, 75, 0));
-  animation: rise-particle 4s ease-out infinite;
-  pointer-events: none;
-}
-
-/* Étoiles scintillantes (page d'accueil) */
-@keyframes twinkle-star {
-  0%, 100% { opacity: 0.12; transform: scale(0.7); }
-  50% { opacity: 0.85; transform: scale(1.15); }
-}
-.etoile {
-  position: absolute;
-  border-radius: 9999px;
-  background: radial-gradient(circle, rgba(184, 146, 58, 0.9) 0%, rgba(184, 146, 58, 0.25) 60%, transparent 75%);
-  animation: twinkle-star 4s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* Chevron qui appelle doucement au clic quand la section est repliée */
-@keyframes chevron-pulse {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(2px); }
-}
-.chevron-pulse {
-  animation: chevron-pulse 2.2s ease-in-out infinite;
-}
-
-/* Anneau pulsé du bouton flottant */
-.fab-ring {
-  background: rgba(11, 93, 66, 0.28);
-  pointer-events: none;
-}
-.dark .fab-ring {
-  background: rgba(46, 143, 104, 0.35);
-}
-
-/* Défilement élégant */
+/* ─── Défilement sobre ─── */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -445,19 +391,12 @@ button, a, [role="button"] {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d8d0bd;
+  background: var(--lin);
   border-radius: 8px;
-  border: 2px solid #fbf9f4;
+  border: 2px solid var(--background);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c3b896;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #2e4437;
-  border-color: #10201a;
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #3e5c4b;
+  background: var(--brouillard);
 }
 
 /* Transition douce sur les sections pliables */
@@ -485,10 +424,9 @@ button, a, [role="button"] {
     height: auto !important;
     overflow: visible !important;
   }
-  /* Quand la zone d'impression est active (bouton Imprimer), tout le reste
-     disparaît : app, dialogues Radix (rendus hors [data-radix-portal] par
-     les versions récentes), toasts, tooltips… Un Ctrl+P sans cible active
-     n'est pas affecté — la zone n'existe alors pas dans le DOM. */
+  body::before {
+    display: none !important;
+  }
   body:has(#zone-impression) > *:not(#zone-impression) {
     display: none !important;
   }

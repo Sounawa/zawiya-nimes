@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useQueryClient } from '@tanstack/react-query'
-import { cn } from '@/lib/utils'
 import { useUser } from '@/lib/store'
+import { useMembers } from '@/lib/api'
 import { ThemeToggle } from '@/components/zaouia/theme-toggle'
 import { VILLE_LABEL, type Ville } from '@/lib/types'
 
@@ -128,228 +128,59 @@ function TitreLettres() {
   )
 }
 
-/* ─── L'état d'un prénom à la porte ───
-   VERIFIE  : on ne sait pas encore (prénom trop court ou en vérification)
-   INCONNU  : personne ne porte ce prénom dans cette zawiya
-   SANS_CODE: connu sans code — le premier passage le pose
-   PRET     : connu avec code — il faut le taper
-   ATTENTE  : inscription faite, validation du référent en cours
-   BLOQUE   : accès révoqué par le référent */
-type EtatPorte = 'VERIFIE' | 'INCONNU' | 'SANS_CODE' | 'PRET' | 'ATTENTE' | 'BLOQUE'
+/* ═════════════════════════════════════════════════════════════════════
+   LA PORTE OUVERTE — la sécurité est retirée pour le moment :
+   plus de zawiya à choisir, plus de prénom, plus de code.
+   Un seul bouton fait entrer, comme référent de Nîmes (la maison-mère)
+   — tous les droits, pour tout voir et tout régler.
 
-const ZAWIYAS: { id: Ville; label: string; sub: string }[] = [
-  { id: 'NIMES', label: 'Nîmes', sub: 'la maison-mère' },
-  { id: 'AVIGNON', label: 'Avignon', sub: 'le groupe frère' },
-  { id: 'MONTPELLIER', label: 'Montpellier', sub: 'le groupe frère' },
-]
-
+   Les routes /api/auth/* restent en place, intactes : le jour où la
+   porte sécurisée revient, il suffira de réinstaller les champs
+   (l'ancienne version vit dans l'historique git).
+   ═════════════════════════════════════════════════════════════════════ */
 export function WelcomeGate() {
   const setName = useUser((s) => s.setName)
   const setVille = useUser((s) => s.setVille)
   const setMember = useUser((s) => s.setMember)
   const qc = useQueryClient()
+  const { data: membres, isPending, isError } = useMembers()
 
-  const [value, setValue] = useState('')
-  /* La zawiya persistée de l'appareil, lue sans écart d'hydratation :
-     le serveur ne rend que Nîmes (son seul instantané), la vraie zawiya
-     arrive à l'hydratation ; le choix d'une tuile prend la main dès le
-     premier clic et prime sur ce qui est persisté. */
-  const [villeChoisie, setVilleChoisie] = useState<Ville | null>(null)
-  const villeDAppareil = useSyncExternalStore(
-    useUser.subscribe,
-    () => useUser.getState().ville,
-    () => 'NIMES' as Ville
+  /* L'entrée se fait toujours à la maison-mère */
+  const ville: Ville = 'NIMES'
+
+  /* Celui qui entre : le référent de Nîmes — ou, à défaut,
+     le premier frère actif de la maison-mère. */
+  const hote = useMemo(
+    () =>
+      (membres ?? []).find(
+        (m) => m.city === 'NIMES' && m.status === 'ACTIVE' && m.role === 'REFERENT'
+      ) ??
+      (membres ?? []).find((m) => m.city === 'NIMES' && m.status === 'ACTIVE'),
+    [membres]
   )
-  const ville = villeChoisie ?? villeDAppareil
-  const [code, setCode] = useState('')
-  const [etat, setEtat] = useState<EtatPorte>('VERIFIE')
-  const [erreur, setErreur] = useState<string | null>(null)
-  const [envoi, setEnvoi] = useState(false)
+
+  const [passage, setPassage] = useState(false)
   const [heure, setHeure] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  const codeRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    inputRef.current?.focus()
     const tick = () =>
-      setHeure(new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date()))
+      setHeure(
+        new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date())
+      )
     tick()
     const t = setInterval(tick, 10_000)
     return () => clearInterval(t)
   }, [])
 
-  /* L'état du prénom dans la zawiya choisie — debounced, discret */
-  useEffect(() => {
-    const v = value.trim()
-    setErreur(null)
-    if (v.length < 2) {
-      setEtat('VERIFIE')
-      return
-    }
-    const t = setTimeout(() => {
-      fetch(`/api/auth/etat?name=${encodeURIComponent(v)}&ville=${ville}`)
-        .then((r) => r.json())
-        .then((d: { etat?: EtatPorte }) => setEtat(d?.etat ?? 'INCONNU'))
-        .catch(() => setEtat('VERIFIE'))
-    }, 350)
-    return () => clearTimeout(t)
-  }, [value, ville])
-
-  /* Vérifier à nouveau — après validation du référent */
-  const reverifier = () => {
-    const v = value.trim()
-    if (!v) return
-    fetch(`/api/auth/etat?name=${encodeURIComponent(v)}&ville=${ville}`)
-      .then((r) => r.json())
-      .then((d: { etat?: EtatPorte }) => setEtat(d?.etat ?? 'INCONNU'))
-      .catch(() => {})
+  /* Entrer — direct, sans formalité : la porte est ouverte */
+  const entrer = () => {
+    if (!hote || passage) return
+    setPassage(true)
+    setVille(ville)
+    setName(hote.name)
+    setMember(hote.id, hote.role, hote.city, hote.perms)
+    qc.invalidateQueries({ queryKey: ['members'] })
   }
-
-  const entrer = async () => {
-    const v = value.trim()
-    if (!v || envoi) return
-    setErreur(null)
-    setEnvoi(true)
-    try {
-      const r = await fetch('/api/auth/entrer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: v, ville, pin: code.trim() }),
-      })
-      const d = await r.json()
-      /* Entré — le frère passe la porte */
-      if (r.ok && d?.id) {
-        setVille(ville)
-        setName(v)
-        setMember(d.id, d.role, d.city, d.perms)
-        qc.invalidateQueries({ queryKey: ['members'] })
-        return
-      }
-      /* Inscription enregistrée, validation en cours */
-      if (d?.attente) {
-        setEtat('ATTENTE')
-        return
-      }
-      /* Code incorrect, accès révoqué, champs invalides… */
-      if (d?.mauvaisCode) setCode('')
-      setErreur(d?.error ?? 'Impossible d’entrer — réessaie.')
-    } catch {
-      setErreur('Erreur réseau — réessaie.')
-    } finally {
-      setEnvoi(false)
-    }
-  }
-
-  /* ─── Écran d'attente : la demande est envoyée, le référent valide ─── */
-  if (etat === 'ATTENTE') {
-    return (
-      <motion.div
-        className="fixed inset-0 z-50 flex min-h-screen flex-col items-center overflow-y-auto bg-background px-6 py-8"
-        exit={{ opacity: 0, scale: 1.04 }}
-        transition={{ duration: 0.6, ease: 'easeInOut' }}
-      >
-        <div className="pattern-arabesque absolute inset-0" aria-hidden />
-        <Etoiles />
-        <div
-          className="absolute inset-0"
-          aria-hidden
-          style={{
-            background:
-              'radial-gradient(ellipse 70% 45% at 50% 38%, rgba(201,162,75,0.14), transparent 70%)',
-          }}
-        />
-        <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
-          {/* Sablier doré */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="halo-dore relative mb-7 grid h-28 w-28 place-items-center rounded-full bg-white shadow-[0_20px_60px_-15px_rgba(11,93,66,0.35)] ring-1 ring-primary/10"
-          >
-            <motion.svg
-              viewBox="0 0 24 24"
-              className="h-12 w-12 text-primary"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              animate={{ rotate: [0, 0, 180, 180, 360, 360] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-              aria-hidden
-            >
-              <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
-            </motion.svg>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.6 }}
-            className="text-center font-display text-3xl font-medium text-encre"
-          >
-            Inscription enregistrée
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="mt-4 max-w-xs text-center font-display text-lg italic leading-relaxed text-muted-foreground"
-          >
-            Marhaban bik, Sidi {value.trim()}. Le référent de la zawiya de{' '}
-            {VILLE_LABEL[ville]} va ouvrir ton accès — repasse dans un instant.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55, duration: 0.5 }}
-            className="mt-9 flex w-full flex-col gap-2"
-          >
-            <button
-              onClick={reverifier}
-              className="w-full rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-[0.15em] text-white shadow-md shadow-primary/25 transition-all hover:bg-emerald-deep active:scale-95"
-            >
-              J’ai été validé — actualiser
-            </button>
-            <button
-              onClick={() => {
-                setEtat('VERIFIE')
-                setValue('')
-                setCode('')
-              }}
-              className="w-full rounded-full py-3 text-xs font-semibold uppercase tracking-[0.2em] text-brouillard transition-colors hover:text-primary"
-            >
-              Changer de prénom
-            </button>
-          </motion.div>
-        </div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="relative z-10 mt-8 text-xs tracking-widest text-brouillard"
-        >
-          {heure ? `${heure} · ${VILLE_LABEL[ville]}` : VILLE_LABEL[ville]}
-        </motion.p>
-      </motion.div>
-    )
-  }
-
-  /* Libellé du champ code selon l'état du prénom */
-  const libelleCode =
-    etat === 'PRET'
-      ? 'Ton code personnel'
-      : etat === 'SANS_CODE'
-        ? 'Choisis ton code'
-        : 'Choisis un code'
-  const aideCode =
-    etat === 'PRET'
-      ? 'Les 4 à 6 chiffres choisis à ton premier passage.'
-      : '4 à 6 chiffres — ils ouvriront l’application à chaque visite.'
-  const peutSoumettre =
-    value.trim().length >= 1 && /^\d{4,6}$/.test(code.trim()) && etat !== 'BLOQUE'
 
   return (
     <motion.div
@@ -392,7 +223,7 @@ export function WelcomeGate() {
         <circle cx="10" cy="54" r="3" fill="currentColor" />
       </svg>
 
-        {/* La calligraphie de la tariqa, posée un peu plus bas dans la composition */}
+      {/* La calligraphie de la tariqa, posée un peu plus bas dans la composition */}
       <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
         {/* ─── L'emblème calligraphié ─── */}
         <motion.div
@@ -499,198 +330,81 @@ export function WelcomeGate() {
           <span className="h-px w-16 bg-gradient-to-l from-transparent to-accent/60" />
         </motion.div>
 
-        {/* ─── Citation ─── */}
-        <motion.blockquote
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.8 }}
-          className="mt-6 max-w-xs text-center"
-        >
-          <p className="font-display text-lg italic leading-relaxed text-muted-foreground">
-            «&nbsp;Nous sommes tous issus de la même lumière.&nbsp;»
-          </p>
-          <cite className="mt-2 block text-[11px] font-semibold uppercase tracking-[0.3em] text-gold not-italic">
-            Sidi Hamza
-          </cite>
-        </motion.blockquote>
-
-        {/* ─── Choix de la zawiya (3 groupes) ─── */}
+        {/* ─── LE BOUTON ENTRER — à la place de la citation ─── */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.6 }}
-          className="mt-9 w-full"
+          transition={{ delay: 0.7, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-8 flex w-full flex-col items-center"
         >
-          <label
-            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
-          >
-            Ta zawiya
-          </label>
-          <div
-            role="radiogroup"
-            aria-label="Ta zawiya"
-            className="relative mx-auto flex w-full items-stretch gap-1 rounded-2xl border border-primary/25 bg-card/90 p-1.5 shadow-inner shadow-primary/5 backdrop-blur sm:rounded-full"
-          >
-            {ZAWIYAS.map((z) => {
-              const actif = ville === z.id
-              return (
-                <button
-                  key={z.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={actif}
-                  onClick={() => setVilleChoisie(z.id)}
-                  className="relative flex-1 rounded-full px-2 py-2.5 text-center transition-all duration-300 sm:px-3"
-                >
-                  {actif && (
-                    <motion.span
-                      layoutId="zawiya-choisie"
-                      className="absolute inset-0 rounded-full bg-primary shadow-md shadow-primary/25"
-                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative block">
-                    <span
-                      className={
-                        'block text-[13px] font-semibold sm:text-sm ' +
-                        (actif ? 'text-white' : 'text-secondary-foreground')
-                      }
-                    >
-                      {z.label}
-                    </span>
-                    <span
-                      className={
-                        'mt-0.5 block text-[8px] uppercase tracking-[0.15em] sm:text-[9px] sm:tracking-[0.2em] ' +
-                        (actif ? 'text-white/70' : 'text-brouillard')
-                      }
-                    >
-                      {z.sub}
-                    </span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </motion.div>
-
-        {/* ─── Champ prénom ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="mt-5 w-full"
-        >
-          <label
-            htmlFor="prenom"
-            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
-          >
-            Prénom
-          </label>
           <div className="relative">
-            <input
-              id="prenom"
-              ref={inputRef}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && /^\d{4,6}$/.test(code)) codeRef.current?.focus()
-              }}
-              placeholder="Ton prénom…"
-              autoComplete="given-name"
-              className="w-full rounded-full border border-primary/25 bg-card/90 py-4 pl-6 pr-6 text-center text-lg text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:text-brouillard/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
-            />
-            {etat === 'PRET' && (
-              <span
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-primary"
-                title="Prénom connu — le code personnel ouvre la porte"
-                aria-label="Prénom connu"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-                </svg>
-              </span>
-            )}
-          </div>
-        </motion.div>
-
-        {/* ─── Code personnel ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.6 }}
-          className="mt-4 w-full"
-        >
-          <label
-            htmlFor="code"
-            className="mb-2 block text-center text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground"
-          >
-            {libelleCode}
-          </label>
-          <div className="relative">
-            <input
-              id="code"
-              ref={codeRef}
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              onKeyDown={(e) => e.key === 'Enter' && peutSoumettre && entrer()}
-              placeholder="••••"
-              type="password"
-              inputMode="numeric"
-              autoComplete="off"
-              aria-label={libelleCode}
-              className={cn(
-                'w-full rounded-full border bg-card/90 py-3.5 text-center text-xl tracking-[0.6em] text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:tracking-[0.4em] placeholder:text-brouillard/50 focus:ring-4 focus:ring-primary/10',
-                erreur || etat === 'BLOQUE'
-                  ? 'border-accent focus:border-accent'
-                  : 'border-primary/25 focus:border-primary'
-              )}
+            {/* Halo qui respire derrière le bouton */}
+            <motion.span
+              aria-hidden
+              className="absolute -inset-2 rounded-full bg-primary/30 blur-xl"
+              animate={{ opacity: [0.45, 0.8, 0.45], scale: [0.97, 1.05, 0.97] }}
+              transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.button
               onClick={entrer}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
-              disabled={!peutSoumettre || envoi}
-              aria-label="Entrer"
-              className="absolute right-1.5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full text-primary-foreground transition-all disabled:border disabled:border-border disabled:bg-card/60 disabled:text-brouillard enabled:bg-primary enabled:shadow-md enabled:shadow-primary/25"
+              disabled={!hote || passage}
+              autoFocus
+              whileHover={hote ? { scale: 1.045 } : undefined}
+              whileTap={hote ? { scale: 0.955 } : undefined}
+              aria-label="Entrer dans la zawiya"
+              className="group relative flex w-[250px] max-w-full items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-br from-primary to-emerald-deep py-4 pl-6 pr-5 text-white shadow-xl shadow-primary/35 ring-1 ring-gold/40 disabled:cursor-wait"
             >
-              {envoi ? (
+              {/* Reflet doré qui balaie le bouton */}
+              <motion.span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-0 w-1/4 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                animate={{ x: ['-160%', '520%'] }}
+                transition={{
+                  duration: 3.6,
+                  repeat: Infinity,
+                  repeatDelay: 1.4,
+                  delay: 1.2,
+                  ease: 'easeInOut',
+                }}
+              />
+              <span className="pl-2 font-display text-sm font-bold uppercase tracking-[0.35em]">
+                {isPending || passage ? 'Un instant…' : 'Entrer'}
+              </span>
+              {isPending || passage ? (
                 <motion.span
-                  className="block h-5 w-5 rounded-full border-2 border-white/40 border-t-white"
+                  className="block h-4 w-4 rounded-full border-2 border-white/40 border-t-white"
                   animate={{ rotate: 360 }}
                   transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                   aria-hidden
                 />
               ) : (
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
               )}
             </motion.button>
           </div>
-          <AnimatePresence>
-            {(erreur || etat === 'BLOQUE') && (
-              <motion.p
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                role="alert"
-                className="mt-2.5 text-center text-xs font-medium text-gold-vif"
-              >
-                {erreur ??
-                  'Cet accès a été révoqué — contacte le référent de la zaouia.'}
-              </motion.p>
-            )}
-            {!erreur && etat !== 'BLOQUE' && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="mt-2.5 text-center text-[11px] leading-relaxed text-brouillard"
-              >
-                {aideCode}
-              </motion.p>
-            )}
-          </AnimatePresence>
+          {(isError || (!isPending && !hote)) && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              role="alert"
+              className="mt-3 text-center text-xs font-medium text-gold-vif"
+            >
+              {isError
+                ? 'La porte ne répond pas — vérifie ta connexion.'
+                : 'Aucun frère actif à Nîmes — impossible d’entrer.'}
+            </motion.p>
+          )}
         </motion.div>
 
         {/* ─── Heure discrète ─── */}

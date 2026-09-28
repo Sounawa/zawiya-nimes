@@ -241,6 +241,137 @@
     font-family: var(--font-arabic), serif;
   }
 
+/* ═══════════════════════════════════════════════════════════════
+   LE SOUFFLE D'AL-ANDALUS — zellige, khātim et mihrab.
+
+   La porcelaine reste la porcelaine, mais elle s'orne : des tuiles
+   octogonales pour les bascules (plus d'onglets en pilule), des
+   arches de mihrab pour les pastilles, un filigrane khātim en
+   réserve sur les grandes cartes, un papier watermarké d'étoiles
+   à huit pans. Toujours mat, toujours discret.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── La tuile khātim — octogone à pans réguliers ───
+   Le « clip-path » découpe la plaque ET son filet d'or (une plaque
+   emboîtée, marge de 1,5 px) : l'octogone de zellige, sans coin
+   vif ni pilule générique. */
+.tuile-khatim {
+  clip-path: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
+}
+/* Le clip retire le contour natif : l'anneau de focus vit sur
+   l'enveloppe, non clippée */
+.tuile-focus:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+/* ─── La pastille-mihrab — niche en fer à cheval ───
+   Dôme plein en haut, base presque droite : la silhouette d'un
+   mihrab andalou, pour numéroter les pièces et porter les icônes. */
+.pastille-arche {
+  border-radius: 999px 999px 9px 9px / 74% 74% 12% 12%;
+}
+
+/* ─── Le filigrane khātim — zellige en réserve ───
+   Étoile à huit pans posée en filigrane sur les grandes cartes
+   (samā'…) : deux carrés entrelacés, trait d'un cheveu. */
+.filigrane-khatim {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%2317553f' stroke-width='1'%3E%3Crect x='16' y='16' width='24' height='24'/%3E%3Crect x='16' y='16' width='24' height='24' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 56px 56px;
+  opacity: 0.05;
+}
+.dark .filigrane-khatim {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%234f9678' stroke-width='1'%3E%3Crect x='16' y='16' width='24' height='24'/%3E%3Crect x='16' y='16' width='24' height='24' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.06;
+}
+
+/* ─── L'en-tête de section — constellation khātim à droite ───
+   Sur les coquilles pliables, les étoiles se faiblent vers le
+   bord gauche : la plaque reste lisible, l'ornement respire. */
+.entete-khatim {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 46 46'%3E%3Cg fill='none' stroke='%2317553f' stroke-width='1'%3E%3Crect x='13' y='13' width='20' height='20'/%3E%3Crect x='13' y='13' width='20' height='20' transform='rotate(45 23 23)'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 46px 46px;
+  opacity: 0.055;
+  -webkit-mask-image: linear-gradient(to left, black 30%, transparent 72%);
+  mask-image: linear-gradient(to left, black 30%, transparent 72%);
+}
+.dark .entete-khatim {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 46 46'%3E%3Cg fill='none' stroke='%234f9678' stroke-width='1'%3E%3Crect x='13' y='13' width='20' height='20'/%3E%3Crect x='13' y='13' width='20' height='20' transform='rotate(45 23 23)'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.075;
+}
+
+/* ─── Le papier watermarké — khātim partout, presque rien ─── */
+body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%232c4a3c' stroke-width='0.8'%3E%3Crect x='26' y='26' width='32' height='32'/%3E%3Crect x='26' y='26' width='32' height='32' transform='rotate(45 42 42)'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 84px 84px;
+  opacity: 0.03;
+}
+.dark body::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%233f5c4e' stroke-width='0.8'%3E%3Crect x='26' y='26' width='32' height='32'/%3E%3Crect x='26' y='26' width='32' height='32' transform='rotate(45 42 42)'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.045;
+}
+
+/* ─── L'ornement de mihrab — filets et étoile des titres ─── */
+.ornement-filet {
+  display: inline-block;
+  width: 3.25rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent, currentColor);
+}
+.ornement-filet:last-child {
+  background: linear-gradient(to left, transparent, currentColor);
+}
+
+/* ─── La page de lecture — plaque de manuscrit ───
+   Un filet intérieur en réserve : la carte devient la planche
+   d'un livre enluminé, sans crier. */
+.poesie-page::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+  border-radius: 11px;
+  pointer-events: none;
+}
+
+/* ─── La qaṣīda — distiques deux colonnes, pleine largeur ───
+   Le Nasiri ou la Munfarija s'étale comme dans le kitāb imprimé :
+   hémistiche à droite, hémistiche à gauche, ۞ au centre — chaque
+   vers justifié sur SA colonne (text-align-last l'étire même
+   s'il ne replie pas). */
+.poesie-vers {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  column-gap: 1.1rem;
+}
+.poesie-shatr {
+  display: block;
+  text-align: justify;
+  text-align-last: justify;
+}
+.poesie-fasl {
+  display: block;
+  font-size: 0.62em;
+  opacity: 0.8;
+  transform: translateY(-0.4em);
+}
+
   /* Le grain de papier — un seul, partout le même */
   body,
   .grain-papier {
@@ -454,6 +585,9 @@
     overflow: visible !important;
   }
   body::before {
+    display: none !important;
+  }
+  body::after {
     display: none !important;
   }
   body:has(#zone-impression) > *:not(#zone-impression) {

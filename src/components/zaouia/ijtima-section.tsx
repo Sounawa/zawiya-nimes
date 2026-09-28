@@ -461,6 +461,11 @@ export function SectionShell({
           ouvert && 'border-primary/25 shadow-md'
         )}
       >
+        {/* Constellation khātim — zellige en réserve, côté droit */}
+        <span
+          aria-hidden
+          className="entete-khatim pointer-events-none absolute inset-0"
+        />
         {/* Balayage doré sous le titre quand la section est ouverte */}
         <motion.span
           aria-hidden

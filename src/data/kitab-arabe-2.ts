@@ -177,6 +177,7 @@ export const PARTIE_2_ARABE: ChapitreArabe[] = [
     id: 'k17',
     titreAr: 'الدُّعَاءُ النَّاصِرِيُّ',
     translit: 'Ad-Du‘â’ an-Nâṣirî',
+    poesie: true,
     debut: 55,
     fin: 58,
     texte: `يَا مَنْ إِلَىٰ رَحْمَتِهِ الْمَفَرُّ ۞ وَمَنْ إِلَيْهِ يَلْجَأُ الْمُضْطَرُّ
@@ -255,6 +256,7 @@ export const PARTIE_2_ARABE: ChapitreArabe[] = [
     id: 'k18',
     titreAr: 'قَصِيدَةُ المُنْفَرِجَة',
     translit: 'Qaṣîdat al-Munfarija',
+    poesie: true,
     debut: 59,
     fin: 61,
     texte: `اِشْتَدِّي أَزْمَةُ تَنْفَرِجِي ۞ قَدْ آذَنَ لَيْلُكِ بِالْبَلَجِ

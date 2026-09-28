@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNav } from '@/lib/store'
 import {
   useAnnouncements,
-  useContent,
   useMeetings,
   usePolls,
 } from '@/lib/api'
@@ -49,7 +48,6 @@ export function RechercheGlobale() {
 
   const { data: meetings } = useMeetings()
   const { data: annonces } = useAnnouncements()
-  const { data: sama } = useContent('SAMA')
   const { data: polls } = usePolls()
 
   /* Raccourci clavier ⌘K / Ctrl+K */
@@ -201,30 +199,28 @@ export function RechercheGlobale() {
             </CommandGroup>
           </>
 
-          {/* ─── Samâ' ─── */}
-          {(sama?.length ?? 0) > 0 && (
-            <>
-              <CommandSeparator />
-              <CommandGroup heading="Samâ'">
-                {sama!.map((c) => (
-                  <CommandItem
-                    key={c.id}
-                    value={`${c.title} ${c.subtitle ?? ''} ${c.body ?? ''}`}
-                    onSelect={() => allerA('sama')}
-                    className="gap-3"
-                  >
-                    <Music className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="min-w-0 flex-1 truncate">
-                      <span className="font-medium">{c.title}</span>
-                      {c.time && (
-                        <span className="ml-1.5 text-xs text-muted-foreground">· {c.time}</span>
-                      )}
-                    </span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </>
-          )}
+          {/* ─── Samâ' — le cahier de samâ' ─── */}
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Samâ'">
+              <CommandItem
+                value="sama cahier diwan ديوان السماع chant hadra 398"
+                onSelect={() => {
+                  useDemandeLecture.getState().demander('sama')
+                  allerA('adhkar')
+                }}
+                className="gap-3"
+              >
+                <Music className="h-4 w-4 shrink-0 text-primary" />
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-medium">Cahier de Samâ'</span>
+                  <span className="ml-1.5 text-xs text-muted-foreground">
+                    · 398 chants · le diwân complet
+                  </span>
+                </span>
+              </CommandItem>
+            </CommandGroup>
+          </>
 
           {/* ─── Sondages ─── */}
           {(polls?.length ?? 0) > 0 && (

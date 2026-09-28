@@ -12,10 +12,9 @@ import { HeaderBar } from '@/components/zaouia/header-bar'
 import { Annonces } from '@/components/zaouia/annonces'
 import { IjtimaSection } from '@/components/zaouia/ijtima-section'
 import { NewMeetingDialog } from '@/components/zaouia/new-meeting-dialog'
-import { ContentSections } from '@/components/zaouia/content-sections'
+import { AdhkarSection, SamaSection } from '@/components/zaouia/adhkar-section'
 import { CotisationSection } from '@/components/zaouia/cotisation-section'
 import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
-import { AdhkarSection } from '@/components/zaouia/adhkar-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
 import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
@@ -91,7 +90,7 @@ export default function Page() {
         <CotisationSection />
         <ZiyaraSection />
         <AdhkarSection />
-        <ContentSections />
+        <SamaSection />
       </main>
 
       {/* ─── Pied de page ─── */}

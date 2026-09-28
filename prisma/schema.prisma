@@ -15,8 +15,11 @@ datasource db {
 model Member {
   id            String         @id @default(cuid())
   name          String
-  city          String         @default("NIMES") // NIMES | MONTPELLIER
+  city          String         @default("NIMES") // NIMES | AVIGNON | MONTPELLIER
   role          String         @default("MEMBER") // MEMBER | TREASURER | REFERENT
+  status        String         @default("ACTIVE") // ACTIVE | PENDING | BLOCKED
+  pin           String? // SHA-256 du code personnel — null = à définir à l'entrée
+  perms         String? // JSON {annonces,sondages,reunions,contenus,cotisations} — surcharges
   createdAt     DateTime       @default(now())
   attendances   Attendance[]
   contributions Contribution[]
@@ -110,6 +113,7 @@ model Announcement {
   title     String? // "-JEUDI- LATÎF AL-KABÎR"
   text      String
   color     String   @default("VERT") // VERT | CORAIL
+  cities    String? // JSON des zawiya destinataires — null = toutes
   date      DateTime @default(now())
   createdAt DateTime @default(now())
 }

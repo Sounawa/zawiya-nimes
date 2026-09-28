@@ -358,7 +358,7 @@ export const creationsLocales = {
 export function useCreateAnnouncement() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { title?: string; text: string; color?: string }) =>
+    mutationFn: (data: { title?: string; text: string; color?: string; cities?: string[] }) =>
       api<Announcement>('/api/announcements', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: (cree) => {
       if (cree?.id) creationsLocales.annonces.add(cree.id)
@@ -371,7 +371,10 @@ export function useCreateAnnouncement() {
 export function useUpdateAnnouncement() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...data }: { id: string; title?: string; text: string; color?: string }) =>
+    mutationFn: ({
+      id,
+      ...data
+    }: { id: string; title?: string; text: string; color?: string; cities?: string[] | null }) =>
       api<Announcement>(`/api/announcements/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['announcements'] })

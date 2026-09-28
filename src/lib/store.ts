@@ -8,16 +8,18 @@ import type { LangueAdhkar } from '@/data/adhkar-docs'
 interface UserState {
   /** Prénom saisi à l'entrée — identité locale, comme l'originale */
   name: string | null
-  /** La zawiya choisie à l'entrée (Nîmes ou Montpellier) */
+  /** La zawiya choisie à l'entrée (Nîmes, Avignon ou Montpellier) */
   ville: Ville
   /** Le membre correspondant (résolu côté serveur) */
   memberId: string | null
   role: Role
+  /** Surcharges de droits individuelles (JSON) — décidées par le référent */
+  perms: string | null
   /** Notifications activées */
   notifAsked: boolean
   setName: (name: string) => void
   setVille: (ville: Ville) => void
-  setMember: (id: string, role: Role, ville: Ville) => void
+  setMember: (id: string, role: Role, ville: Ville, perms?: string | null) => void
   setNotifAsked: (v: boolean) => void
   logout: () => void
 }
@@ -29,17 +31,21 @@ export const useUser = create<UserState>()(
       ville: 'NIMES',
       memberId: null,
       role: 'MEMBER',
+      perms: null,
       notifAsked: false,
       setName: (name) => set({ name }),
       setVille: (ville) => set({ ville }),
-      setMember: (memberId, role, ville) => set({ memberId, role, ville }),
+      setMember: (memberId, role, ville, perms = null) =>
+        set({ memberId, role, ville, perms }),
       setNotifAsked: (notifAsked) => set({ notifAsked }),
-      logout: () => set({ name: null, ville: 'NIMES', memberId: null, role: 'MEMBER' }),
+      logout: () =>
+        set({ name: null, ville: 'NIMES', memberId: null, role: 'MEMBER', perms: null }),
     }),
     {
       name: 'zaouia-user',
-      version: 2,
-      /* Les anciens états (rôle ADMIN, sans ville) deviennent membre de Nîmes */
+      version: 3,
+      /* Les anciens états (rôle ADMIN, sans ville, sans surcharges)
+         deviennent membre de Nîmes aux droits par défaut */
       migrate: (persisted) => {
         const ancien = (persisted ?? {}) as Record<string, unknown>
         const ancienRole = ancien.role as string | undefined
@@ -47,6 +53,7 @@ export const useUser = create<UserState>()(
           ...ancien,
           ville: (ancien.ville as Ville | undefined) ?? 'NIMES',
           role: ancienRole === 'ADMIN' ? 'MEMBER' : (ancienRole ?? 'MEMBER'),
+          perms: (ancien.perms as string | null | undefined) ?? null,
         } as UserState
       },
     }

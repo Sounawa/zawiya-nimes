@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { usePrint, useUser } from '@/lib/store'
 import { useMembers } from '@/lib/api'
 import { peut } from '@/lib/permissions'
+import { SECTION_TRESORERIE } from '@/lib/config'
 import { WelcomeGate } from '@/components/zaouia/welcome-gate'
 import { HeaderBar } from '@/components/zaouia/header-bar'
 import { Annonces } from '@/components/zaouia/annonces'
@@ -23,50 +24,63 @@ import { BandeauProchainIjtima } from '@/components/zaouia/bandeau-prochain-ijti
 import { BoutonHautDePage } from '@/components/zaouia/bouton-haut-de-page'
 import { BoutonInstallation } from '@/components/zaouia/bouton-installation'
 import { EnregistrementSW } from '@/components/zaouia/enregistrement-sw'
+import { useToast } from '@/hooks/use-toast'
+import { VILLE_LABEL } from '@/lib/types'
 
 export default function Page() {
   const name = useUser((s) => s.name)
   const ville = useUser((s) => s.ville)
   const memberId = useUser((s) => s.memberId)
   const role = useUser((s) => s.role)
+  const perms = useUser((s) => s.perms)
   const setMember = useUser((s) => s.setMember)
+  const logout = useUser((s) => s.logout)
   const cibleImpression = usePrint((s) => s.cible)
   const { data: membres } = useMembers()
   const qc = useQueryClient()
+  const { toast } = useToast()
 
-  /* Les droits du frère connecté — groupe (ville) + rôle */
-  const voirCotisations = peut(ville, role, 'cotisations.voir')
-  const redigerReunions = peut(ville, role, 'reunions.rediger')
+  /* Les droits du frère connecté — groupe (ville) + rôle + surcharges */
+  const voirCotisations = peut(ville, role, 'cotisations.voir', perms)
+  const redigerReunions = peut(ville, role, 'reunions.rediger', perms)
 
   const [reglagesOuverts, setReglagesOuverts] = useState(false)
   const [profilOuvert, setProfilOuvert] = useState(false)
   const [nouvelleReunion, setNouvelleReunion] = useState(false)
 
-  /* Résoudre le prénom + la zawiya → membre (id + rôle)
-     Inconnu ? Le participant s'inscrit lui-même dans son groupe. */
+  /* Résoudre le prénom + la zawiya → membre (id, rôle, droits).
+     L'inscription se fait à la porte d'entrée (avec code et validation) :
+     ici, on ne crée plus rien — on synchronise, et on sors celui dont
+     l'accès a été révoqué ou retiré depuis. */
   useEffect(() => {
-    if (name && membres) {
-      const m = membres.find((x) => x.name === name && x.city === ville)
-      if (m && (m.id !== memberId || m.role !== role)) {
-        setMember(m.id, m.role, m.city)
-      } else if (!m) {
-        // Le prénom n'existe pas encore dans cette zawiya : le créer
-        fetch('/api/members', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, ville }),
-        })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((created) => {
-            if (created) {
-              setMember(created.id, created.role, created.city)
-              qc.invalidateQueries({ queryKey: ['members'] })
-            }
-          })
-          .catch(() => {})
-      }
+    if (!name || !membres) return
+    const m = membres.find((x) => x.name === name && x.city === ville)
+    if (!m) {
+      /* Le frère n'existe plus dans cette zawiya (retiré par le référent) */
+      logout()
+      toast({
+        title: 'Accès fermé',
+        description: `Sidi ${name} n'est plus inscrit à la zawiya de ${VILLE_LABEL[ville] ?? ''}.`,
+        variant: 'destructive',
+      })
+      return
     }
-  }, [name, ville, membres, memberId, role, setMember, qc])
+    if (m.status === 'BLOCKED' || m.status === 'PENDING') {
+      logout()
+      toast({
+        title: m.status === 'BLOCKED' ? 'Accès révoqué' : 'Inscription en attente',
+        description:
+          m.status === 'BLOCKED'
+            ? 'Le référent a suspendu cet accès — contacte-le pour le rouvrir.'
+            : 'Le référent doit d’abord valider ton inscription.',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (m.id !== memberId || m.role !== role || m.perms !== perms) {
+      setMember(m.id, m.role, m.city, m.perms)
+    }
+  }, [name, ville, membres, memberId, role, perms, setMember, logout, toast])
 
   /* Écran d'entrée tant que le prénom n'est pas posé */
   if (!name) {
@@ -95,8 +109,9 @@ export default function Page() {
         <BandeauProchainIjtima />
         <Annonces />
         <IjtimaSection />
-        {/* La trésorerie (cotisations + ziyara) est réservée à la zawiya de Nîmes */}
-        {voirCotisations && (
+        {/* La trésorerie (cotisations + ziyara) — masquée pour le moment.
+            Réactivable d'un drapeau, déjà branchée sur le trésorier. */}
+        {SECTION_TRESORERIE && voirCotisations && (
           <>
             <CotisationSection />
             <ZiyaraSection />

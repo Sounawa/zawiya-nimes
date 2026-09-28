@@ -1,16 +1,22 @@
 // Types partagés de l'application Zawiya Nimes
 
 /* ─── Groupes & rôles ───
-   Ville  : la zawiya du frère — NIMES (droits complets) ou MONTPELLIER
-   Rôle   : MEMBER (participe) < TREASURER (trésorerie) < REFERENT (gère tout) */
-export type Ville = 'NIMES' | 'MONTPELLIER'
+   Ville  : la zawiya du frère — NIMES (droits complets) ou
+            AVIGNON / MONTPELLIER (lecture + participation)
+   Rôle   : MEMBER (participe) < TREASURER (trésorerie) < REFERENT (gère tout)
+   Statut : ACTIVE (validé) | PENDING (demande d'inscription) | BLOCKED (révoqué) */
+export type Ville = 'NIMES' | 'AVIGNON' | 'MONTPELLIER'
 export type Role = 'REFERENT' | 'TREASURER' | 'MEMBER'
+export type StatutMembre = 'ACTIVE' | 'PENDING' | 'BLOCKED'
 
 /** Libellés affichables */
 export const VILLE_LABEL: Record<string, string> = {
   NIMES: 'Nîmes',
+  AVIGNON: 'Avignon',
   MONTPELLIER: 'Montpellier',
 }
+
+export const VILLES: Ville[] = ['NIMES', 'AVIGNON', 'MONTPELLIER']
 
 export const ROLE_LABEL: Record<string, string> = {
   MEMBER: 'Membre',
@@ -18,14 +24,38 @@ export const ROLE_LABEL: Record<string, string> = {
   REFERENT: 'Référent',
 }
 
+export const STATUT_LABEL: Record<string, string> = {
+  ACTIVE: 'Actif',
+  PENDING: 'En attente',
+  BLOCKED: 'Révoqué',
+}
+
 export interface Member {
   id: string
   name: string
   city: Ville
   role: Role
+  status: StatutMembre
+  /** Surcharges de droits — JSON {annonces?,sondages?,reunions?,contenus?,cotisations?} */
+  perms: string | null
   createdAt: string
   _count?: { contributions: number; attendances: number }
 }
+
+/* ─── Familles de droits (surcharges individuelles) ───
+   Le référent peut accorder ou retirer une famille de droits à n'importe
+   quel frère, au-dessus des droits par défaut de son groupe. */
+export type FamilleDroits = 'annonces' | 'sondages' | 'reunions' | 'contenus' | 'cotisations'
+
+export type Surcharges = Partial<Record<FamilleDroits, boolean>>
+
+export const FAMILLES_DROITS: { id: FamilleDroits; label: string; detail: string }[] = [
+  { id: 'annonces', label: 'Annonces', detail: 'Publier et corriger les annonces' },
+  { id: 'sondages', label: 'Sondages', detail: 'Créer des sondages pour les frères' },
+  { id: 'reunions', label: 'Ijtima’', detail: "Rédiger les réunions de la semaine" },
+  { id: 'contenus', label: 'Contenus', detail: "Éditer adhkâr, samâ' et durûs" },
+  { id: 'cotisations', label: 'Trésorerie', detail: 'Voir les cotisations (section masquée pour l’instant)' },
+]
 
 export interface ProgramLine {
   time: string
@@ -88,8 +118,27 @@ export interface Announcement {
   title: string | null
   text: string
   color: 'VERT' | 'CORAIL'
+  /** JSON ["NIMES","MONTPELLIER"] — null = toutes les zawiya */
+  cities: string | null
   date: string
   createdAt: string
+}
+
+/** Les zawiya destinataires d'une annonce — null = toutes */
+export function parseCities(a: Announcement): Ville[] | null {
+  if (!a.cities) return null
+  try {
+    const liste = JSON.parse(a.cities) as string[]
+    return Array.isArray(liste) && liste.length ? (liste as Ville[]) : null
+  } catch {
+    return null
+  }
+}
+
+/** Libellé compact de l'audience — « toutes » ou « Nîmes · Montpellier » */
+export function labelAudience(a: Announcement): string {
+  const villes = parseCities(a)
+  return villes ? villes.map((v) => VILLE_LABEL[v] ?? v).join(' · ') : 'toutes les zawiya'
 }
 
 export interface ContentItem {

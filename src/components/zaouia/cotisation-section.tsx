@@ -240,8 +240,9 @@ export function CotisationSection() {
   const { data, isLoading } = useContributions()
   const role = useUser((s) => s.role)
   const ville = useUser((s) => s.ville)
+  const perms = useUser((s) => s.perms)
   /* La trésorerie — le trésorier (et le référent, qui peut tout) */
-  const peutGerer = peut(ville, role, 'cotisations.gerer')
+  const peutGerer = peut(ville, role, 'cotisations.gerer', perms)
   const imprimer = usePrint((s) => s.imprimer)
   const { toast } = useToast()
 

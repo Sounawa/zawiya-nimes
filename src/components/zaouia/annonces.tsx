@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Megaphone, Pencil, Plus, X } from 'lucide-react'
+import { MapPin, Megaphone, Pencil, Plus, X } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Announcement } from '@/lib/types'
+import { labelAudience, parseCities, VILLE_LABEL, VILLES, type Ville } from '@/lib/types'
 import { useCreateAnnouncement, useUpdateAnnouncement } from '@/lib/api'
 import { useUser } from '@/lib/store'
 import { peut } from '@/lib/permissions'
@@ -25,8 +26,14 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 function api<T>(url: string, init?: RequestInit): Promise<T> {
+  /* Le membre courant voyage dans l'en-tête : le serveur filtre les
+     annonces selon la zawiya du frère (toutes ou le sien). */
+  const memberId = useUser.getState().memberId
   return fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(memberId ? { 'x-member-id': memberId } : {}),
+    },
     ...init,
   }).then((r) => {
     if (!r.ok) throw new Error('Erreur réseau')
@@ -62,8 +69,9 @@ function CarteAnnonce({
   const del = useDeleteAnnouncement()
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
+  const perms = useUser((s) => s.perms)
   /* La voix de la zawiya — seuls les frères de Nîmes la portent */
-  const peutGerer = peut(ville, role, 'annonces.creer')
+  const peutGerer = peut(ville, role, 'annonces.creer', perms)
 
   return (
     <motion.article
@@ -122,11 +130,21 @@ function CarteAnnonce({
           <p className="mt-1 whitespace-pre-line font-display text-[17px] leading-relaxed text-secondary-foreground">
             {a.text}
           </p>
-          <p className="mt-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brouillard-clair">
+          <p className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brouillard-clair">
             {dateCourte(a.createdAt)}
             {a.date !== a.createdAt && (
               <span className="rounded-full bg-primary/8 px-1.5 py-px normal-case tracking-normal text-brouillard">
                 · modifiée le {dateCourte(a.date)}
+              </span>
+            )}
+            {/* Audience — masquée quand l'annonce va à toutes les zawiya */}
+            {parseCities(a) && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-px normal-case tracking-normal text-gold-vif"
+                title="Zawiya destinataires de cette annonce"
+              >
+                <MapPin className="h-3 w-3" aria-hidden />
+                {labelAudience(a)}
               </span>
             )}
           </p>
@@ -163,7 +181,8 @@ export function Annonces() {
   const { data: annonces } = useAnnouncements()
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
-  const peutPublier = peut(ville, role, 'annonces.creer')
+  const perms = useUser((s) => s.perms)
+  const peutPublier = peut(ville, role, 'annonces.creer', perms)
   const [dialogOuvert, setDialogOuvert] = useState(false)
   const [edition, setEdition] = useState<Announcement | null>(null)
 
@@ -243,6 +262,7 @@ function AnnonceDialog({
   const create = useCreateAnnouncement()
   const update = useUpdateAnnouncement()
   const { toast } = useToast()
+  const maVille = useUser((s) => s.ville)
 
   const edition = annonce !== null
   const enCours = edition ? update : create
@@ -250,34 +270,55 @@ function AnnonceDialog({
   const [titre, setTitre] = useState('')
   const [texte, setTexte] = useState('')
   const [couleur, setCouleur] = useState<'VERT' | 'CORAIL'>('VERT')
+  /* Destinataires — toutes les zawiya, ou une sélection précise */
+  const [toutes, setToutes] = useState(true)
+  const [visees, setVisees] = useState<Ville[]>([])
 
   /* Pré-remplir pendant le rendu (motif React officiel) :
      — édition : champs depuis l'annonce existante
-     — création : champs vides */
+     — création : champs vides, annonce pour toutes les zawiya */
   const [prerempli, setPrerempli] = useState(false)
   if (open && !prerempli) {
     if (edition && annonce) {
       setTitre(annonce.title ?? '')
       setTexte(annonce.text)
       setCouleur(annonce.color)
+      const villes = parseCities(annonce)
+      setToutes(!villes)
+      setVisees(villes ?? [])
     } else {
       setTitre('')
       setTexte('')
       setCouleur('VERT')
+      setToutes(true)
+      setVisees([])
     }
     setPrerempli(true)
   }
   if (!open && prerempli) setPrerempli(false)
+
+  const basculerVille = (v: Ville) => {
+    setVisees((vs) => (vs.includes(v) ? vs.filter((x) => x !== v) : [...vs, v]))
+  }
 
   const enregistrer = () => {
     if (!texte.trim()) {
       toast({ title: 'Texte requis', description: 'Écris le message de l’annonce.', variant: 'destructive' })
       return
     }
+    if (!toutes && !visees.length) {
+      toast({
+        title: 'Choisis les zawiya',
+        description: 'Coche au moins une zawiya destinataire.',
+        variant: 'destructive',
+      })
+      return
+    }
     const payload = {
       title: titre.trim() || undefined,
       text: texte.trim(),
       color: couleur,
+      cities: toutes ? undefined : visees,
     }
     if (edition && annonce) {
       update.mutate(
@@ -294,7 +335,12 @@ function AnnonceDialog({
     }
     create.mutate(payload, {
       onSuccess: () => {
-        toast({ title: 'Annonce publiée', description: 'Elle apparaît en tête de la page.' })
+        toast({
+          title: 'Annonce publiée',
+          description: toutes
+            ? 'Elle apparaît en tête de la page pour toutes les zawiya.'
+            : `Elle apparaît pour ${visees.map((v) => VILLE_LABEL[v]).join(' et ')}.`,
+        })
         onOpenChange(false)
       },
       onError: () => toast({ title: 'Échec de la publication', variant: 'destructive' }),
@@ -384,6 +430,88 @@ function AnnonceDialog({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Destinataires — toutes les zawiya, ou une sélection */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Destinataires
+            </Label>
+            <div className="flex gap-2">
+              {(
+                [
+                  { v: true, label: 'Toutes les zawiya' },
+                  { v: false, label: 'Zawiya précises' },
+                ] as { v: boolean; label: string }[]
+              ).map((o) => (
+                <button
+                  key={o.label}
+                  type="button"
+                  onClick={() => setToutes(o.v)}
+                  aria-pressed={toutes === o.v}
+                  className={cn(
+                    'flex-1 rounded-xl px-3 py-2 text-xs font-bold transition-all',
+                    toutes === o.v
+                      ? 'bg-primary/12 text-primary ring-2 ring-primary/40'
+                      : 'bg-sand text-muted-foreground ring-1 ring-primary/12 hover:ring-primary/30'
+                  )}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            {!toutes && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-1 grid grid-cols-3 gap-2"
+                role="group"
+                aria-label="Zawiya destinataires"
+              >
+                {VILLES.map((v) => {
+                  const cochee = visees.includes(v)
+                  return (
+                    <label
+                      key={v}
+                      className={cn(
+                        'flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 px-2 py-2.5 text-center transition-all select-none',
+                        cochee
+                          ? 'border-primary bg-primary/8'
+                          : 'border-transparent bg-card ring-1 ring-primary/12 hover:ring-primary/30'
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={cochee}
+                        onChange={() => basculerVille(v)}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden
+                        className={cn(
+                          'grid h-4 w-4 place-items-center rounded-md border transition-colors',
+                          cochee ? 'border-primary bg-primary text-white' : 'border-primary/30 bg-white'
+                        )}
+                      >
+                        {cochee && (
+                          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="text-[11px] font-bold text-secondary-foreground">
+                        {VILLE_LABEL[v]}
+                      </span>
+                      {v === maVille && (
+                        <span className="text-[8px] font-semibold uppercase tracking-wider text-brouillard">
+                          ta zawiya
+                        </span>
+                      )}
+                    </label>
+                  )
+                })}
+              </motion.div>
+            )}
           </div>
 
           {/* Aperçu en direct */}

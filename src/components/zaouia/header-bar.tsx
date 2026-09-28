@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { motion, useScroll, useSpring } from 'framer-motion'
 import { LogOut, Settings2, UserRound } from 'lucide-react'
 import { useUser } from '@/lib/store'
+import { useMembers } from '@/lib/api'
 import { peut } from '@/lib/permissions'
 import { VILLE_LABEL } from '@/lib/types'
 import { dateLongue } from '@/lib/format'
@@ -20,10 +21,15 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
   const name = useUser((s) => s.name)
   const role = useUser((s) => s.role)
   const ville = useUser((s) => s.ville)
+  const perms = useUser((s) => s.perms)
   const logout = useUser((s) => s.logout)
 
   /* Les réglages de la zaouia ne regardent que le référent */
-  const gereReglages = peut(ville, role, 'reglages.gerer')
+  const gereReglages = peut(ville, role, 'reglages.gerer', perms)
+
+  /* Les demandes d'inscription en attente — pastille dorée sur l'engrenage */
+  const { data: membres } = useMembers()
+  const demandes = (membres ?? []).filter((m) => m.status === 'PENDING').length
 
   /* Fil d'or — progression de lecture au-dessus de la corniche */
   const { scrollYProgress } = useScroll()
@@ -98,11 +104,25 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
             variant="ghost"
             size="icon"
             onClick={onOpenSettings}
-            aria-label="Réglages"
-            title="Réglages de la zaouia (référent)"
-            className="h-9 w-9 shrink-0 rounded-full text-primary hover:bg-primary/8 sm:h-10 sm:w-10"
+            aria-label={demandes ? `Réglages — ${demandes} demande${demandes > 1 ? 's' : ''} d’inscription` : 'Réglages'}
+            title={
+              demandes
+                ? `${demandes} demande${demandes > 1 ? 's' : ''} d’inscription à valider`
+                : 'Réglages de la zaouia (référent)'
+            }
+            className="relative h-9 w-9 shrink-0 rounded-full text-primary hover:bg-primary/8 sm:h-10 sm:w-10"
           >
             <Settings2 className="h-4.5 w-4.5" />
+            {demandes > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: [1, 1.12, 1] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -right-0.5 -top-0.5 grid h-4.5 min-w-4.5 place-items-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-white shadow-sm"
+              >
+                {demandes}
+              </motion.span>
+            )}
           </Button>
         )}
 

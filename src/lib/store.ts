@@ -129,7 +129,7 @@ export const useLecture = create<LectureState>()(
   persist(
     (set) => ({
       police: 'cormorant',
-      policeArabe: 'amiri',
+      policeArabe: 'scheherazade',
       tailleArabe: 25,
       taille: 19,
       interligne: 'normal',
@@ -138,7 +138,18 @@ export const useLecture = create<LectureState>()(
       langueAdhkar: 'ph',
       regler: (p) => set(p),
     }),
-    { name: 'zaouia-lecture' }
+    {
+      name: 'zaouia-lecture',
+      version: 1,
+      /* v0 → v1 : Scheherazade devient la police du kitāb partout
+         sur le site — les frères qui avaient Amiri d'enregistré
+         passent à Scheherazade une fois, puis peuvent revenir. */
+      migrate: (persisted: unknown) => {
+        const etat = persisted as Record<string, unknown> | undefined
+        if (etat && etat.policeArabe === 'amiri') etat.policeArabe = 'scheherazade'
+        return etat as unknown as LectureState
+      },
+    }
   )
 )
 

@@ -6,7 +6,7 @@
    — éléments statiques : stale-while-revalidate (icônes, polices, manifest)
    Cache versionné — toute nouvelle version purge l'ancienne. */
 
-const VERSION = 'zawiya-v6'
+const VERSION = 'zawiya-v7'
 const SHELL = [
   '/logo.png',
   '/icone-192.png',

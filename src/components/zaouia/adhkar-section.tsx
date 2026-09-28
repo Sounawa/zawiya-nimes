@@ -1,7 +1,7 @@
 'use client'
 
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { create } from 'zustand'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   BookOpen,
@@ -11,6 +11,7 @@ import {
   FileDown,
   List,
   Minus,
+  Music,
   Plus,
   Printer,
   Type,
@@ -102,6 +103,102 @@ function LigneInvocation({ ligne, accent }: { ligne: string; accent: string }) {
     )
   }
   return <span className="block">{ligne || '\u00A0'}</span>
+}
+
+/* ─── La bascule andalouse — deux tuiles de zellige ───
+   Plus d'onglets en pilule : chaque choix est une tuile à huit
+   pans (khātim), l'active posée sur un filet d'or, l'autre en
+   porcelaine — un souffle d'Al-Andalus dans la lecture. */
+function BasculeAndalouse<T extends string>({
+  valeur,
+  choix,
+  onChange,
+  libelle,
+  taille = 'md',
+}: {
+  valeur: T
+  choix: { id: T; label: string; rtl?: boolean }[]
+  onChange: (v: T) => void
+  libelle: string
+  taille?: 'md' | 'sm'
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-1" role="group" aria-label={libelle}>
+      {choix.map((c, i) => {
+        const actif = c.id === valeur
+        return (
+          <Fragment key={c.id}>
+            {i > 0 && (
+              <span aria-hidden className="select-none px-0.5 text-[9px] text-gold/70">
+                ✦
+              </span>
+            )}
+            <span className="tuile-focus inline-block">
+              <button
+                type="button"
+                onClick={() => onChange(c.id)}
+                aria-pressed={actif}
+                dir={c.rtl ? 'rtl' : undefined}
+                className={cn(
+                  'tuile-khatim relative block transition-transform duration-200 active:scale-[0.96]',
+                  taille === 'md' ? 'px-6 py-2.5' : 'px-4 py-1.5'
+                )}
+              >
+                {/* Le filet d'or de la tuile */}
+                <span
+                  aria-hidden
+                  className={cn(
+                    'tuile-khatim absolute inset-0 transition-opacity duration-300',
+                    actif
+                      ? 'bg-gradient-to-br from-gold via-accent to-gold-vif opacity-100'
+                      : 'bg-gold/45 opacity-70'
+                  )}
+                />
+                {/* La plaque : vert profond ou porcelaine */}
+                <span
+                  className={cn(
+                    'tuile-khatim relative m-[1.5px] flex items-center justify-center transition-colors duration-200',
+                    taille === 'md'
+                      ? c.rtl
+                        ? 'px-4 py-1.5 font-arabic text-[17px]'
+                        : 'px-4 py-1.5 text-[12.5px] font-semibold uppercase tracking-[0.14em]'
+                      : c.rtl
+                        ? 'px-3 py-0.5 font-arabic text-[15px]'
+                        : 'px-3 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.13em]',
+                    actif
+                      ? 'bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]'
+                      : 'bg-card text-brouillard hover:bg-feuille hover:text-primary'
+                  )}
+                >
+                  {c.label}
+                </span>
+              </button>
+            </span>
+          </Fragment>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ─── Un vers de qaṣīda — deux hémistiches pleine largeur ───
+   Le Nasiri ou la Munfarija n'est plus une colonne étroite
+   alignée à droite : chaque distique s'étale en deux colonnes
+   comme dans le kitāb imprimé, le séparateur ۞ au centre. */
+function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
+  const coupe = ligne.split('۞')
+  if (coupe.length !== 2) {
+    return <LigneInvocation ligne={ligne} accent={accent} />
+  }
+  return (
+    <span className="poesie-vers">
+      <span className="poesie-shatr">{coupe[0].trim()}</span>
+      <span aria-hidden className="poesie-fasl" style={{ color: accent }}>
+        ۞
+      </span>
+      <span className="poesie-shatr">{coupe[1].trim()}</span>
+    </span>
+  )
 }
 
 /* ─── Le paragraphage du cahier phonétique ───
@@ -324,25 +421,20 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
       const i = chapitres.findIndex((c) => c.id === chapitreInitial)
       const cible = i >= 0 ? cartesRef.current[i] : null
       if (cible) {
-        el.scrollTo({ top: cible.offsetTop - el.offsetTop - 8 })
+        cible.scrollIntoView({ block: 'start' })
         return
       }
     }
     el.scrollTo({ top: 0 })
   }, [chapitreInitial, doc.id, chapitres.length])
 
-  const allerAuChapitre = useCallback(
-    (i: number) => {
-      const cible = cartesRef.current[i]
-      if (cible) {
-        conteneurRef.current?.scrollTo({
-          top: cible.offsetTop - (conteneurRef.current?.offsetTop ?? 0) - 8,
-          behavior: 'smooth',
-        })
-      }
-    },
-    []
-  )
+  /* Ancre robuste : scrollIntoView + marge de défilement — le
+     navigateur mesure lui-même la position réelle, quel que soit
+     l'état de l'en-tête ou des panneaux déroulés au-dessus. */
+  const allerAuChapitre = useCallback((i: number) => {
+    const cible = cartesRef.current[i]
+    if (cible) cible.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 
   /* ─── Le chapitre visible suit le défilement ─── */
   useEffect(() => {
@@ -466,43 +558,24 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
         </div>
 
         {/* Bascule Texte / Numérisé — le texte réécrit d'abord (encre
-            sur porcelaine), ou le livre imprimé à l'identique */}
+            sur porcelaine), ou le livre imprimé à l'identique — en
+            tuiles de zellige */}
         {aLesDeux && (
-          <div className="flex justify-center gap-1.5 border-t border-border py-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                setVue('texte')
+          <div className="flex justify-center border-t border-border py-2">
+            <BasculeAndalouse
+              libelle="Vue du document"
+              taille="sm"
+              valeur={vueDoc ? 'doc' : 'texte'}
+              choix={[
+                { id: 'texte', label: 'Texte' },
+                { id: 'doc', label: 'Numérisé' },
+              ]}
+              onChange={(v) => {
+                setVue(v)
                 setReglagesOuverts(false)
                 setSommaireOuvert(false)
               }}
-              aria-pressed={!vueDoc}
-              className={cn(
-                'flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors duration-200 active:scale-[0.98]',
-                !vueDoc
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
-              )}
-            >
-              <Type className="h-3.5 w-3.5" /> Texte
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setVue('doc')
-                setReglagesOuverts(false)
-                setSommaireOuvert(false)
-              }}
-              aria-pressed={vueDoc}
-              className={cn(
-                'flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors duration-200 active:scale-[0.98]',
-                vueDoc
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
-              )}
-            >
-              <BookOpen className="h-3.5 w-3.5" /> Numérisé
-            </button>
+            />
           </div>
         )}
 
@@ -723,7 +796,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
               <nav
                 aria-label="Sommaire des pratiques"
                 className={cn(
-                  'grain-papier relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-6',
+                  'grain-papier poesie-page relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-6',
                   theme.fond,
                   theme.texte,
                   theme.cadre
@@ -782,6 +855,13 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                                 className="mb-1.5 flex items-baseline gap-2 border-b pb-1"
                                 style={{ borderColor: `${accent.couleur}30` }}
                               >
+                                <span
+                                  aria-hidden
+                                  className="text-[8px] leading-none"
+                                  style={{ color: accent.couleur }}
+                                >
+                                  ✦
+                                </span>
                                 <h4
                                   className="text-[10px] font-bold uppercase tracking-[0.22em]"
                                   style={{ color: accent.couleur }}
@@ -837,9 +917,6 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                                           </span>
                                         )}
                                       </span>
-                                      <span className="shrink-0 text-[10px] font-medium tabular-nums opacity-50">
-                                        {e.langue === 'ar' ? `ص ${e.debut}` : `p. ${e.debut}`}
-                                      </span>
                                     </button>
                                   </li>
                                 ))}
@@ -863,7 +940,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 : POLICES_PH.find((p) => p.id === l.police) ?? POLICES_PH[0]
               const tailleC = arabeC ? l.tailleArabe : l.taille
               return (
-              <article
+                <article
                 key={c.id}
                 data-i={i}
                 ref={(el) => {
@@ -872,26 +949,37 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 dir={arabeC ? 'rtl' : undefined}
                 lang={arabeC ? 'ar' : undefined}
                 className={cn(
-                  'grain-papier relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7',
+                  'grain-papier poesie-page relative scroll-mt-3 overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7',
                   theme.fond,
                   theme.texte,
                   theme.cadre
                 )}
               >
-                {/* En-tête du chapitre */}
+                {/* En-tête du chapitre — un souffle de mihrab */}
                 <header className="mb-5 text-center">
+                  <span
+                    aria-hidden
+                    className="ornement-mihrab mb-2 flex items-center justify-center gap-2"
+                    style={{ color: accent.couleur }}
+                  >
+                    <span className="ornement-filet" />
+                    <span className="text-[0.62em]">✦</span>
+                    <span className="ornement-filet" />
+                  </span>
                   <h3
                     className={cn('leading-tight', arabeC ? 'font-arabic text-[30px] font-semibold leading-snug' : 'text-[22px] font-semibold')}
                     style={{ fontFamily: policeC.css, color: accent.couleur }}
                   >
                     {c.titre}
                   </h3>
-                  <p
-                    className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.22em] opacity-50"
-                    dir={arabeC ? 'ltr' : undefined}
-                  >
-                    {c.sousTitre}
-                  </p>
+                  {c.sousTitre ? (
+                    <p
+                      className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.22em] opacity-50"
+                      dir={arabeC ? 'ltr' : undefined}
+                    >
+                      {c.sousTitre}
+                    </p>
+                  ) : null}
                   {/* La pratique n'existe pas dans la langue demandée —
                       on la lit dans l'autre, avec une mention discrète */}
                   {c.repli && (
@@ -909,11 +997,12 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 </header>
 
                 {/* Le texte sacré — phonétique rejointe en paragraphes
-                    coulant sur toute la largeur ; arabe verset à verset */}
+                    coulant sur toute la largeur ; arabe verset à verset ;
+                    qaṣīda en distiques deux colonnes pleine largeur */}
                 <div
                   className={cn(
                     'text-justify',
-                    arabeC ? 'kitab-texte text-right' : 'cahier-texte'
+                    arabeC ? 'kitab-texte' : 'cahier-texte'
                   )}
                   style={{
                     fontFamily: policeC.css,
@@ -924,9 +1013,13 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                   {(c.langue === 'ph' && doc.id !== 'sama'
                     ? paragrapher(c.texte)
                     : c.texte.split('\n')
-                  ).map((ligne, j) => (
-                    <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
-                  ))}
+                  ).map((ligne, j) =>
+                    arabeC && c.poesie ? (
+                      <VersPoeme key={j} ligne={ligne} accent={accent.couleur} />
+                    ) : (
+                      <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
+                    )
+                  )}
                 </div>
 
                 {/* Imprimer ce chapitre — pas pour le diwân, qui
@@ -1054,49 +1147,28 @@ export function AdhkarSection() {
   return (
     <SectionShell
       titre="Adhkâr"
-      compteur="9 documents · phonétique & arabe"
+      compteur="8 documents · phonétique & arabe"
       id="adhkar"
       defaultOpen={false}
     >
       <div className="space-y-3">
-        {/* ─── La bascule de langue — phonétique ou arabe ─── */}
-        <div
-          className="grid grid-cols-2 gap-1 rounded-2xl border border-border bg-card p-1"
-          role="group"
-          aria-label="Langue de lecture"
-        >
-          <button
-            type="button"
-            onClick={() => l.regler({ langueAdhkar: 'ph' })}
-            aria-pressed={!arabe}
-            className={cn(
-              'rounded-xl px-4 py-2.5 text-[13px] font-medium uppercase tracking-[0.14em] transition-colors duration-200 active:scale-[0.98]',
-              !arabe
-                ? 'bg-primary text-primary-foreground'
-                : 'text-brouillard hover:bg-muted/60 hover:text-primary'
-            )}
-          >
-            Phonétique
-          </button>
-          <button
-            type="button"
-            onClick={() => l.regler({ langueAdhkar: 'ar' })}
-            aria-pressed={arabe}
-            dir="rtl"
-            className={cn(
-              'rounded-xl px-4 py-2.5 font-arabic text-[17px] font-medium transition-colors duration-200 active:scale-[0.98]',
-              arabe
-                ? 'bg-primary text-primary-foreground'
-                : 'text-brouillard hover:bg-muted/60 hover:text-primary'
-            )}
-          >
-            عربي
-          </button>
+        {/* ─── La bascule de langue — tuiles de zellige, plus de pilule ─── */}
+        <div className="rounded-2xl border border-border bg-card px-3 py-3.5">
+          <BasculeAndalouse
+            libelle="Langue de lecture"
+            valeur={langue}
+            choix={[
+              { id: 'ph' as const, label: 'Phonétique' },
+              { id: 'ar' as const, label: 'عَرَبِي', rtl: true },
+            ]}
+            onChange={(v) => l.regler({ langueAdhkar: v })}
+          />
         </div>
 
-        {/* ─── Les neuf documents — une pièce, une porte ─── */}
-        <div className="space-y-2" role="list">
-          {DOCUMENTS_ADHKAR.map((doc, i) => {
+        {/* ─── Les huit documents — une pièce, une porte ───
+            (le cahier de samâ' a sa propre section plus bas) */}
+        <div className="space-y-2">
+          {DOCUMENTS_ADHKAR.filter((d) => d.id !== 'sama').map((doc, i) => {
             const titre = arabe ? doc.titreAr : doc.titreFr
             const detail = arabe ? doc.detailAr : doc.detailFr
             const nbChapitres = doc.pratiques?.length ?? (arabe ? doc.ar?.length : doc.ph?.length) ?? 0
@@ -1105,7 +1177,6 @@ export function AdhkarSection() {
               <motion.button
                 key={doc.id}
                 type="button"
-                role="listitem"
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-20px' }}
@@ -1117,10 +1188,10 @@ export function AdhkarSection() {
                   arabe && 'text-right'
                 )}
               >
-                {/* Pastille du document */}
+                {/* Pastille du document — arche de mihrab */}
                 <span
                   aria-hidden
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border bg-feuille text-[13px] font-medium text-primary transition-colors duration-200 group-hover:bg-lin-clair"
+                  className="pastille-arche grid h-9 w-8 shrink-0 place-items-center border border-border bg-feuille text-[13px] font-medium text-primary transition-colors duration-200 group-hover:bg-lin-clair"
                 >
                   {i + 1}
                 </span>
@@ -1189,6 +1260,90 @@ export function AdhkarSection() {
             doc={lecteur.doc}
             langue={langue}
             chapitreInitial={lecteur.chapitre}
+            onFermer={() => setLecteur(null)}
+          />
+        )}
+      </AnimatePresence>
+    </SectionShell>
+  )
+}
+
+/* ═══ LA SECTION SAMÂ' — le cahier de samâ', et rien d'autre ══════════
+   Le diwân complet de la hadra : 398 chants réécrits en phonétique
+   (le texte coule, la police se règle), ou le livre numérisé page à
+   page. Une seule porte, celle du cahier. */
+export function SamaSection() {
+  const l = useLecture()
+  const langue = l.langueAdhkar
+  const arabe = langue === 'ar'
+
+  const [lecteur, setLecteur] = useState<DocAdhkar | null>(null)
+  const doc = useMemo(() => DOCUMENTS_ADHKAR.find((d) => d.id === 'sama'), [])
+
+  return (
+    <SectionShell
+      titre="Samâ'"
+      compteur="le cahier · 398 chants"
+      id="sama"
+      defaultOpen={false}
+    >
+      <motion.button
+        type="button"
+        onClick={() => doc && setLecteur(doc)}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        whileTap={{ scale: 0.985 }}
+        className={cn(
+          'carte-precieuse group relative flex w-full flex-col items-center overflow-hidden px-6 py-9 text-center transition-all duration-200 hover:border-primary/30 hover:shadow-md',
+          arabe && 'text-right'
+        )}
+      >
+        {/* Filigrane khātim — zellige en réserve */}
+        <span aria-hidden className="filigrane-khatim pointer-events-none absolute inset-0" />
+
+        {/* La pastille — un mihrab pour la musique */}
+        <span
+          aria-hidden
+          className="pastille-arche relative grid h-12 w-11 place-items-center border border-gold/40 bg-or-pale text-gold-vif transition-transform duration-300 group-hover:scale-105"
+        >
+          <Music className="h-5 w-5" />
+        </span>
+
+        <span
+          className={cn(
+            'relative mt-3.5 font-display text-[21px] font-semibold text-encre',
+            arabe && 'font-arabic text-[22px]'
+          )}
+          dir={arabe ? 'rtl' : undefined}
+        >
+          {arabe ? 'ديوان السماع' : "Cahier de Samâ'"}
+        </span>
+        <span
+          className="relative mt-1 font-arabic text-[16px] text-primary/80"
+          dir="rtl"
+          lang="ar"
+        >
+          {arabe ? 'كتاب السماع' : 'دِيوَانُ السَّمَاع'}
+        </span>
+        <p className="relative mt-3 max-w-[42ch] text-[12px] leading-relaxed text-brouillard">
+          {arabe
+            ? '٢٢٢ صفحة من كتاب السماع، صفحة بصفحة'
+            : 'Le diwân complet réécrit — 398 chants en phonétique — et le livre numérisé en arabe.'}
+        </p>
+
+        <span className="btn-precieux relative mt-5 px-7 py-2.5 text-[11.5px] font-bold uppercase tracking-[0.16em]">
+          {arabe ? 'افتح الكتاب' : 'Ouvrir le cahier'}
+        </span>
+      </motion.button>
+
+      {/* ─── Le lecteur plein écran ─── */}
+      <AnimatePresence>
+        {lecteur && (
+          <LecteurAdhkar
+            key="sama"
+            doc={lecteur}
+            langue={langue}
             onFermer={() => setLecteur(null)}
           />
         )}

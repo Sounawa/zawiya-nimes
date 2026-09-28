@@ -411,3 +411,37 @@ Stage Summary:
 - Le texte phonétique coule JUSTIFIÉ sur toute la largeur (mesuré 324/324 px mobile) — plus d'escalier collé à gauche
 - Warsh : 2 graphies corrigées (48:29 ×2 + artefact), tout le reste vérifié conforme (SĪN partout, ḍammas, madds, nominatifs Warsh)
 - Restes : rien de bloquant — pistes futures : le sommaire pourrait porter les durées indicatives des pratiques ; le doc séparé « Surat al-Mulk » en PDF extrait des pages 16-18 si la zawiya le souhaite un jour
+
+---
+Task ID: 1
+Agent: main (Z.ai Code)
+Task: Lot de corrections — sama', Warsh mot à mot, sommaire, ordre du cahier, poésie pleine largeur, design andalou
+
+Work Log:
+- SAMÂ' : supprimé les cartes éditables inutiles (ContentSections/SAMA retiré de page.tsx) ; créé SamaSection dédiée dans adhkar-section.tsx — une seule porte : le cahier de samâ' (diwân 402 entrées en phonétique via sama-chants.ts, ou les 222 pages numérisées en arabe). Le doc reste dans DOCUMENTS_ADHKAR (liste filtrée à 8) pour la recherche ⌘K : l'entrée « Cahier de Samâ' » ouvre le lecteur directement (demander('sama') + allerA('adhkar')).
+- WARSH (kitab-arabe.ts) — corrections mot à mot, riwāyat Warsh 'an Nāfi' :
+  · Yā-Sīn 36:26 ٱدْخُلُ … يَعْلَمُونِ (dkhulu / yaʿlamūnī)
+  · Yā-Sīn 36:32 لَمَا sans shadda (lamā)
+  · Yā-Sīn 36:66 لَطَمَسَنَا et 36:67 لَمَسَخَنَٰهُمْ (formes pleines)
+  · Yā-Sīn 36:76 فَلَا تَحْزُنكَ (tuḥzunka)
+  · Fatḥ 48:11 أَشْغَلَتْنَآ (form IV)
+  · Wāqiʿa 56:17 وَلَدَانٌ (waladānun), 56:19 يَنزِفُونَ (actif), 56:29 وَطَلْعٍ (ṭalʿ), 56:65 فَظَلِلْتُمْ (forme pleine)
+  · Mulk : versets 67:23-27 AJOUTÉS (manquaient !), 67:15 فَامْشُوا۟, 67:27 تَتَدَّعُونَ (tataddaʿūna sans idghām)
+  · Déjà conformes vérifiés : 36:9 سُدًّا, 36:23 يُرِدْنِ, سِرَٰط (sīn), 67:2 الْحَيَوٰةَ
+  · La liste complète des variantes est documentée dans l'en-tête de kitab-arabe.ts ; 36:47 (man law / man in) laissé en l'état (à re-vérifier avec le mushaf).
+- ORDRE DU CAHIER : PRATIQUES_WADHIFA réordonné — l'ordre suit le cahier imprimé ch01→ch12 sans interruption ; سُورَةُ المُلْك (k04) et أَلَا يَا لَطِيفُ (k19) viennent APRÈS la séquence du cahier (entrées 13-14 du groupe quotidien) — plus jamais elles ne coupent la wadhifa.
+- RÉFÉRENCES DE PAGES SUPPRIMÉES : sous-titres « cahier p. X–Y » (helpers cahier()/depuisCahier) et « ص X–Y » (kitab()/depuisKitab) remplacés (kitāb : translit seul) ; numéros de page retirés des entrées du sommaire ; le sous-titre n'est rendu que s'il est non vide.
+- SOMMAIRE : ancres rendues robustes — allerAuChapitre et le positionnement initial utilisent scrollIntoView({block:'start'}) + scroll-mt-3 sur les articles (le navigateur mesure la position réelle, plus d'arithmétique offsetTop faussée par les panneaux déroulés). Vérifié : clic سُورَةُ المُلْك → atterrit sur سُورَةُ المُلْك en phonétique ET en arabe.
+- NASIRI/MUNFARIJA : layout poésie deux colonnes pleine largeur — nouveau composant VersPoeme + classes CSS .poesie-vers/.poesie-shatr/.poesie-fasl (grille 1fr-auto-1fr, hémistiches justifiés text-align-last, ۞ au centre). Flag poesie: true sur k17 et k18 (ChapitreArabe + ChapitreLecture). Vérifié : 71 vers, colonnes 348px+10px+348px.
+- DESIGN ANDALOU (globals.css + composants) :
+  · BasculeAndalouse — tuiles octogonales de zellige (clip-path 12px, filet d'or emboîté, active vert profond) avec ✦ séparateur ; remplace les pilules pour Phonétique/عربي et Texte/Numérisé.
+  · .pastille-arche — badges numéros en arche de mihrab (dôme haut, base droite) sur les documents et la carte samâ'.
+  · .filigrane-khatim — filigrane étoile à huit pans sur la grande carte samâ' ; .entete-khatim — constellation khātim côté droit des en-têtes de sections (SectionShell).
+  · body::after — papier watermarké khātim (3 % jour / 4,5 % nuit), masqué à l'impression.
+  · .ornement-mihrab/.ornement-filet — double filet + ✦ au-dessus des titres de chapitres ; .poesie-page — filet intérieur de planche de manuscrit sur les cartes du lecteur.
+  · role="listitem" retiré des boutons de documents (ils étaient invisibles à l'accessibilité).
+- QA agent-browser : ancre Al Mulk OK dans les deux langues ; ordre du sommaire 1-35 vérifié ; Warsh vérifié dans le DOM rendu (9 variantes true) ; diwân phonétique 402 articles + 222 canvases en arabe ; « cahier p. » absent ; bascule tuiles fonctionnelle ; recherche ⌘K sama OK ; footer mobile collé au bas ; captures VLM : « refined Andalusian, clean, aligned ». Lint : 0 erreur. dev.log : plus d'erreur (celle du log était un état intermédiaire d'import, corrigée).
+
+Stage Summary:
+- Toutes les demandes du lot sont traitées : sama' = le cahier seul ; Warsh appliqué et vérifié mot à mot au rendu ; Mulk ne coupe plus la wadhifa (ordres cahier) ; sommaire fiable et épuré ; Nasiri/Munfarija en distiques pleine largeur ; « cahier p. X » supprimé ; onglets remplacés par des tuiles de zellige et ornements andalous partout (subtils, mats).
+- Points d'attention pour la suite : (1) 36:47 « man law / man in » à trancher avec le mushaf imprimé de la zawiya ; (2) le texte Warsh reste à confrontér visuellement au kitab-arabe.pdf scan par scan pour un contrôle final ; (3) les sous-titres du diwân samâ' gardent « chant n° N · p. X · auteur » — utile (poètes), à garder sauf avis contraire.

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CalendarPlus } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -27,6 +27,9 @@ import { EnregistrementSW } from '@/components/zaouia/enregistrement-sw'
 import { useToast } from '@/hooks/use-toast'
 import { VILLE_LABEL } from '@/lib/types'
 
+/* Abonnement vide — le « monté » ne bascule qu'une fois, à l'hydratation */
+const souscrireRien = () => () => {}
+
 export default function Page() {
   const name = useUser((s) => s.name)
   const ville = useUser((s) => s.ville)
@@ -47,6 +50,13 @@ export default function Page() {
   const [reglagesOuverts, setReglagesOuverts] = useState(false)
   const [profilOuvert, setProfilOuvert] = useState(false)
   const [nouvelleReunion, setNouvelleReunion] = useState(false)
+
+  /* Garde d'hydratation — le serveur ne connaît pas le prénom persisté sur
+     l'appareil. Pendant l'hydratation, l'instantané serveur (false) fait
+     régner la porte d'entrée, exactement comme le HTML rendu ; une fois
+     hydraté, l'instantané client (true) révèle l'app du frère déjà entré —
+     le tout sans écart d'hydratation (c'est la promesse de l'API). */
+  const monte = useSyncExternalStore(souscrireRien, () => true, () => false)
 
   /* Résoudre le prénom + la zawiya → membre (id, rôle, droits).
      L'inscription se fait à la porte d'entrée (avec code et validation) :
@@ -82,8 +92,8 @@ export default function Page() {
     }
   }, [name, ville, membres, memberId, role, perms, setMember, logout, toast])
 
-  /* Écran d'entrée tant que le prénom n'est pas posé */
-  if (!name) {
+  /* Écran d'entrée tant que le prénom n'est pas posé (ou pas encore monté) */
+  if (!monte || !name) {
     return (
       <AnimatePresence mode="wait">
         <WelcomeGate key="gate" />

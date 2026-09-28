@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { useQueryClient } from '@tanstack/react-query'
@@ -86,12 +86,14 @@ function Etoiles() {
   )
 }
 
-/** Rayons de lumière dorés qui tournent lentement derrière le sceau */
+/** Rayons de lumière dorés qui tournent lentement derrière la calligraphie.
+ *  Cercle parfait — remplis le parent centré, l'ellipse est évitée
+ *  (un ovale en rotation donnerait un balancement disgracieux). */
 function RayonsLumiere() {
   return (
     <motion.div
       aria-hidden
-      className="pointer-events-none absolute -inset-16 sm:-inset-20"
+      className="pointer-events-none h-full w-full"
       animate={{ rotate: 360 }}
       transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
       style={{
@@ -148,7 +150,17 @@ export function WelcomeGate() {
   const qc = useQueryClient()
 
   const [value, setValue] = useState('')
-  const [ville, setVilleChoisie] = useState<Ville>(useUser.getState().ville ?? 'NIMES')
+  /* La zawiya persistée de l'appareil, lue sans écart d'hydratation :
+     le serveur ne rend que Nîmes (son seul instantané), la vraie zawiya
+     arrive à l'hydratation ; le choix d'une tuile prend la main dès le
+     premier clic et prime sur ce qui est persisté. */
+  const [villeChoisie, setVilleChoisie] = useState<Ville | null>(null)
+  const villeDAppareil = useSyncExternalStore(
+    useUser.subscribe,
+    () => useUser.getState().ville,
+    () => 'NIMES' as Ville
+  )
+  const ville = villeChoisie ?? villeDAppareil
   const [code, setCode] = useState('')
   const [etat, setEtat] = useState<EtatPorte>('VERIFIE')
   const [erreur, setErreur] = useState<string | null>(null)
@@ -380,59 +392,74 @@ export function WelcomeGate() {
         <circle cx="10" cy="54" r="3" fill="currentColor" />
       </svg>
 
-      {/* Le logo placé un peu plus bas dans la composition */}
+        {/* La calligraphie de la tariqa, posée un peu plus bas dans la composition */}
       <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
-        {/* ─── Le sceau animé ─── */}
+        {/* ─── L'emblème calligraphié ─── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.6, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mb-8"
+          className="relative mb-7"
         >
           <Particules />
-          {/* Rayons de lumière tournants */}
-          <RayonsLumiere />
-          {/* Anneaux concentriques */}
+          {/* Rayons de lumière tournants — cercle centré derrière la calligraphie */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[23rem] w-[23rem] -translate-x-1/2 -translate-y-1/2 sm:h-[26rem] sm:w-[26rem]"
+          >
+            <RayonsLumiere />
+          </div>
+          {/* Anneau pointillé doré — cercle centré, tourne lentement */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
+            <motion.div
+              className="h-[21rem] w-[21rem] rounded-full border border-dashed border-gold/40 sm:h-[24rem] sm:w-[24rem]"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+            />
+          </div>
+          {/* Anneau ovale qui respire — épouse la calligraphie */}
           <motion.div
-            className="absolute -inset-8 rounded-full border border-primary/25"
-            animate={{ scale: [1, 1.12, 1], opacity: [0.5, 0.9, 0.5] }}
+            className="absolute -inset-x-10 -inset-y-8 rounded-[999px] border border-primary/20"
+            animate={{ scale: [1, 1.045, 1], opacity: [0.45, 0.85, 0.45] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden
           />
-          <motion.div
-            className="absolute -inset-14 rounded-full border border-dashed border-gold/40"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+          {/* Plaque de nuit — la lune d'ivoire porte la calligraphie verte.
+              Le jour, la calligraphie flotte sur le papier crème ; la nuit,
+              l'ivoire plein la garde lisible (le vert sur le vert-noir
+              s'éteindrait, un voile translucide pire encore : sa lueur
+              égalerait presque celle des lettres). */}
+          <div
             aria-hidden
+            className="pointer-events-none absolute -inset-x-7 -inset-y-6 hidden rounded-[999px] bg-gradient-to-b from-[#faf8f1] to-[#ece5d3] shadow-[0_18px_50px_-12px_rgba(0,0,0,0.5)] ring-1 ring-gold/25 dark:block"
           />
-          {/* Sceau du logo */}
-          <div className="halo-dore relative grid h-40 w-40 place-items-center rounded-full bg-white shadow-[0_20px_60px_-15px_rgba(11,93,66,0.35)] ring-1 ring-primary/10 sm:h-48 sm:w-48">
-            <motion.div
-              animate={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-              className="relative h-32 w-32 sm:h-40 sm:w-40"
-            >
-              <Image
-                src="/tariqa.png"
-                alt="Sceau de la zawiya"
-                fill
-                priority
-                sizes="192px"
-                className="object-contain"
-              />
-            </motion.div>
-            {/* Étoile à 8 branches tournante */}
-            <motion.svg
-              className="absolute -right-1 -top-1 h-8 w-8 text-gold"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
-              aria-hidden
-            >
-              <path d="M12 0l2.4 7.2L22 4.8l-4.8 7.2L24 12l-6.8 0l4.8 7.2-7.6-2.4L12 24l-2.4-7.2L2 19.2 6.8 12 0 12l6.8 0L2 4.8l7.6 2.4z" opacity="0.85" />
-            </motion.svg>
-          </div>
+          {/* La calligraphie — fond transparent, elle flotte sur le papier */}
+          <motion.div
+            animate={{ y: [0, -8, 0], rotate: [0, 1.5, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            className="relative w-72 sm:w-80"
+          >
+            <Image
+              src="/tariqa.png"
+              alt="Calligraphie de la zawiya — la Basmala calligraphiée"
+              width={520}
+              height={413}
+              priority
+              sizes="(min-width: 640px) 320px, 288px"
+              className="h-auto w-full drop-shadow-[0_14px_28px_rgba(11,93,66,0.22)] dark:drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+            />
+          </motion.div>
+          {/* Étoile à 8 branches tournante — le petit sceau d'or */}
+          <motion.svg
+            className="absolute -right-2 top-2 h-8 w-8 text-gold"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
+            aria-hidden
+          >
+            <path d="M12 0l2.4 7.2L22 4.8l-4.8 7.2L24 12l-6.8 0l4.8 7.2-7.6-2.4L12 24l-2.4-7.2L2 19.2 6.8 12 0 12l6.8 0L2 4.8l7.6 2.4z" opacity="0.85" />
+          </motion.svg>
         </motion.div>
 
         {/* ─── Titre ─── */}

@@ -97,7 +97,7 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
               </span>
             )}
           </span>
-          <span className="mt-0.5 block truncate text-[15px] font-semibold text-encre">
+          <span className="mt-0.5 block truncate text-[16px] font-medium text-encre">
             {meeting.title}
           </span>
           {!compact && (
@@ -474,7 +474,7 @@ export function SectionShell({
           </span>
           <span
             className={cn(
-              'hidden rounded-full bg-primary/6 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground transition-opacity group-hover:opacity-100 sm:inline-block',
+              'hidden rounded-full bg-primary/6 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground transition-opacity group-hover:opacity-100 sm:inline-block',
               ouvert ? 'opacity-0' : 'opacity-70'
             )}
           >
@@ -489,7 +489,7 @@ export function SectionShell({
           )}
           <motion.span
             animate={{ rotate: ouvert ? 180 : 0 }}
-            className={cn('text-brouillard-clair transition-colors group-hover:text-primary', !ouvert && 'chevron-pulse')}
+            className={cn('text-brouillard-clair transition-colors group-hover:text-primary')}
           >
             <ChevronDown className="h-5 w-5" />
           </motion.span>

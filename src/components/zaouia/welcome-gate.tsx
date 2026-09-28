@@ -313,7 +313,7 @@ export function WelcomeGate() {
               onKeyDown={(e) => e.key === 'Enter' && entrer()}
               placeholder="Ton prénom…"
               autoComplete="given-name"
-              className="w-full rounded-full border border-primary/25 bg-card/90 py-4 pl-6 pr-24 text-center text-lg text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:text-brouillard-clair focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="w-full rounded-full border border-primary/25 bg-card/90 py-4 pl-6 pr-24 text-center text-lg text-encre shadow-inner shadow-primary/5 outline-none backdrop-blur transition-all placeholder:text-brouillard/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
             />
             <motion.button
               onClick={entrer}
@@ -321,7 +321,7 @@ export function WelcomeGate() {
               whileTap={{ scale: 0.94 }}
               disabled={!value.trim()}
               aria-label="Entrer"
-              className="absolute right-1.5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-br from-primary to-emerald-deep text-white shadow-lg shadow-primary/30 transition-opacity disabled:opacity-40"
+              className="absolute right-1.5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full text-primary-foreground transition-all disabled:border disabled:border-border disabled:bg-card/60 disabled:text-brouillard enabled:bg-primary enabled:shadow-md enabled:shadow-primary/25"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M13 6l6 6-6 6" />

@@ -41,7 +41,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           </motion.div>
           <span className="hidden text-left leading-tight min-[420px]:block">
             <span className="block text-[15px] font-bold tracking-wide text-encre">ZAWIYA</span>
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-primary">
+            <span className="block text-[10.5px] font-semibold uppercase tracking-[0.28em] text-primary">
               Nimes
             </span>
           </span>
@@ -91,7 +91,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
       </div>
 
       {/* Ligne spirituelle : la date du jour */}
-      <div className="mx-auto max-w-3xl px-4 pb-2">
+      <div className="mx-auto max-w-3xl px-4 pb-3">
         <motion.p
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}

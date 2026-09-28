@@ -172,10 +172,13 @@ export function Annonces() {
   return (
     <section id="annonces" aria-label="Annonces" className="scroll-mt-24 space-y-3">
       {/* Ligne d'en-tête avec bouton de création */}
-      <div className="flex items-center justify-between">
-        <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
-          <Megaphone className="h-4 w-4" /> Annonces
-        </p>
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-primary">
+            Voix de la zawiya
+          </p>
+          <h2 className="mt-1 font-display text-2xl font-medium text-foreground">Annonces</h2>
+        </div>
         <button
           onClick={ouvrirCreation}
           className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-primary ring-1 ring-primary/20 transition-all hover:bg-primary/8 hover:shadow-sm active:scale-95"

@@ -121,7 +121,10 @@ function LecteurCoran({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.22 }}
-      className="fixed inset-0 z-[90] flex flex-col bg-background grain-papier"
+      /* mb-0 : MAIN porte space-y-9 ; sans lui, le dialogue plein écran
+          reçoit une marge de 36px en bas et ne couvre pas tout l'écran
+          (Tailwind v4 space-y = margin-block-end sur :not(:last-child)) */
+      className="fixed inset-0 z-[90] mb-0 flex flex-col bg-background grain-papier"
       role="dialog"
       aria-modal="true"
       aria-label={`Lecteur — ${volume.titreAr}`}

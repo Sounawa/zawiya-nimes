@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════════
    ADHKÂR DE LA ZAWIYA — la présentation des invocations du site
    original : neuf documents, chacun ouvrable en phonétique ou en
-   arabe. Le cahier phonétique (32 chapitres) et le kitāb arabe
-   (21 chapitres, Coran en riwāyat Warsh) sont découpés selon
-   le sommaire du site original de la zawiya.
+   arabe. Le cahier de wadhifa est organisé en PRATIQUES : chaque
+   pratique garde sa version phonétique (cahier imprimé) et/ou sa
+   version arabe (kitāb imprimé, Coran en riwāyat Warsh) — plus
+   aucun chapitre ne se perd en changeant de langue.
    ═══════════════════════════════════════════════════════════════════ */
 
 import { CHAPITRES_CAHIER } from './cahier'
@@ -42,10 +43,12 @@ export interface DocAdhkar {
   /** PDF servis tels quels (samā') : chemin public */
   pdfPh?: string
   pdfAr?: string
+  /** pratiques structurées (cahier de wadhifa) — lecteur à sommaire */
+  pratiques?: PratiqueWadhifa[]
 }
 
 /* Les 21 chapitres arabes, rassemblés */
-const CHAPITRES_ARABES = [...PARTIE_1_ARABE, ...PARTIE_2_ARABE]
+export const CHAPITRES_ARABES = [...PARTIE_1_ARABE, ...PARTIE_2_ARABE]
 
 /* Helpers de conversion vers le format du lecteur */
 function depuisCahier(ids: string[]): ChapitreLecture[] {
@@ -125,14 +128,95 @@ export const JAZR_CAHIER = {
   texte: JAZR_PHONETIQUE[0].texte,
 }
 
+/* ═══ Les pratiques du cahier de wadhifa ═════════════════════════════
+   Chaque pratique existe dans le cahier phonétique (p. du cahier)
+   et/ou dans le kitāb arabe (ص du livre) — la même liste sert aux
+   deux langues : basculer phonétique ⇄ عربي ne change plus ni le
+   sommaire ni la pratique en cours de lecture. */
+
+export type GroupeWadhifa = 'quotidien' | 'moments' | 'sceaux' | 'dhikr' | 'salawat' | 'annexes'
+
+export const GROUPES_WADHIFA: { id: GroupeWadhifa; titre: string; titreAr: string }[] = [
+  { id: 'quotidien', titre: 'Le Wadhifa quotidien', titreAr: 'الوَظِيفَة اليَوْمِيَّة' },
+  { id: 'moments', titre: 'Les Waẓîfa des moments', titreAr: 'وَظَائِف الأَوْقَات' },
+  { id: 'sceaux', titre: 'Ouvertures & sceaux', titreAr: 'الافْتِتَاح والخَتْم' },
+  { id: 'dhikr', titre: 'Dhikr & prières du cahier', titreAr: 'أَذْكَار وأَدْعِيَة' },
+  { id: 'salawat', titre: 'Les Ṣalawât', titreAr: 'الصَّلَوَات' },
+  { id: 'annexes', titre: 'Annexes du cahier', titreAr: 'مَلَاحِق' },
+]
+
+export interface PratiqueWadhifa {
+  /** identifiant canonique de la pratique */
+  id: string
+  groupe: GroupeWadhifa
+  /** version phonétique (cahier imprimé) */
+  ph?: ChapitreLecture
+  /** version arabe (kitāb imprimé) */
+  ar?: ChapitreLecture
+}
+
+export const PRATIQUES_WADHIFA: PratiqueWadhifa[] = [
+  /* ── Le Wadhifa quotidien ── */
+  { id: 'w-taqwiyya', groupe: 'quotidien', ph: cahier('ch01-attaqwiyya'), ar: kitab('k09') },
+  { id: 'w-yasin', groupe: 'quotidien', ph: cahier('ch02-sratysn'), ar: kitab('k01') },
+  { id: 'w-wadhifa', groupe: 'quotidien', ph: cahier('ch03-alwafa'), ar: kitab('k05') },
+  { id: 'w-waqia', groupe: 'quotidien', ph: cahier('ch04-sratalwqia'), ar: kitab('k03') },
+  { id: 'w-mulk', groupe: 'quotidien', ar: kitab('k04') },
+  { id: 'w-nasiri', groupe: 'quotidien', ph: cahier('ch05-adduannir'), ar: kitab('k17') },
+  { id: 'w-munfarija', groupe: 'quotidien', ph: cahier('ch06-qadatalmunfarija'), ar: kitab('k18') },
+  { id: 'w-latif-hajar', groupe: 'quotidien', ph: cahier('ch07-lafibnajar'), ar: kitab('k13') },
+  { id: 'w-latif-muwahhad', groupe: 'quotidien', ph: cahier('ch08-lafalmuwaad'), ar: kitab('k14') },
+  { id: 'w-latif-mujarrad', groupe: 'quotidien', ph: cahier('ch09-lafalmujarrad') },
+  { id: 'w-latif-kabir', groupe: 'quotidien', ph: cahier('ch10-lafalkabr'), ar: kitab('k15') },
+  { id: 'w-ala-latif', groupe: 'quotidien', ar: kitab('k19') },
+  { id: 'w-fidya', groupe: 'quotidien', ph: cahier('ch11-alfidya'), ar: kitab('k12') },
+  { id: 'w-fath', groupe: 'quotidien', ph: cahier('ch12-sratalfat'), ar: kitab('k02') },
+  /* ── Les Waẓîfa des moments ── */
+  { id: 'w-avant-fajr', groupe: 'moments', ph: cahier('ch13-wafaavantlefajr'), ar: kitab('k06') },
+  { id: 'w-subh', groupe: 'moments', ph: cahier('ch14-wafaaub'), ar: kitab('k07') },
+  { id: 'w-nachr', groupe: 'moments', ph: cahier('ch15-wafatannachr') },
+  { id: 'w-voyage', groupe: 'moments', ph: cahier('ch16-wafadevoyage'), ar: kitab('k08') },
+  /* ── Ouvertures & sceaux ── */
+  { id: 'w-iftitah', groupe: 'sceaux', ph: cahier('ch17-iftitassilkaiftitd'), ar: kitab('k10') },
+  { id: 'w-khatm-dalail', groupe: 'sceaux', ph: cahier('ch19-khatmdalilalkhayrt'), ar: kitab('k16') },
+  { id: 'w-khatm-silka', groupe: 'sceaux', ph: cahier('ch18-khatmassilka'), ar: kitab('k11') },
+  /* ── Dhikr & prières du cahier ── */
+  { id: 'w-mukhlisin', groupe: 'dhikr', ph: cahier('ch20-dhikralmukhlin') },
+  { id: 'w-dhikr-nachr', groupe: 'dhikr', ph: cahier('ch21-dhikrannachr') },
+  { id: 'w-ijtim-jeunes', groupe: 'dhikr', ph: cahier('ch22-ijtimdesjeunes') },
+  { id: 'w-ghayth', groupe: 'dhikr', ph: cahier('ch23-dhikralghayth') },
+  { id: 'w-faraj', groupe: 'dhikr', ph: cahier('ch24-dhikralfaraj') },
+  { id: 'w-nom-divin', groupe: 'dhikr', ph: cahier('ch25-qadatnomdivin') },
+  /* ── Les Ṣalawât ── */
+  { id: 'w-mashishiyya', groupe: 'salawat', ph: cahier('ch26-aaltalmashshiyya'), ar: kitab('k20') },
+  { id: 'w-zajr-mashishiyya', groupe: 'salawat', ph: cahier('ch27-zajralmashshiyya') },
+  { id: 'w-salat-nabi', groupe: 'salawat', ar: kitab('k21') },
+  /* ── Annexes du cahier ── */
+  { id: 'w-hizb-nasr', groupe: 'annexes', ph: cahier('ch28-izbannar') },
+  { id: 'w-burda', groupe: 'annexes', ph: cahier('ch29-alburda') },
+  { id: 'w-adhkar-khassa', groupe: 'annexes', ph: cahier('ch30-adhkrkha') },
+  { id: 'w-reginale', groupe: 'annexes', ph: cahier('ch31-programmedelargina') },
+  { id: 'w-grille', groupe: 'annexes', ph: cahier('ch32-grilledetranscript') },
+]
+
+/* Helpers internes — chapitre du cahier / du kitāb par identifiant */
+function cahier(id: string): ChapitreLecture | undefined {
+  const c = CHAPITRES_CAHIER.find((x) => x.id === id)
+  return c ? { id: c.id, titre: c.titre, sousTitre: `cahier p. ${c.debut}–${c.fin}`, debut: c.debut, fin: c.fin, texte: c.texte } : undefined
+}
+function kitab(id: string): ChapitreLecture | undefined {
+  const c = CHAPITRES_ARABES.find((x) => x.id === id)
+  return c ? { id: c.id, titre: c.titreAr, sousTitre: `${c.translit} · ص ${c.debut}–${c.fin}`, debut: c.debut, fin: c.fin, texte: c.texte } : undefined
+}
+
 /* ═══ Les neuf documents, dans l'ordre du site original de la zawiya ═══ */
 export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
   {
     id: 'kitab',
     titreFr: 'Cahier de Wadhifa',
     titreAr: 'كتاب الأذكار',
-    detailFr: 'le cahier complet · 32 invocations · p. 4–71',
-    detailAr: 'الكتاب كاملًا · ٢١ فصلًا · ص ٤–٦٥',
+    detailFr: '35 pratiques · phonétique & arabe · sommaire',
+    detailAr: '٣٥ فصلًا · ص ٤–٦٥',
     pdfPh: '/adhkar/cahier-wadhifa.pdf',
     pdfAr: '/adhkar/kitab-arabe.pdf',
     ph: depuisCahier([
@@ -192,6 +276,7 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
       'k20',
       'k21',
     ]),
+    pratiques: PRATIQUES_WADHIFA,
   },
   {
     id: 'yasin',

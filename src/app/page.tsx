@@ -15,12 +15,7 @@ import { NewMeetingDialog } from '@/components/zaouia/new-meeting-dialog'
 import { ContentSections } from '@/components/zaouia/content-sections'
 import { CotisationSection } from '@/components/zaouia/cotisation-section'
 import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
-import { SondagesSection } from '@/components/zaouia/sondages-section'
-import { AnnuaireSection } from '@/components/zaouia/annuaire-section'
-import { HistoriqueSection } from '@/components/zaouia/historique-section'
 import { AdhkarSection } from '@/components/zaouia/adhkar-section'
-import { QuranSection } from '@/components/zaouia/quran-section'
-import { SalatSection } from '@/components/zaouia/salat-section'
 import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
 import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
@@ -95,12 +90,7 @@ export default function Page() {
         <IjtimaSection />
         <CotisationSection />
         <ZiyaraSection />
-        <SondagesSection />
-        <AnnuaireSection />
-        <HistoriqueSection />
         <AdhkarSection />
-        <SalatSection />
-        <QuranSection />
         <ContentSections />
       </main>
 

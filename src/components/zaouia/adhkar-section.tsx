@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   BookOpen,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   FileDown,
@@ -17,10 +18,12 @@ import {
 } from 'lucide-react'
 import {
   DOCUMENTS_ADHKAR,
+  GROUPES_WADHIFA,
   chapitresDuDoc,
   pdfDuDoc,
   type ChapitreLecture,
   type DocAdhkar,
+  type GroupeWadhifa,
   type LangueAdhkar,
 } from '@/data/adhkar-docs'
 import {
@@ -101,6 +104,46 @@ function LigneInvocation({ ligne, accent }: { ligne: string; accent: string }) {
   return <span className="block">{ligne || '\u00A0'}</span>
 }
 
+/* ─── Le paragraphage du cahier phonétique ───
+   Le cahier imprimé est une colonne étroite : l'extraction garde
+   des lignes courtes coupées au milieu des phrases. On rejoint
+   les lignes d'un même bloc (séparé par une ligne vide) et on
+   coupe après les renvois « → p. » et les répétitions « x 100 » —
+   le texte coule alors sur toute la largeur, justifié comme un
+   livre, au lieu de rester collé à gauche. */
+function paragrapher(texte: string): string[] {
+  const paras: string[] = []
+  let courant: string[] = []
+  const flush = () => {
+    if (courant.length) {
+      paras.push(courant.join(' ').replace(/\s+/g, ' ').trim())
+      courant = []
+    }
+  }
+  for (const brute of texte.split('\n')) {
+    const t = brute.trim()
+    if (!t) {
+      flush()
+      continue
+    }
+    courant.push(t)
+    /* Fin logique de paragraphe : renvoi de page, ou répétition badgée */
+    if (/→\s*p\.|→\s*ص|[×x]\s*[٠-٩\d][٠-٩\dHh '’]*$/.test(t)) flush()
+  }
+  flush()
+  return paras
+}
+
+/* Une entrée du lecteur — chapitre dans sa langue EFFECTIVE :
+   les pratiques du cahier sans version dans la langue demandée
+   se lisent dans l'autre langue, sans jamais disparaître. */
+interface EntreeLecture extends ChapitreLecture {
+  langue: LangueAdhkar
+  /** la pratique n'existe pas dans la langue demandée — repli */
+  repli?: boolean
+  groupe?: GroupeWadhifa
+}
+
 /* ═══ LE LECTEUR PLEIN ÉCRAN ═══════════════════════════════════════ */
 
 interface LecteurProps {
@@ -129,20 +172,46 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
     }
   }, [doc.id, langue])
 
-  const chapitres = useMemo(
-    () => (doc.id === 'sama' && langue === 'ph' ? samaTexte ?? [] : chapitresDuDoc(doc, langue)),
-    [doc, langue, samaTexte]
-  )
+  /* Les entrées du lecteur : pratiques structurées (cahier de
+     wadhifa) ou chapitres plats (autres documents). Chaque entrée
+     porte sa langue effective — le sommaire ne change jamais quand
+     on bascule phonétique ⇄ عربي, la pratique lue reste en place. */
+  const entrees = useMemo<EntreeLecture[]>(() => {
+    if (doc.pratiques) {
+      return doc.pratiques
+        .map((p): EntreeLecture | null => {
+          const prefere = p[langue]
+          const autre = langue === 'ph' ? p.ar : p.ph
+          const c = prefere ?? autre
+          if (!c) return null
+          return {
+            ...c,
+            langue: prefere ? langue : langue === 'ph' ? 'ar' : 'ph',
+            repli: !prefere,
+            groupe: p.groupe,
+          }
+        })
+        .filter((e): e is EntreeLecture => e !== null)
+    }
+    if (doc.id === 'sama' && langue === 'ph') {
+      return (samaTexte ?? []).map((c) => ({ ...c, langue: 'ph' as const }))
+    }
+    return chapitresDuDoc(doc, langue).map((c) => ({ ...c, langue }))
+  }, [doc, langue, samaTexte])
+  const chapitres = entrees
   const pdf = pdfDuDoc(doc, langue)
   const conteneurRef = useRef<HTMLDivElement | null>(null)
   const cartesRef = useRef<(HTMLElement | null)[]>([])
 
   const [indexActif, setIndexActif] = useState(() => {
-    const i = chapitreInitial ? chapitres.findIndex((c) => c.id === chapitreInitial) : -1
+    const i = chapitreInitial ? entrees.findIndex((c) => c.id === chapitreInitial) : -1
     return i >= 0 ? i : 0
   })
   const [reglagesOuverts, setReglagesOuverts] = useState(false)
   const [sommaireOuvert, setSommaireOuvert] = useState(false)
+  /* La carte sommaire du cahier — dépliée à l'ouverture, refermée
+     si la recherche ⌘K demande directement une pratique. */
+  const [sommaireCarte, setSommaireCarte] = useState(!chapitreInitial)
   const [progression, setProgression] = useState(0)
   const [scrolle, setScrolle] = useState(false)
 
@@ -244,7 +313,10 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
   }, [vueDoc])
 
   /* ─── Positionner au chapitre demandé à l'ouverture ───
-     (le diwân arrive un instant après : on replace alors) */
+     (le diwân arrive un instant après : on replace alors)
+     « langue » n'est PAS une dépendance : basculer phonétique ⇄ عربي
+     ne doit jamais replacer la lecture — les pratiques unifiées
+     gardent leur place, seul le texte affiché change. */
   useEffect(() => {
     const el = conteneurRef.current
     if (!el) return
@@ -257,7 +329,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
       }
     }
     el.scrollTo({ top: 0 })
-  }, [chapitreInitial, langue, doc.id, chapitres.length])
+  }, [chapitreInitial, doc.id, chapitres.length])
 
   const allerAuChapitre = useCallback(
     (i: number) => {
@@ -340,14 +412,20 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
             <button
               type="button"
               onClick={() => {
-                setSommaireOuvert((o) => !o)
+                if (doc.pratiques) {
+                  /* Le cahier de wadhifa : le sommaire est la carte en tête */
+                  setSommaireCarte((o) => !o)
+                  conteneurRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+                } else {
+                  setSommaireOuvert((o) => !o)
+                }
                 setReglagesOuverts(false)
               }}
-              aria-expanded={sommaireOuvert}
+              aria-expanded={sommaireOuvert || (doc.pratiques && sommaireCarte)}
               aria-label="Sommaire du document"
               className={cn(
                 'grid h-9 w-9 place-items-center rounded-full transition-colors duration-200',
-                sommaireOuvert
+                sommaireOuvert || (doc.pratiques && sommaireCarte)
                   ? 'bg-muted text-foreground'
                   : 'text-brouillard hover:bg-muted/60 hover:text-foreground'
               )}
@@ -564,9 +642,9 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
           )}
         </AnimatePresence>
 
-        {/* ─── Sommaire des chapitres ─── */}
+        {/* ─── Sommaire des chapitres (documents plats) ─── */}
         <AnimatePresence>
-          {sommaireOuvert && chapitres.length > 1 && (
+          {sommaireOuvert && !doc.pratiques && chapitres.length > 1 && (
             <motion.nav
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -623,7 +701,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
         >
           <div
             className={cn(
-              'mx-auto flex w-full max-w-[760px] flex-col items-stretch gap-3 px-2.5 pb-[calc(110px+env(safe-area-inset-bottom))] pt-3 sm:px-4'
+              'mx-auto flex w-full max-w-[840px] flex-col items-stretch gap-3 px-3 pb-[calc(110px+env(safe-area-inset-bottom))] pt-3 sm:px-5'
             )}
           >
             {estSama && !samaTexte && (
@@ -638,15 +716,161 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 </span>
               </div>
             )}
-            {chapitres.map((c, i) => (
+
+            {/* ─── Le sommaire hypertexte du cahier de wadhifa ───
+                une entrée = une pratique ; cliquer y va directement */}
+            {doc.pratiques && (
+              <nav
+                aria-label="Sommaire des pratiques"
+                className={cn(
+                  'grain-papier relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-6',
+                  theme.fond,
+                  theme.texte,
+                  theme.cadre
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => setSommaireCarte((o) => !o)}
+                  aria-expanded={sommaireCarte}
+                  className="flex w-full items-center justify-between gap-3 text-left"
+                >
+                  <span className="flex min-w-0 items-baseline gap-2">
+                    <List
+                      className="h-4 w-4 shrink-0 self-center"
+                      style={{ color: accent.couleur }}
+                      aria-hidden
+                    />
+                    <span
+                      className="text-[16px] font-semibold"
+                      style={{ color: accent.couleur }}
+                    >
+                      Sommaire
+                    </span>
+                    <span className="text-[9.5px] font-medium uppercase tracking-[0.2em] opacity-60">
+                      {entrees.length} pratiques
+                    </span>
+                  </span>
+                  <motion.span
+                    animate={{ rotate: sommaireCarte ? 180 : 0 }}
+                    className="shrink-0 opacity-60"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </motion.span>
+                </button>
+                <p className="mt-0.5 pl-6 text-[10.5px] italic opacity-55">
+                  Clique sur une pratique pour y accéder directement.
+                </p>
+                <AnimatePresence initial={false}>
+                  {sommaireCarte && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 space-y-4">
+                        {GROUPES_WADHIFA.map((g) => {
+                          const items = entrees
+                            .map((e, i) => ({ e, i }))
+                            .filter(({ e }) => e.groupe === g.id)
+                          if (!items.length) return null
+                          return (
+                            <div key={g.id}>
+                              <div
+                                className="mb-1.5 flex items-baseline gap-2 border-b pb-1"
+                                style={{ borderColor: `${accent.couleur}30` }}
+                              >
+                                <h4
+                                  className="text-[10px] font-bold uppercase tracking-[0.22em]"
+                                  style={{ color: accent.couleur }}
+                                >
+                                  {g.titre}
+                                </h4>
+                                <span
+                                  className="font-arabic text-[12px] opacity-50"
+                                  dir="rtl"
+                                  lang="ar"
+                                >
+                                  {g.titreAr}
+                                </span>
+                              </div>
+                              <ul className="space-y-0.5">
+                                {items.map(({ e, i }) => (
+                                  <li key={e.id}>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSommaireCarte(false)
+                                        /* La fermeture de la carte (0,32 s) change la
+                                           hauteur au-dessus de la cible : on laisse
+                                           l'animation se terminer avant de mesurer,
+                                           sinon le point d'arrivée glisse trop haut. */
+                                        window.setTimeout(() => allerAuChapitre(i), 400)
+                                      }}
+                                      className="group relative flex w-full items-baseline justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left transition-transform active:scale-[0.995]"
+                                    >
+                                      <span
+                                        aria-hidden
+                                        className="pointer-events-none absolute inset-0 rounded-lg bg-current opacity-0 transition-opacity duration-200 group-hover:opacity-[0.05] group-focus-visible:opacity-[0.05]"
+                                      />
+                                      <span className="min-w-0 flex-1 truncate text-[13.5px]">
+                                        <span className="mr-1.5 inline-block w-5 shrink-0 text-right text-[10px] font-bold tabular-nums opacity-45">
+                                          {i + 1}
+                                        </span>
+                                        <span
+                                          dir={e.langue === 'ar' ? 'rtl' : undefined}
+                                          lang={e.langue === 'ar' ? 'ar' : undefined}
+                                          className={cn(
+                                            e.langue === 'ar' && 'font-arabic text-[15.5px]'
+                                          )}
+                                        >
+                                          {e.titre}
+                                        </span>
+                                        {e.repli && (
+                                          <span
+                                            className="ml-1.5 inline-block rounded-full border px-1.5 py-0.5 align-middle text-[8.5px] font-bold uppercase tracking-wider opacity-55"
+                                            style={{ borderColor: `${accent.couleur}40` }}
+                                          >
+                                            {e.langue === 'ar' ? 'arabe' : 'phonétique'}
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="shrink-0 text-[10px] font-medium tabular-nums opacity-50">
+                                        {e.langue === 'ar' ? `ص ${e.debut}` : `p. ${e.debut}`}
+                                      </span>
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </nav>
+            )}
+
+            {chapitres.map((c, i) => {
+              /* La langue de CETTE pratique — l'arabe du kitāb ou la
+                 phonétique du cahier — réglages de lecture adaptés */
+              const arabeC = c.langue === 'ar'
+              const policeC = arabeC
+                ? POLICES_AR.find((p) => p.id === l.policeArabe) ?? POLICES_AR[0]
+                : POLICES_PH.find((p) => p.id === l.police) ?? POLICES_PH[0]
+              const tailleC = arabeC ? l.tailleArabe : l.taille
+              return (
               <article
                 key={c.id}
                 data-i={i}
                 ref={(el) => {
                   cartesRef.current[i] = el
                 }}
-                dir={arabe ? 'rtl' : undefined}
-                lang={arabe ? 'ar' : undefined}
+                dir={arabeC ? 'rtl' : undefined}
+                lang={arabeC ? 'ar' : undefined}
                 className={cn(
                   'grain-papier relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7',
                   theme.fond,
@@ -657,17 +881,26 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 {/* En-tête du chapitre */}
                 <header className="mb-5 text-center">
                   <h3
-                    className={cn('leading-tight', arabe ? 'font-arabic text-[30px] font-semibold leading-snug' : 'text-[22px] font-semibold')}
-                    style={{ fontFamily: police.css, color: accent.couleur }}
+                    className={cn('leading-tight', arabeC ? 'font-arabic text-[30px] font-semibold leading-snug' : 'text-[22px] font-semibold')}
+                    style={{ fontFamily: policeC.css, color: accent.couleur }}
                   >
                     {c.titre}
                   </h3>
                   <p
                     className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.22em] opacity-50"
-                    dir={arabe ? 'ltr' : undefined}
+                    dir={arabeC ? 'ltr' : undefined}
                   >
                     {c.sousTitre}
                   </p>
+                  {/* La pratique n'existe pas dans la langue demandée —
+                      on la lit dans l'autre, avec une mention discrète */}
+                  {c.repli && (
+                    <p className="mt-1 text-[10px] italic opacity-55">
+                      {arabeC
+                        ? 'texte arabe du kitāb — pas de transcription dans le cahier'
+                        : 'transcription du cahier — pas de version arabe dans le kitāb'}
+                    </p>
+                  )}
                   <div
                     className="mx-auto mt-3 h-px w-24"
                     style={{ backgroundColor: accent.couleur, opacity: 0.4 }}
@@ -675,16 +908,23 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                   />
                 </header>
 
-                {/* Le texte sacré */}
+                {/* Le texte sacré — phonétique rejointe en paragraphes
+                    coulant sur toute la largeur ; arabe verset à verset */}
                 <div
-                  className={cn(!arabe && 'cahier-texte', arabe && 'kitab-texte text-right')}
+                  className={cn(
+                    'text-justify',
+                    arabeC ? 'kitab-texte text-right' : 'cahier-texte'
+                  )}
                   style={{
-                    fontFamily: police.css,
-                    fontSize: `${taille}px`,
+                    fontFamily: policeC.css,
+                    fontSize: `${tailleC}px`,
                     lineHeight: (INTERLIGNES.find((x) => x.id === l.interligne) ?? INTERLIGNES[1]).valeur,
                   }}
                 >
-                  {c.texte.split('\n').map((ligne, j) => (
+                  {(c.langue === 'ph' && doc.id !== 'sama'
+                    ? paragrapher(c.texte)
+                    : c.texte.split('\n')
+                  ).map((ligne, j) => (
                     <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
                   ))}
                 </div>
@@ -696,7 +936,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                     <button
                       type="button"
                       onClick={() =>
-                        imprimer({ kind: arabe ? 'kitab' : 'cahier', chapitreId: c.id })
+                        imprimer({ kind: arabeC ? 'kitab' : 'cahier', chapitreId: c.id })
                       }
                       className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] transition-all active:scale-95"
                       style={{ color: accent.couleur }}
@@ -706,7 +946,8 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                   </footer>
                 )}
               </article>
-            ))}
+              )
+            })}
 
             {/* La fin du document — pas pendant l'ouverture du diwân */}
             {!(estSama && !samaTexte) && (
@@ -858,7 +1099,7 @@ export function AdhkarSection() {
           {DOCUMENTS_ADHKAR.map((doc, i) => {
             const titre = arabe ? doc.titreAr : doc.titreFr
             const detail = arabe ? doc.detailAr : doc.detailFr
-            const nbChapitres = (arabe ? doc.ar?.length : doc.ph?.length) ?? 0
+            const nbChapitres = doc.pratiques?.length ?? (arabe ? doc.ar?.length : doc.ph?.length) ?? 0
             const estPdf = Boolean(arabe ? doc.pdfAr : doc.pdfPh)
             return (
               <motion.button
@@ -908,7 +1149,7 @@ export function AdhkarSection() {
                     </span>
                     {nbChapitres > 1 && (
                       <span className="shrink-0 rounded-full border border-border px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wider text-brouillard">
-                        {nbChapitres} morceaux
+                        {nbChapitres} {doc.pratiques ? 'pratiques' : 'morceaux'}
                       </span>
                     )}
                   </span>
@@ -940,7 +1181,11 @@ export function AdhkarSection() {
       <AnimatePresence>
         {lecteur && (
           <LecteurAdhkar
-            key={`${lecteur.doc.id}-${langue}-${lecteur.chapitre ?? 'tête'}`}
+            /* Pas de « langue » dans la clé : le lecteur ne se remonte
+               pas à la bascule phonétique ⇄ عربي — le nombre d'entrées
+               ne change pas (pratiques unifiées), la pratique lue et
+               la position de lecture restent exactement en place. */
+            key={`${lecteur.doc.id}-${lecteur.chapitre ?? 'tête'}`}
             doc={lecteur.doc}
             langue={langue}
             chapitreInitial={lecteur.chapitre}

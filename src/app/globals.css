@@ -375,6 +375,25 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  /* ─── Le texte de lecture ───
+     Le cahier phonétique coule justifié sur TOUTE la largeur de la
+     carte — comme le livre imprimé — au lieu d'un escalier de lignes
+     courtes collé à gauche. */
+  .cahier-texte {
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+  .cahier-texte > span {
+    text-indent: 0;
+  }
+
+  /* Le kitāb arabe : chaque verset prend sa ligne, aligné à droite */
+  .kitab-texte {
+    text-align: right;
+  }
 }
 
 /* ─── Navigation clavier — anneau visible (base : les utilities

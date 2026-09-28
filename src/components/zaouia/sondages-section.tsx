@@ -13,7 +13,6 @@ import {
 import { useUser } from '@/lib/store'
 import { parsePollOptions, type Poll } from '@/lib/types'
 import { dateCourte } from '@/lib/format'
-import { SectionShell } from './ijtima-section'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -222,36 +221,46 @@ function CarteSondage({ poll }: { poll: Poll }) {
   )
 }
 
-/* ═══════════════ Section Sondages ═══════════════ */
-export function SondagesSection() {
+/* ═══════════════ Les sondages — intégrés à la section Al-Ijtimâ' ═══════════════ */
+export function SondagesDuIjtima() {
   const { data: polls, isLoading } = usePolls()
   const [ouvert, setOuvert] = useState(false)
 
   return (
-    <>
-      <SectionShell
-        titre="Sondages"
-        compteur={polls ? `${polls.length}` : undefined}
-        id="sondages"
-      >
-        {isLoading ? (
-          <div className="h-32 animate-pulse rounded-2xl bg-sand/60" />
-        ) : (
-          <div className="space-y-3">
-            {(polls ?? []).map((p) => (
-              <CarteSondage key={p.id} poll={p} />
-            ))}
-            <button
-              onClick={() => setOuvert(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/30 bg-card/50 p-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
-            >
-              <Plus className="h-4 w-4" /> Nouveau sondage — « qui vient ? »
-            </button>
-          </div>
+    <div className="mt-5">
+      {/* Sous-titre de groupe — dans la coquille Al-Ijtimâ' */}
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-brouillard">
+          <Vote className="h-3.5 w-3.5 text-gold" aria-hidden /> Sondages
+        </h3>
+        {polls && polls.length > 0 && (
+          <span className="rounded-full bg-sand px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            {polls.length}
+          </span>
         )}
-      </SectionShell>
+      </div>
+      {isLoading ? (
+        <div className="h-32 animate-pulse rounded-2xl bg-sand/60" />
+      ) : (
+        <div className="space-y-3">
+          {(polls ?? []).map((p) => (
+            <CarteSondage key={p.id} poll={p} />
+          ))}
+          {!polls?.length && (
+            <p className="rounded-2xl border border-dashed border-primary/20 p-4 text-center text-xs text-brouillard">
+              Aucun sondage pour l'instant.
+            </p>
+          )}
+          <button
+            onClick={() => setOuvert(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/45 bg-or-pale/40 p-3 text-xs font-bold uppercase tracking-[0.18em] text-gold-vif transition-colors hover:border-gold/70 hover:bg-or-pale/70"
+          >
+            <Plus className="h-4 w-4" /> Nouveau sondage — « qui vient ? »
+          </button>
+        </div>
+      )}
       <NouveauSondageDialog open={ouvert} onOpenChange={setOuvert} />
-    </>
+    </div>
   )
 }
 

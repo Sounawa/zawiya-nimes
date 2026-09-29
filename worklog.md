@@ -666,3 +666,21 @@ Stage Summary:
 - Al-Mulk a maintenant SA carte autonome (elle n'existait que dans la wadhifa et le kitāb) ; n'existant qu'en arabe, un badge عربي l'annonce et son lecteur s'ouvre directement en Warsh quelle que soit la langue de lecture
 - La WADHIFA n'a pas bougé (w-fath ch12 + w-mulk k04 restent dans le groupe quotidien, ordre du cahier imprimé)
 - Restes/pistes : si la zawiya fournit un jour la transcription phonétique de Mulk, l'ajouter à cahier.ts et renseigner ph: sur la carte ; Taha (P0 du document Word) reste disponible si une section est demandée
+
+---
+Task ID: round-23-waqia-texte
+Agent: Z.ai Code (session principale)
+Task: « j'ai pu récupérer sourate al waqi'a tu dois refaire une mise en page propre et conforme à ce que nous avons fait pour les autres sourates » + question déploiement Netlify/GitHub hors-ligne PWA
+
+Work Log:
+- TEXTE FOURNI PAR LE FRÈRE : Sourate Al-Wāqiʿa complète (96 versets, notation ٱ alif wasla U+0671 du mushaf numérique, marqueurs ﴿N﴾) reçue dans le chat — la version « vérifiée Warsh-patchée » de k03 a été REMPLACÉE par ce texte
+- MISE EN PAGE CONFORME (scripts/tmp/waqia-build.ts, supprimé après usage) : conversion ﴿N﴾ → séparateurs ۞ · 3 blocs ﴾…﴿ (v.1-35 / 36-69 / 70-96) comme Yasin/Fath · a'ūdhu + basmala en notation ٱ · du'ā « صَدَقَ اللهُ » et khatm repris TELS QUELS de l'ancien k03 · artefact de copie corrigé : « لِّ لْمُقْوِينَ » (v.73, espace parasite) → « لِّلْمُقْوِينَ »
+- CONTRÔLES SCRIPTÉS : 96 versets comptés (35/34/27), 93 séparateurs internes exacts, 8 sondages de versets (ouverture, وِلْدَٰنٌ v17, وَطَلْحٍ v29, أَئِذَا v47, فَظَلْتُمْ v65, لِّلْمُقْوِينَ v73, clôture v96) tous ✓ ; en-tête documentaire de kitab-arabe.ts mis à jour (source : texte du frère, octobre)
+- SW bumpé zawiya-v7 → v8 (distribution du nouveau texte)
+- QA AGENT-BROWSER : carte « Surat al-Waqi'a » (onglet 4) ouverte en phonétique puis عَرَبِي → NOUVEAU TEXTE complet dans le DOM (ٱلْوَاقِعَةُ, wasla, du'ā, khatm, ancienne variante Warsh وَطَلْعٍ absente) ; police calculée du texte = « Scheherazade New » ; CAHIER DE WADHIFA : article « سُورَةُ الوَاقِعَة » (pratique 4) = même texte neuf confirmé (k03 partagé) ; VLM sur capture : « rendu propre et complet, aucun tofu, alif wasla correctement rendu, présentation élégante » ; 0 erreur console ; lint 0 erreur ; commit eac28f2
+- NOTE DEMPLOI (question posée) : voir section suivante — analyse PWA faite pour répondre à « mettre l'application sur netlify ou github pour trouver uniquement en hors ligne pour pas consommer de la data avec la possibilité de l'installer comme App »
+
+Stage Summary:
+- AL-WĀQIʿA EST LE TEXTE DU FRÈRE : k03 remplacé mot pour mot (96 versets, 3 blocs), visible dans la carte Adhkâr n°4 ET dans le cahier de wadhifa (pratique 4) — Scheherazade partout, SW v8
+- La phonétique (ch04-sratalwqia du cahier) est inchangée ; les PDF numérisés legacy (waqia-ar.pdf) restent accessibles via l'onglet « Numérisé » du lecteur
+- Restes/pistes : si le frère veut la version Warsh maghrébine de la Wāqiʿa un jour (le texte fourni est en notation standard), remplacer k03 de la même façon ; Taha (P0 du document Word) toujours disponible pour une section

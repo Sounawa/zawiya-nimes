@@ -800,3 +800,37 @@ Stage Summary:
 - Site définitif : https://zawiya-nimes.netlify.app avec DATABASE_URL + DATABASE_AUTH_TOKEN (Turso) — prêt à construire
 - Le repo GitHub est propre (plus aucun secret, force push post filter-repo)
 - UNIQUE ÉTAPES RESTANTES : 1 clic utilisateur (app GitHub Netlify) puis 2 appels API + QA (procédure exacte ci-dessus)
+
+---
+Task ID: round-27-finalisation-deploiement
+Agent: Z.ai Code (session principale)
+Task: Finalisation du déploiement après le clic utilisateur (« c'est fait » = installation de l'app GitHub Netlify) — liaison repo, premier build, correction du runtime production, QA complète
+
+Work Log:
+- LIAISON REPO RÉUSSIE : le clic utilisateur a installé l'app GitHub Netlify → PUT /sites/:id AVEC LE FORMAT {"repo":{"provider":"github","repo":"Sounawa/zawiya-nimes",...}} (format owner/name, PAS url complète) → HTTP 200 ; le webhook GitHub a déclenché le 1er build tout seul (commit 93a74a4)
+- BUILD 1 (93a74a4) ready mais RUNTIME CASSÉ : / → 502, /api/members → 500 ; diagnostic ajouté (champ detail dans le catch de /api/members) → erreur réelle : « URL_INVALID: The URL 'undefined' is not in a valid format »
+- RACINE DU BUG TROUVÉE dans @prisma/adapter-libsql 6.11.1 : PrismaLibSQL prend une CONFIG {url, authToken} (il crée lui-même le client libsql) — le code du round 24b lui passait un CLIENT libsql → config.url === undefined ; le mode Turso n'avait jamais pu être testé avant le déploiement réel
+- FIX APPLIQUÉ (commit 46c855d) : db.ts passe {url, authToken} à PrismaLibSQL ; imports STATIQUES (require dynamique remplacé) ; binaryTargets = ["native","rhel-openssl-1.0.x"] ajouté au generator (runtime Lambda Amazon Linux)
+- BUILD 2 (46c855d) → TOUT FONCTIONNE : / → 200, /api/members → 200 (Mehdi REFERENT servi depuis Turso), /api/settings → 200 (jours ijtima' Vendredi 19:30 + Dimanche 10:30)
+- QA PRODUCTION COMPLÈTE (agent-browser sur zawiya-nimes.netlify.app) :
+  * Porte ENTRER : Mehdi entre directement comme RÉFÉRENT (logique round 25)
+  * AJOUT membre : Karim ajouté → POST 201 → visible API Turso + UI ✓
+  * RÔLE : Karim nommé TRÉSORIER via PATCH 200 ✓
+  * SUPPRESSION : dialogue « Retirer Sidi Karim ? » (role=dialog ajouté, commit f227289) → DELETE → Karim parti, seul Mehdi reste ✓
+  * SÉCURITÉ : DELETE sans session référent → 403 « Seul le référent de la zaouia peut gérer les membres. » ✓
+  * WĀQIʿA PHONÉTIQUE : modal TEXTE/NUMÉRISÉ, texte du cahier avec marqueurs ✓
+  * WĀQIʿA ARABE : bascule عَرَبِي (attention : bouton avec diacritiques عَرَبِي) → texte Warsh complet (أَعُوذُ بِٱللَّهِ, ۞ séparateurs, ٱ alif wasla) ✓
+  * HORS-LIGNE : set offline on + reload → page complète servie par le SW (header, sections, footer, bouton INSTALLER) ; Wāqiʿa arabe OUVERTE HORS-LIGNE ✓ (objectif « sans data » atteint)
+  * MOBILE 390px : layout adapté, footer en bas ✓
+- NETTOYAGE (commit 8eb6a7e) : champ detail de diagnostic retiré de /api/members ; build final ready
+- CRON 15 min : ancien job 423356 désactivé (exec limits) → supprimé et recréé (job 423551) avec règles à jour (surveiller AUSSI la production, ne plus jamais effacer les membres en masse)
+-captures de preuve : download/qa-deploiement-*.png (gate, accueil, waqia phonétique/arabe/warsh, hors-ligne, mobile)
+
+PROCÉDURE DE BUILD NETLIFY (pour les futurs rounds) : après git push origin main, le webhook ne part PAS toujours (installation app partielle) → déclencher avec le PUT de re-lien : curl -X PUT -H "Authorization: Bearer $(cat .netlify-token)" -H "Content-Type: application/json" https://api.netlify.com/api/v1/sites/f4dee7b5-a55f-4223-acd6-cfca4894c846 -d '{"repo":{"provider":"github","repo":"Sounawa/zawiya-nimes","branch":"main","cmd":"npm run build:netlify","dir":".next","deploy_key_id":"6abb8fe73fee498cc76f3e07"}}' → build ~30-60 s (cache) → surveiller GET /sites/:id/deploys
+
+Stage Summary:
+- SITE EN LIGNE ET COMPLET : https://zawiya-nimes.netlify.app (GitHub privé + Turso eu-west-1 + Netlify Free, 0 €)
+- Mehdi REFERENT admin : ajoute/efface des membres, attribue les rôles (Membre/Trésorier/Référent) — tout validé en production
+- Hors-ligne PWA validé en production : texte coranique Warsh accessible sans data
+- ÉTAT FINAL : base Turso = Mehdi seul ; commits poussés jusqu'à 8eb6a7e ; SW zawiya-v8
+- SUGGESTION UTILISATEUR À FAIRE : révoquer/créer des tokens jetables si besoin de nouveaux rounds (GitHub PAT expire seul)

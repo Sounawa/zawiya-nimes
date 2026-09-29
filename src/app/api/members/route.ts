@@ -31,8 +31,15 @@ export async function GET() {
       select: CHAMPS_MEMBRE,
     })
     return NextResponse.json(members)
-  } catch {
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  } catch (e) {
+    console.error('[api/members] GET :', e)
+    return NextResponse.json(
+      {
+        error: 'Erreur serveur',
+        detail: e instanceof Error ? e.message : String(e),
+      },
+      { status: 500 }
+    )
   }
 }
 

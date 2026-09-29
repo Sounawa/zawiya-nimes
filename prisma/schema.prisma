@@ -1,6 +1,10 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
+  // native = machine de dev/build · rhel-openssl-1.0.x = runtime des
+  // fonctions Netlify (Amazon Linux) — sans lui, le moteur Prisma ne
+  // se charge pas en production.
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
 }
 
 datasource db {

@@ -6,21 +6,19 @@
      branchée sur Turso (base SQLite hébergée gratuite) via l'adaptateur
      LibSQL — le système de fichiers des fonctions serverless étant
      éphémère, la base doit vivre à l'extérieur.
-   Le choix est fait à la lecture de l'URL : rien à configurer. */
+   Le choix est fait à la lecture de l'URL : rien à configurer.
+   NB : imports STATIQUES (pas de require dynamique) — le bundler du
+   runtime Netlify doit trouver les modules au moment de l'empaquetage. */
 
 import { PrismaClient } from '@prisma/client'
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { createClient } from '@libsql/client'
 
 const url = process.env.DATABASE_URL ?? ''
 const estTurso = url.startsWith('libsql://')
 
 function creerClient(): PrismaClient {
   if (estTurso) {
-    // Charge dynamiquement l'adaptateur — inutile en dev local,
-    // et laisse le bundler Netlify l'inclure dans la fonction.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PrismaLibSQL } = require('@prisma/adapter-libsql') as typeof import('@prisma/adapter-libsql')
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createClient } = require('@libsql/client') as typeof import('@libsql/client')
     const libsql = createClient({
       url,
       authToken: process.env.DATABASE_AUTH_TOKEN,

@@ -304,7 +304,10 @@ function VersPoeme({
   police: string
 }) {
   const coupe = ligne.split('۞')
-  if (coupe.length !== 2) {
+  /* Le verset récité cent fois n'est pas un vers du poème : la
+     ligne qui porte un multiplicateur « × N » reste une invocation
+     à part entière, badge compris. */
+  if (coupe.length !== 2 || /[×x]\s*[٠-٩\d]/.test(ligne)) {
     return <LigneInvocation ligne={ligne} accent={accent} />
   }
   return (
@@ -341,19 +344,30 @@ function VersDeuxShatr({
     const ajuster = () => {
       /* D'abord rendre la taille choisie par le frère */
       el.style.fontSize = ''
-      /* Hors du mode une-ligne (tablette, paysage : deux colonnes
-         du kitāb), la taille choisie s'applique telle quelle */
-      if (getComputedStyle(el).display !== 'flex') return
       const shatrs = el.querySelectorAll('.poesie-shatr')
       const fasl = el.querySelector('.poesie-fasl')
       if (shatrs.length !== 2 || !fasl) return
+      /* Le mode « une ligne » (téléphone en portrait) : l'hémistiche
+         ne passe jamais à la ligne. Sur tablette et en paysage, les
+         deux colonnes du kitāb laissent au contraire le texte
+         envelopper — rien à resserrer. */
+      if (getComputedStyle(shatrs[0]).whiteSpace !== 'nowrap') return
 
-      /* Largeur naturelle du vers entier, nowrap */
+      /* Largeur NATURELLE du texte de chaque hémistiche : dans la
+         grille aux colonnes égales, la boîte de l'hémistiche est
+         la cellule — c'est le Range qui mesure le texte lui-même. */
+      const largeurTexte = (s: Element) => {
+        const r = document.createRange()
+        r.selectNodeContents(s)
+        return Math.ceil(r.getBoundingClientRect().width)
+      }
       const gap =
         2 * (parseFloat(getComputedStyle(el).columnGap) || 0) || 0
+      /* Les colonnes sont égales, le milieu reste droit vers après
+         vers : c'est l'hémistiche le plus long qui décide de la
+         taille commune. */
       const nat =
-        shatrs[0].getBoundingClientRect().width +
-        shatrs[1].getBoundingClientRect().width +
+        2 * Math.max(largeurTexte(shatrs[0]), largeurTexte(shatrs[1])) +
         fasl.getBoundingClientRect().width +
         gap
       const dispo = el.clientWidth

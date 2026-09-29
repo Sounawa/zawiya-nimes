@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useQueryClient } from '@tanstack/react-query'
@@ -130,14 +130,26 @@ function TitreLettres() {
 
 /* ═════════════════════════════════════════════════════════════════════
    LA PORTE OUVERTE — la sécurité est retirée pour le moment :
-   plus de zawiya à choisir, plus de prénom, plus de code.
-   Un seul bouton fait entrer, comme référent de Nîmes (la maison-mère)
-   — tous les droits, pour tout voir et tout régler.
+   plus de zawiya à choisir, plus de code. Le prénom, lui, revient :
+   il s'écrit une fois, se mémorise sur l'appareil, et la porte
+   salue au retour (« Entrer, Mehdi »). Celui qui entre est le
+   référent de Nîmes (la maison-mère) — tous les droits, pour tout
+   voir et tout régler ; si le prénom désigne un frère actif de la
+   maison-mère, c'est lui qui entre, avec ses droits à lui.
 
    Les routes /api/auth/* restent en place, intactes : le jour où la
    porte sécurisée revient, il suffira de réinstaller les champs
    (l'ancienne version vit dans l'historique git).
    ═════════════════════════════════════════════════════════════════════ */
+
+/** La clé du prénom mémorisé sur l'appareil — indépendante de la
+ *  session (zaouia-user) : elle survit aux déconnexions. */
+const CLE_PRENOM = 'zaouia-prenom'
+
+/* Abonnement vide — le prénom mémorisé n'est lu qu'au rendu, rien
+ * ne le fait changer en cours de session. */
+const souscrireRien = () => () => {}
+
 export function WelcomeGate() {
   const setName = useUser((s) => s.setName)
   const setVille = useUser((s) => s.setVille)
@@ -161,6 +173,33 @@ export function WelcomeGate() {
 
   const [passage, setPassage] = useState(false)
   const [heure, setHeure] = useState('')
+  /* Le prénom du frère — édition locale par-dessus le prénom
+     mémorisé sur l'appareil : la porte le reconnaît au retour */
+  const [prenomEdite, setPrenomEdite] = useState<string | null>(null)
+  /* Le prénom mémorisé — lu au rendu côté client seulement : le
+     serveur n'en connaît rien, l'hydratation rend d'abord le champ
+     vide puis le préremplit, sans écart d'hydratation */
+  const prenomMemorise = useSyncExternalStore(
+    souscrireRien,
+    () => {
+      try {
+        return localStorage.getItem(CLE_PRENOM) ?? ''
+      } catch {
+        return ''
+      }
+    },
+    () => '',
+  )
+  const prenom = prenomEdite ?? prenomMemorise
+  const refPrenom = useRef<HTMLInputElement | null>(null)
+  const refBouton = useRef<HTMLButtonElement | null>(null)
+
+  /* Au retour, le bouton attend, prêt — sinon, c'est le champ qui
+     reçoit le doigt (lecture directe : l'effet ne tourne qu'une
+     fois, côté client, quand le prénom mémorisé est déjà là) */
+  useEffect(() => {
+    ;(localStorage.getItem(CLE_PRENOM) ? refBouton.current : refPrenom.current)?.focus()
+  }, [])
 
   useEffect(() => {
     const tick = () =>
@@ -172,13 +211,34 @@ export function WelcomeGate() {
     return () => clearInterval(t)
   }, [])
 
-  /* Entrer — direct, sans formalité : la porte est ouverte */
+  /* Entrer — direct, sans formalité : la porte est ouverte. Le
+     prénom désigne un frère actif de la maison-mère (à la casse
+     près — « mehdi » trouve Mehdi) ; sinon, l'hôte référent
+     ouvre sa porte, comme avant. */
+  const prenomEpure = prenom.trim().replace(/\s+/g, ' ')
+
   const entrer = () => {
     if (!hote || passage) return
+    const moi = prenomEpure
+      ? (membres ?? []).find(
+          (m) =>
+            m.city === 'NIMES' &&
+            m.status === 'ACTIVE' &&
+            m.name.toLowerCase() === prenomEpure.toLowerCase(),
+        ) ?? hote
+      : hote
     setPassage(true)
+    if (prenomEpure) {
+      try {
+        localStorage.setItem(CLE_PRENOM, prenomEpure)
+      } catch {
+        /* appareil en navigation privée — le prénom tiendra le temps
+           de la session, c'est tout */
+      }
+    }
     setVille(ville)
-    setName(hote.name)
-    setMember(hote.id, hote.role, hote.city, hote.perms)
+    setName(moi.name)
+    setMember(moi.id, moi.role, moi.city, moi.perms)
     qc.invalidateQueries({ queryKey: ['members'] })
   }
 
@@ -330,14 +390,34 @@ export function WelcomeGate() {
           <span className="h-px w-16 bg-gradient-to-l from-transparent to-accent/60" />
         </motion.div>
 
-        {/* ─── LE BOUTON ENTRER — à la place de la citation ─── */}
+        {/* ─── LE PRÉNOM + LE BOUTON ENTRER ─── */}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mt-8 flex w-full flex-col items-center"
         >
-          <div className="relative">
+          {/* Le champ du prénom — posé sur la porte, mémorisé sur
+              l'appareil : la porte salue au retour */}
+          <div className="relative w-full max-w-[280px]">
+            <input
+              ref={refPrenom}
+              value={prenom}
+              onChange={(e) =>
+                setPrenomEdite(e.target.value.replace(/\s+/g, ' ').slice(0, 24))
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') entrer()
+              }}
+              placeholder="Ton prénom"
+              aria-label="Ton prénom"
+              enterKeyHint="go"
+              autoComplete="given-name"
+              spellCheck={false}
+              className="w-full rounded-full border border-gold/40 bg-card/70 px-5 py-3 text-center font-display text-lg text-encre shadow-inner shadow-primary/5 placeholder:font-normal placeholder:text-brouillard/70 focus:border-gold/80 focus:outline-none focus:ring-2 focus:ring-gold/25 dark:bg-card/50"
+            />
+          </div>
+          <div className="relative mt-4">
             {/* Halo qui respire derrière le bouton */}
             <motion.span
               aria-hidden
@@ -346,12 +426,12 @@ export function WelcomeGate() {
               transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.button
+              ref={refBouton}
               onClick={entrer}
               disabled={!hote || passage}
-              autoFocus
               whileHover={hote ? { scale: 1.045 } : undefined}
               whileTap={hote ? { scale: 0.955 } : undefined}
-              aria-label="Entrer dans la zawiya"
+              aria-label={prenomEpure ? `Entrer dans la zawiya, ${prenomEpure}` : 'Entrer dans la zawiya'}
               className="group relative flex w-[250px] max-w-full items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-br from-primary to-emerald-deep py-4 pl-6 pr-5 text-white shadow-xl shadow-primary/35 ring-1 ring-gold/40 disabled:cursor-wait"
             >
               {/* Reflet doré qui balaie le bouton */}
@@ -367,8 +447,12 @@ export function WelcomeGate() {
                   ease: 'easeInOut',
                 }}
               />
-              <span className="pl-2 font-display text-sm font-bold uppercase tracking-[0.35em]">
-                {isPending || passage ? 'Un instant…' : 'Entrer'}
+              <span className="truncate pl-2 font-display text-sm font-bold uppercase tracking-[0.3em]">
+                {isPending || passage
+                  ? 'Un instant…'
+                  : prenomEpure
+                    ? `Entrer, ${prenomEpure}`
+                    : 'Entrer'}
               </span>
               {isPending || passage ? (
                 <motion.span

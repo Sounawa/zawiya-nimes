@@ -980,3 +980,26 @@ Stage Summary:
 - Sobriété data conservée : PDF téléchargé UNE fois à la 1re ouverture, jamais re-téléchargé ; API relais = 0 octet supplémentaire
 - ⚠ RISQUE : site était en 500 au début du round (round interrompu commité cassé) — TOUJOURS vérifier dev.log en ouverture de round
 - Prochaines pistes : rien d'urgent — suggestions possibles : indicateur de téléchargement du PDF (progression), mode nuit du lecteur numérisé (déjà gamme nuit ?), nettoyage public/quran (47 Mo jamais référencés, section Coran supprimée en round 3)
+
+---
+Task ID: round-33-invocation-100-prenom-alignement
+Agent: Z.ai Code (session principale)
+Task: Retours utilisateur — invocation ×100 oubliée après Nassiri/Munfarija (retour wadhifa), alignement du milieu des vers en portrait, prénom à la porte d'accueil mémorisé sur l'appareil + questions annonces/data
+
+Work Log:
+- INVOCATION ×100 + ṢALĀT JAMĀLIYYA (k18) : l'utilisateur précise « après la munfarija il faut revenir dans wadhifa il manque 100 fa'lam etc puis salat jamaliya » — vérifié le scan kitab-arabe.pdf p.61 (VLM, 3 niveaux de recadrage) : la page est VIDE après le dernier vers (اشْتَدِّي أَزْمَةُ تَنْفَرِجِ) car le livre renvoie au cahier ; le cahier phonétique ch04/ch06 a exactement le bloc manquant : renvois → ﴾Fa-inna ma'al 'usri yusran…﴿ ×100 → Du'â' Salât al-Jamâliyya
+- FIX kitab-arabe-2.ts k18 : ajouté après le dernier vers : ﴾ فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۞ إِنَّ مَعَ الْعُسْرِ يُسْرًا ﴿ × ١٠٠ puis دُعَاء — الصَّلَاةُ الْجَمَالِيَّة + texte complet (même format que k06/k07/k08/k09) — apparaît aussi à la fin du doc « Dua Nasiri-Al Munfarijah » (k17+k18) = exactement le flux de la wadhifa
+- VersPoeme corrigé : une ligne avec multiplicateur « × N » n'est PLUS rendue comme un vers du poème (sinon le badge ×100 était avalé par le rendu vers) — regex /[×x]\s*[٠-٩\d]/ → LigneInvocation
+- ALIGNEMENT PORTRAIT : le ۞ dansait vers après vers (flex + largeurs naturelles) ; fix = grille minmax(0,1fr) auto minmax(0,1fr) sur mobile (<640px) comme la tablette — chaque hémistiche occupe une demi-ligne, le ۞ reste AU CENTRE ; ajuster() re-mesure via document.createRange (la boîte du shatr est la cellule en grille, le Range mesure le texte réel) et nat = 2×max(w1,w2)+fasl+gap (l'hémistiche le plus long décide)
+- PIÈGE CACHE TURBOPACK (encore) : le CSS servi restait l'ANCIEN après restart serveur → rm -rf .next + SW désinscrit + caches navigateur purgés → nouveau CSS servi ; TOUJOURS purger .next/dev ET le SW quand un media query ne s'applique pas
+- QA ALIGNEMENT (agent-browser 390×844) : Nassiri k17 71 vers + Munfarija k18 48 vers = 119 vers → ۞ tous à 195.0 (centre exact), écartMax = 0 px, 0 débordement, fs 13–22px, 0 vers sur 2 lignes ; VLM confirme la colonne ۞ droite ; taille 40px forcée → re-mesure, toujours écart 0 ; bureau 1024px : grid 1fr auto 1fr, wrap autorisé, une seule taille — RAS
+- PRÉNOM À LA PORTE : champ « Ton prénom » (input arrondi bord or, autofocus 1re visite) au-dessus du bouton ; le bouton devient « Entrer, Mehdi » ; mémorisé localStorage 'zaouia-prenom' (clé dédiée, survit aux déconnexions) ; au retour champ prérempli + bouton « Entrer, Mehdi » + focus bouton ; le prénom désigne un frère actif de Nîmes à la casse près (« mehdi » → Mehdi) sinon l'hôte référent ouvre (porte ouverte inchangée) ; pattern useSyncExternalStore pour la lecture localStorage (pas de setState dans un effet — règle react-hooks/set-state-in-effect)
+- QA PORTE : saisie « Mehdi » → bouton « Entrer, Mehdi » → clic → app + en-tête Mehdi + localStorage zaouia-prenom = "Mehdi" ; session vidée → retour porte avec champ prérempli « Mehdi » et bouton « Entrer, Mehdi » ✓
+- HORS-LIGNE (priorité) : SW v12 re-testé après purge complète : émulation offline + reload → app rendue ; KILL du serveur dev + reload (le vrai test) → app COMPLÈTE rendue (Mehdi, annonces, badge « hors-ligne », ijtimâ' du relais API) + lecteur ouvert + verset ×100 + 119 vers alignés — tout vient du bundle/caches, 0 octet réseau
+- Note : l'hydratation offline après reload prend >10 s en dev (chunks + HMR client) — attendre avant de juger l'écran
+- lint 0 erreur ; dev.log propre
+
+Stage Summary:
+- LES 3 RETOURS SONT TRAITÉS : invocation ﴾فَإِنَّ مَعَ الْعُسْرِ يُسْرًا…﴿ × ١٠٠ + Ṣalāt Jamāliyya complète à la fin de la Munfarija (k18 + doc nasiri) ; milieu ۞ parfaitement aligné en portrait (grille à colonnes égales, écart 0 px mesuré sur 119 vers) ; prénom à la porte mémorisé sur l'appareil (« Entrer, Mehdi »)
+- Hors-ligne revalidé en conditions réelles (serveur mort) : textes, annonces, ijtimâ', lecteur, ×100 — tout sert du cache
+- RÉPONSES AUX QUESTIONS UTILISATEUR : une annonce pour l'ijtimâ' apparaîtra chez TOUS ceux qui ont l'app et l'ouvrent (bandeau + section Annonces) ; avec permission notification accordée, notification système même onglet en arrière-plan (veille 60 s) ; PAS de push vers une app complètement fermée (aucun serveur push — choix de sobriété) ; consommation : ~2 requêtes/minute ~200 octets chacune tant que l'app est OUVERTE, 0 octet app fermée, l'annonce elle-même = quelques centaines d'octets une fois

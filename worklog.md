@@ -834,3 +834,27 @@ Stage Summary:
 - Hors-ligne PWA validé en production : texte coranique Warsh accessible sans data
 - ÉTAT FINAL : base Turso = Mehdi seul ; commits poussés jusqu'à 8eb6a7e ; SW zawiya-v8
 - SUGGESTION UTILISATEUR À FAIRE : révoquer/créer des tokens jetables si besoin de nouveaux rounds (GitHub PAT expire seul)
+
+---
+Task ID: round-28-economie-donnees-sw-v9
+Agent: Z.ai Code (session principale)
+Task: Répondre à la question utilisateur « tant que je n'utilise pas les annonces/réunions, ça n'utilisera pas le réseau ? » — audit réseau complet + optimisation service worker
+
+Work Log:
+- QUESTION UTILISATEUR : « tant que je n'utilise pas les annonces/réunions alors ça n'utilisera pas le réseau ? on est d'accord ? »
+- AUDIT RÉSEAU COMPLET du code (page.tsx, api.ts, veille-communaute.tsx, bandeau-prochain-ijtima.tsx, annonces.tsx, sw.js) :
+  * Textes (Coran/adhkâr/samâ') : 100 % dans le bundle JS → 0 octet réseau, même ouvertes hors-ligne ✓
+  * App fermée : 0 octet (aucun push serveur, rien ne tourne en fond) ✓
+  * App ouverte : sync membres + annonces + réunions à l'ouverture (~200 octets, mesuré en production) + veille 2 requêtes/60 s tant que l'app est ouverte
+- MESURES RÉELLES en production (curl gzip) : HTML 7,9 Ko · /api/members 199 o · /api/announcements 2 o · /api/meetings 2 o · bundle JS 396 Ko · logo 147 Ko · tariqa 214 Ko · icônes 170 Ko
+- PROBLÈME DÉCOUVERT : le SW v8 utilisait stale-while-revalidate sur /_next/static/ et les images → à CHAQUE ouverture en ligne, le bundle complet (~400 Ko) + images (~360 Ko) étaient RE-TÉLÉCHARGÉS en arrière-plan malgré le cache → ~750 Ko par ouverture !
+- FIX SW v9 (commit 6fde5ae) : les immuables (/_next/static/ + SHELL logo/tariqa/icônes/manifest) passent en CACHE D'ABORD sans re-téléchargement ; navigation réseau-d'abord conservée (canal de mise à jour) ; SWR conservé pour les autres statiques ; ⚠ changer une image exige désormais de bumper VERSION dans sw.js
+- QA LOCALE agent-browser : SW v9 activé (cache zawiya-v9) · offline + reload → app complète rendue (Mehdi RÉFÉRENT, sections visibles) · Adhkâr ouvert hors-ligne (Ya-Sīn + Al-Wāqiʿa listées) · rechargement en ligne : transferSize bundle = 0 octet, data totale hors HTML = 3 Ko (avant : ~750 Ko) → −98,7 %
+- DÉPLOIEMENT IMPOSSIBLE POUR L'INSTANT : tokens GitHub ET Netlify révoqués par l'utilisateur (401 vérifiés) → commit 6fde5ae poussé en LOCAL seulement ; production toujours en v8 (fonctionnelle, mais ~750 Ko/ouverture)
+- Cron 15 min : job 423551 désactivé (exec limits) → supprimé et recréé (job 423580) avec contexte v9 à déployer
+
+Stage Summary:
+- RÉPONSE À LA QUESTION : oui pour l'essentiel (textes = 0 data, app fermée = 0 data) MAIS la veille interroge 2 petites API/minute tant que l'app est OUVERTE (~12 Ko/h) ; les annonces/réunions ne consomment rien tant qu'elles sont vides (2 octets/réponse)
+- SW v9 prêt et validé localement : ~10 Ko par ouverture (HTML 8 Ko + API 0,2 Ko) au lieu de ~750 Ko — dépensés UNIQUEMENT si une mise à jour est publiée
+- BLOQUANT DÉPLOIEMENT : nouveau token GitHub PAT nécessaire (classic, scope repo) pour pousser 6fde5ae et déclencher le build Netlify
+- Turso : token .env.turso présent (validité non re-testée ce round)

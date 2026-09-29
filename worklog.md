@@ -948,3 +948,35 @@ Stage Summary:
 - DATA : coquille SW réduite de 225 Ko (−83 %) ; une ouverture continue de coûter ~10 Ko (HTML + petites API) ; les nouveaux fichiers ne sont téléchargés qu'UNE fois puis servis du cache v11
 - PWA installée sur les téléphones : l'icône d'accueil devient le logo tariqa dès la prochaine ouverture (SW v11 remplace la coquille)
 - Pipeline auto-déploy confirmé encore une fois : push 0947c43 → deploy ready sans intervention
+
+---
+Task ID: round-32-quatre-corrections-et-hors-ligne-complet
+Agent: Z.ai Code (session principale)
+Task: Les 4 retours utilisateur — renvois wadhifa cliquables, pages numérotées en arabe, suppression « Imprimer ce chapitre », page 18 du kitāb + hors-ligne prioritaire
+
+Work Log:
+- DÉCOUVERTE CRITIQUE : le round précédent (interrompu, commits 89c1ecc + 847c11b) avait laissé adhkar-section.tsx avec une fermeture dupliquée (l. 1251 « })} » + « )} ») → erreur de parsing → GET / 500 — TOUT le site était cassé
+- FIX : fermeture corrigée (})\n)}) + directive eslint-disable devenue inutile retirée → compilation 0 erreur, lint 0 erreur
+- Le round interrompu avait déjà implémenté les 4 demandes : je les ai VERIFIÉES une à une puis complétées :
+  1. RENVOIS LIENS : « سُورَةُ يس (٣٦) ← ص ٧ » et « Sûrat (36) Yâ si~n → p. 7 » = boutons .lien-renvoi (38 en prod) — clic testé : navigation directe vers k01/ch02-sratysn (scroll vérifié t:120-121px) ; pratiqueDuRenvoi() reconnaît le titre arabe normalisé (diacritiques/parenthèses retirées) puis la page du livre correspondant ; renvois introuvables rendus en texte simple
+  2. NUMÉROTATION : sommaire ص ٤ (chiffresArabes) / p. 4 (latIN) + badge BookOpen « ص ٤ – ٨ » / « p. 7 – 13 » dans l'en-tête de CHAQUE pratique (70 badges) ; sommaire phonétique : replis arabes marqués ARABE avec ص N
+  3. IMPRIMER SUPPRIMÉ : footer « Imprimer ce chapitre » + import Printer + usePrint retirés du lecteur — 0 bouton en prod
+  4. PAGE 18 : lecteur-pdf assortirAuFond() seuil de boîte beige 25 % → 8 % du pic dominant — page 18 (boîte courte sur fond clair) désormais colorisée ; VLM confirme fond crème uniforme, « 18/65 » visible
+- ORDRE ARABE : ORDRE_LECTURE_ARABE (k01 p.4 → k21 p.65, pratiques du cahier intercalées à leur place — Mujarrad entre Muwaḥḥad et Kabîr, dhikrs avant la Mashîshiyya) — sommaire vérifié : Yâ-Sîn ص ٤, Fatḥ ص ٩, Wâqi‘a ص ١٣, Mulk ص ١٦, Waẓîfa ص ١٩…
+- HORS-LIGNE (priorité absolue) :
+  * SW v12 : les PDF des livres en CACHE À VIE après 1re ouverture (jamais re-téléchargés — un scan ne change jamais) ; worker pdfjs + cmaps + polices en cache immutable
+  * lecteur-pdf : disableRange:true — UNE seule requête complète par livre (les plages partielles ne sont pas cachables par le Cache API) + message dédié quand un livre jamais ouvert est demandé hors-ligne (détection par HEAD fetch : navigateur.onLine ne voit pas un serveur mort)
+  * SW : GET /api/* réseau d'abord + relais hors-ligne (réponses minuscules 2-200 octets, mises en cache au passage) — en-tête X-Hors-Ligne:1 sur le repli (fix bug : new Headers(enCache.headers) au lieu du spread qui perdait tout)
+  * badge « hors-ligne » doré avec WifiOff dans la ligne de date de l'en-tête (AnimatePresence, store useReseau basculé par api())
+- QA HORS-LIGNE RÉELLE : l'émulation offline CDP ne bloque PAS les fetch du SW → test au kill du serveur dev : app entière rendue (HTML cache), Mehdi reconnu, ijtimâ' du 6 octobre AFFICHÉ depuis le relais API, badge « hors-ligne » visible (VLM confirme), kitāb numérisé rendu du cache PDF (65 pages), Surat Ya-Sin jamais ouvert → message dédié ✓
+- PIÈGE DEV DÉCOUVERT : les chunks Turbopack gardent des URLs stables en dev → le SW les sert cache-first STALE après une modification de code → purge caches.open nécessaire pour tester ; n'existe PAS en prod (noms hachés par contenu)
+- QA EN LIGNE FINALE : numérisé 65 pages OK, 0 erreur navigateur, lint 0 erreur
+- DÉPLOIEMENT : commit cb0103e poussé → webhook GitHub → build hook Netlify → prod : sw.js = zawiya-v12 ✓, HTML 200 (30 361 octets) ; prod vérifiée navigateur : 38 liens renvoi, 70 badges pages, 0 bouton imprimer, entrée Mehdi OK
+- Netlify API : token .netlify-token renvoie 401 (révoqué ?) mais le pipeline webhook fonctionne — surveillance via prod directe
+
+Stage Summary:
+- LES 4 RETOURS UTILISATEUR SONT TRAITÉS ET DÉPLOYÉS : renvois cliquables (exactement « سُورَةُ يس (٣٦) ← ص ٧ » → lien), pages numérotées partout (sommaire + corps), « Imprimer ce chapitre » supprimé, page 18 colorisée
+- HORS-LIGNE COMPLET : textes (bundle) + livres numérisés (cache à vie après 1re ouverture) + données communauté (relais dernières connues) + badge d'état + messages dédiés — le site sert intégralement sans réseau
+- Sobriété data conservée : PDF téléchargé UNE fois à la 1re ouverture, jamais re-téléchargé ; API relais = 0 octet supplémentaire
+- ⚠ RISQUE : site était en 500 au début du round (round interrompu commité cassé) — TOUJOURS vérifier dev.log en ouverture de round
+- Prochaines pistes : rien d'urgent — suggestions possibles : indicateur de téléchargement du PDF (progression), mode nuit du lecteur numérisé (déjà gamme nuit ?), nettoyage public/quran (47 Mo jamais référencés, section Coran supprimée en round 3)

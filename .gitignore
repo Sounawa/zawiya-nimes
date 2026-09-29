@@ -57,3 +57,11 @@ server.log
 scripts/tmp-export/
 db/*.db
 db/*.db-journal
+
+# Tokens de déploiement temporaires (jamais dans Git)
+.netlify-*.json
+.gh-*.json
+.turso-*.json
+.netlify-site.json
+.netlify-res.json
+.netlify-key.json

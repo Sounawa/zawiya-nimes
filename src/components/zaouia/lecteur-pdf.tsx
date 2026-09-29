@@ -550,10 +550,12 @@ export function LecteurPdf({
           className="absolute inset-0 h-full w-full"
           style={{ imageRendering: 'auto' }}
         />
-        {/* Squelette tant que la page n'est pas rendue */}
+        {/* Squelette tant que la page n'est pas rendue — la MÊME couleur
+            que le site : une page en cours de rendu est déjà le papier de
+            la maison, jamais une autre teinte */}
         <div
           data-squelette={n}
-          className="pointer-events-none absolute inset-0 grid place-items-center bg-muted/70"
+          className="pointer-events-none absolute inset-0 grid place-items-center bg-background"
         >
           <Loader2 className="h-6 w-6 animate-spin text-brouillard/50" aria-hidden />
         </div>
@@ -628,7 +630,7 @@ export function LecteurPdf({
             /* Le temps d'ouvrir le livre */
             <div className="w-full" style={{ maxWidth: 'min(100%, 900px)' }}>
               <div
-                className="relative w-full overflow-hidden rounded-lg border border-border bg-muted/70 shadow-sm"
+                className="relative w-full overflow-hidden rounded-lg border border-border bg-background shadow-sm"
                 style={{ aspectRatio: String(aspect) }}
               >
                 <div className="absolute inset-0 grid place-items-center">

@@ -18,6 +18,7 @@ import {
 import {
   DOCUMENTS_ADHKAR,
   GROUPES_WADHIFA,
+  ORDRE_KITAB,
   chapitresDuDoc,
   pdfDuDoc,
   type ChapitreLecture,
@@ -352,10 +353,15 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
   /* Les entrées du lecteur : pratiques structurées (cahier de
      wadhifa) ou chapitres plats (autres documents). Chaque entrée
      porte sa langue effective — le sommaire ne change jamais quand
-     on bascule phonétique ⇄ عربي, la pratique lue reste en place. */
+     on bascule phonétique ⇄ عربي, la pratique lue reste en place.
+     ORDRE : en phonétique, l'ordre du cahier imprimé ; en arabe,
+     l'ordre du kitāb imprimé (ce qui est ensemble dans le livre
+     reste ensemble, dans l'ordre — Yā-Sīn p.4 d'abord, Ṣalāt
+     'alâ an-Nabī p.65 en dernier). Les pièces sans chapitre arabe
+     (absentes du kitāb) suivent, dans l'ordre du cahier. */
   const entrees = useMemo<EntreeLecture[]>(() => {
     if (doc.pratiques) {
-      return doc.pratiques
+      const converties = doc.pratiques
         .map((p): EntreeLecture | null => {
           const prefere = p[langue]
           const autre = langue === 'ph' ? p.ar : p.ph
@@ -369,6 +375,16 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
           }
         })
         .filter((e): e is EntreeLecture => e !== null)
+      if (langue !== 'ar') return converties
+      const positionKitab = (id: string) => ORDRE_KITAB.indexOf(id)
+      return converties.sort((a, b) => {
+        const pa = positionKitab(a.id)
+        const pb = positionKitab(b.id)
+        if (pa >= 0 && pb >= 0) return pa - pb
+        if (pa >= 0) return -1
+        if (pb >= 0) return 1
+        return 0
+      })
     }
     if (doc.id === 'sama' && langue === 'ph') {
       return (samaTexte ?? []).map((c) => ({ ...c, langue: 'ph' as const }))
@@ -490,8 +506,40 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
   /* ─── Positionner au chapitre demandé à l'ouverture ───
      (le diwân arrive un instant après : on replace alors)
      « langue » n'est PAS une dépendance : basculer phonétique ⇄ عربي
-     ne doit jamais replacer la lecture — les pratiques unifiées
-     gardent leur place, seul le texte affiché change. */
+     ne doit jamais replacer la lecture. En arabe l'ordre change
+     (celui du kitāb) : on mémorise la pratique lue AVANT le
+     réordonnancement et on y revient juste après — la pratique
+     reste sous les yeux, seule l'ordre du sommaire change. */
+  const idAvantBascule = useRef<string | null>(null)
+  useEffect(() => {
+    if (langue === 'ar') {
+      /* capture AVANT réordonnancement : indexActif pointe encore
+         dans l'ancien ordre — on prend l'id depuis le DOM visible */
+      const cartes = cartesRef.current
+      const conteneur = conteneurRef.current
+      if (conteneur && cartes.length) {
+        const haut = conteneur.scrollTop + conteneur.clientHeight * 0.25
+        let meilleure: HTMLElement | null = null
+        for (const c of cartes) {
+          if (!c) continue
+          if (c.offsetTop <= haut) meilleure = c
+          else break
+        }
+        idAvantBascule.current = meilleure?.dataset.idPratique ?? null
+      }
+    }
+    const idAGarder = idAvantBascule.current
+    const minuteur = window.setTimeout(() => {
+      if (langue === 'ar' && idAGarder) {
+        const i = chapitres.findIndex((c) => c.id === idAGarder)
+        const cible = i >= 0 ? cartesRef.current[i] : null
+        cible?.scrollIntoView({ block: 'start' })
+      }
+    }, 60)
+    return () => window.clearTimeout(minuteur)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [langue])
+
   useEffect(() => {
     const el = conteneurRef.current
     if (!el) return
@@ -921,7 +969,81 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                       className="overflow-hidden"
                     >
                       <div className="mt-4 space-y-4">
-                        {GROUPES_WADHIFA.map((g) => {
+                        {arabe && doc.pratiques ? (
+                          /* En arabe : LE LIVRE, dans l'ordre du kitāb imprimé —
+                             une liste continue, ce qui est ensemble dans le
+                             livre reste ensemble. La page du livre est portée
+                             par chaque entrée (p. 4 → 65). */
+                          <div>
+                            <div
+                              className="mb-1.5 flex items-baseline gap-2 border-b pb-1"
+                              style={{ borderColor: `${accent.couleur}30` }}
+                            >
+                              <span
+                                aria-hidden
+                                className="text-[8px] leading-none"
+                                style={{ color: accent.couleur }}
+                              >
+                                ✦
+                              </span>
+                              <h4
+                                className="text-[10px] font-bold uppercase tracking-[0.22em]"
+                                style={{ color: accent.couleur }}
+                              >
+                                Ordre du kitāb
+                              </h4>
+                              <span
+                                className="font-arabic text-[12px] opacity-50"
+                                dir="rtl"
+                                lang="ar"
+                              >
+                                كتاب الأذكار
+                              </span>
+                            </div>
+                            <ul className="space-y-0.5">
+                              {entrees.map((e, i) => (
+                                <li key={e.id}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSommaireCarte(false)
+                                      window.setTimeout(() => allerAuChapitre(i), 400)
+                                    }}
+                                    className="group relative flex w-full items-baseline justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left transition-transform active:scale-[0.995]"
+                                  >
+                                    <span
+                                      aria-hidden
+                                      className="pointer-events-none absolute inset-0 rounded-lg bg-current opacity-0 transition-opacity duration-200 group-hover:opacity-[0.05] group-focus-visible:opacity-[0.05]"
+                                    />
+                                    <span className="min-w-0 flex-1 truncate text-[13.5px]">
+                                      <span className="mr-1.5 inline-block w-5 shrink-0 text-right text-[10px] font-bold tabular-nums opacity-45">
+                                        {e.debut > 0 ? `ص ${e.debut}` : i + 1}
+                                      </span>
+                                      <span
+                                        dir={e.langue === 'ar' ? 'rtl' : undefined}
+                                        lang={e.langue === 'ar' ? 'ar' : undefined}
+                                        className={cn(
+                                          e.langue === 'ar' && 'font-arabic text-[15.5px]'
+                                        )}
+                                      >
+                                        {e.titre}
+                                      </span>
+                                      {e.repli && (
+                                        <span
+                                          className="ml-1.5 inline-block rounded-full border px-1.5 py-0.5 align-middle text-[8.5px] font-bold uppercase tracking-wider opacity-55"
+                                          style={{ borderColor: `${accent.couleur}40` }}
+                                        >
+                                          phonétique
+                                        </span>
+                                      )}
+                                    </span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                        GROUPES_WADHIFA.map((g) => {
                           const items = entrees
                             .map((e, i) => ({ e, i }))
                             .filter(({ e }) => e.groupe === g.id)
@@ -1001,6 +1123,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                             </div>
                           )
                         })}
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -1020,6 +1143,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 <article
                 key={c.id}
                 data-i={i}
+                data-id-pratique={c.id}
                 ref={(el) => {
                   cartesRef.current[i] = el
                 }}

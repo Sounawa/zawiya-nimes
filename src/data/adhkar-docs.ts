@@ -53,6 +53,14 @@ export interface DocAdhkar {
 /* Les 21 chapitres arabes, rassemblés */
 export const CHAPITRES_ARABES = [...PARTIE_1_ARABE, ...PARTIE_2_ARABE]
 
+/* L'ORDRE DU LIVRE IMPRIMÉ — les identifiants des chapitres arabes
+   triés par leur page d'ouverture dans le kitāb (p. 4 → 65). C'est
+   CET ordre que suit le lecteur en arabe : ce qui est ensemble dans
+   le livre reste ensemble à l'écran, dans l'ordre. */
+export const ORDRE_KITAB: string[] = [...CHAPITRES_ARABES]
+  .sort((a, b) => a.debut - b.debut)
+  .map((c) => c.id)
+
 /* Helpers de conversion vers le format du lecteur — les renvois de
    pages imprimées ne servent plus à rien à l'écran : on les retire. */
 function depuisCahier(ids: string[]): ChapitreLecture[] {

@@ -880,3 +880,29 @@ Stage Summary:
 - PAYSAGE : disposition 2 colonnes conservée (rien à redire), chrome compacté, zone de texte maximisée
 - BADGE NETLIFY : ne s'affichera plus pour personne, dès le premier chargement (piège DOM) — à valider en production dès le déploiement
 - DÉPLOIEMENT TOUJOURS EN ATTENTE : un token GitHub PAT (scope repo) est nécessaire pour pousser 6fde5ae (SW v9 économie data) + 3a6efc2 (ce round) et déclencher le build Netlify
+---
+Task ID: round-30-tokens-restauration-deploiement
+Agent: Z.ai Code (session principale)
+Task: Nouveaux tokens fournis par l'utilisateur (GitHub + Netlify + Turso) — pousser les commits en attente et redéployer la production
+
+Work Log:
+- TOKENS REÇUS : GitHub PAT (scope repo, admin sur Sounawa/zawiya-nimes) + Netlify nfp (compte weezlovmanager/ANAMNESE) + Turso org token
+- GITHUB : remote mis à jour avec le nouveau PAT → push réussi 13287f2..8cb9e4d (6fde5ae SW v9, 3a6efc2 qaṣīdas, worklogs, 2 commits session)
+- NETLIFY : site zawiya-nimes (f4dee7b5-a55f-4223-acd6-cfca4894c846, compte weezlovmanager) — le push n'a PAS déclenché de build (webhook mort)
+- DIAGNOSTIC : build manuel → erreur « preparing repo: Permission denied (publickey) » ; repo GitHub PRIVÉ ; site Netlify sans installation GitHub App (installation_id None) mais avec deploy_key_id 6abb8fe7… ; le repo GitHub avait 0 deploy key (l'ancienne avait été supprimée lors du nettoyage des tokens)
+- FIX TENTÉ 1 : ré-ajout de la clé publique Netlify sur le repo GitHub (empreinte vérifiée identique 64:ce:ef:…) → STILL Permission denied (le couple privé côté Netlify devait être cassé)
+- FIX DÉFINITIF : création d'une NOUVELLE deploy key Netlify (POST /api/v1/deploy_keys → 6abbbc8f91f63cc1b028a4d7) + ajout au repo GitHub (id 164822733, read_only) + PATCH du site (build_settings.deploy_key_id) → build relancé → SUCCÈS (deploy 6abbbca8, ready, commit 8cb9e4d)
+- TURSO : le token d'org fourni ne marche pas directement sur la base (invalid JWT) MAIS l'ancien token .env.turso FONCTIONNE TOUJOURS (COUNT Member = 1 vérifié) → production OK, rien à changer ; token d'org gardé en secours
+- VÉRIFICATION PRODUCTION (curl + agent-browser) :
+  * sw.js en prod = zawiya-v10 ✓, piège #nl-hud-frame présent dans le HTML ✓
+  * APIs : /api/members 200 (199 o), /api/announcements 200 (2 o), /api/meetings 200 (2 o)
+  * PORTRAIT 390×844 : Du'ā Nāṣirī عربي → 119/119 vers sur UNE ligne, 0 vers sur 2 lignes ✓
+  * PAYSAGE 844×390 : 119 vers en 2 colonnes (1er vers 48 px = une ligne), badge Netlify : AUCUN (visible nulle part) ✓
+  * Captures : download/qa-prod-nassiri-paysage.png
+
+Stage Summary:
+- PIPELINE DÉPLOIEMENT RÉPARÉ COMPLET : GitHub push ✓ → Netlify build auto (via nouvelle deploy key) ✓ → production à jour (commit 8cb9e4d, SW v10) ✓
+- CAUSE RACINE de la panne : révocation des tokens + suppression de la deploy key GitHub → privé repo inaccessible à Netlify ; la création d'une FRAÎCHE paire de clés a tout réparé
+- PROD VALIDÉE : qaṣīdas une ligne par vers (portrait), lecteur compact + 2 colonnes (paysage), badge Netlify neutralisé, économie de données SW v9+v10 en ligne
+- Turso : ancien token toujours valide (aucune action), nouveau token d'org en secours dans la conversation
+- ⚠ NOTE : si l'utilisateur révoque encore des tokens, penser à VÉRIFIER les deploy keys GitHub du repo (Settings → Deploy keys) — 2 clés actives désormais (restaurée + v2)

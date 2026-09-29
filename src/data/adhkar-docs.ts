@@ -54,12 +54,56 @@ export interface DocAdhkar {
 export const CHAPITRES_ARABES = [...PARTIE_1_ARABE, ...PARTIE_2_ARABE]
 
 /* L'ORDRE DU LIVRE IMPRIMÉ — les identifiants des chapitres arabes
-   triés par leur page d'ouverture dans le kitāb (p. 4 → 65). C'est
-   CET ordre que suit le lecteur en arabe : ce qui est ensemble dans
-   le livre reste ensemble à l'écran, dans l'ordre. */
+   triés par leur page d'ouverture dans le kitāb (p. 4 → 65). */
 export const ORDRE_KITAB: string[] = [...CHAPITRES_ARABES]
   .sort((a, b) => a.debut - b.debut)
   .map((c) => c.id)
+
+/* L'ORDRE DE LECTURE EN ARABE — celui du kitāb imprimé, page par
+   page (k01 p.4 → k21 p.65), où s'insèrent à leur place du cahier
+   les pratiques qui n'existent que dans le cahier phonétique :
+   le Mujarrad entre Muwaḥḥad et Kabîr (comme les quatre Laṭîf du
+   cahier), les dhikrs avant la Mashîshiyya, la Zajr juste après,
+   les annexes en fin de livre. Ce qui est ensemble dans un livre
+   reste ensemble à l'écran — aucun pratique ne traîne en fin de
+   liste, détachée de ses sœurs. */
+export const ORDRE_LECTURE_ARABE: string[] = [
+  'w-yasin', // k01 · p.4
+  'w-fath', // k02 · p.9
+  'w-waqia', // k03 · p.13
+  'w-mulk', // k04 · p.16
+  'w-wadhifa', // k05 · p.19
+  'w-avant-fajr', // k06 · p.23
+  'w-subh', // k07 · p.26
+  'w-nachr', // cahier ch15 — entre Ṣubḥ et Voyage
+  'w-voyage', // k08 · p.28
+  'w-taqwiyya', // k09 · p.31
+  'w-iftitah', // k10 · p.32
+  'w-khatm-silka', // k11 · p.33
+  'w-fidya', // k12 · p.39
+  'w-latif-hajar', // k13 · p.41
+  'w-latif-muwahhad', // k14 · p.43
+  'w-latif-mujarrad', // cahier ch09 — entre Muwaḥḥad et Kabîr
+  'w-latif-kabir', // k15 · p.47
+  'w-khatm-dalail', // k16 · p.49
+  'w-nasiri', // k17 · p.55
+  'w-munfarija', // k18 · p.59
+  'w-ala-latif', // k19 · p.62
+  'w-mukhlisin', // cahier ch20 — dhikrs, avant la Mashîshiyya
+  'w-dhikr-nachr', // cahier ch21
+  'w-ijtim-jeunes', // cahier ch22
+  'w-ghayth', // cahier ch23
+  'w-faraj', // cahier ch24
+  'w-nom-divin', // cahier ch25
+  'w-mashishiyya', // k20 · p.63
+  'w-zajr-mashishiyya', // cahier ch27 — juste après la Mashîshiyya
+  'w-salat-nabi', // k21 · p.65
+  'w-hizb-nasr', // cahier ch28 — annexes
+  'w-burda', // cahier ch29
+  'w-adhkar-khassa', // cahier ch30
+  'w-reginale', // cahier ch31
+  'w-grille', // cahier ch32
+]
 
 /* Helpers de conversion vers le format du lecteur — les renvois de
    pages imprimées ne servent plus à rien à l'écran : on les retire. */
@@ -434,4 +478,67 @@ export function sansDiacritiquesAdhkar(s: string): string {
     .replace(/[\u0300-\u036f\u064b-\u0652\u0670]/g, '')
     .normalize('NFC')
     .toLowerCase()
+}
+
+/* ═══ Les renvois de pages, liens du lecteur ═════════════════════════
+   Le cahier imprimé renvoie ses pratiques les unes aux autres :
+   « Sûrat (36) Yâ si~n → p. 7 » en phonétique, « سُورَةُ يس ← ص ٧ »
+   dans le kitāb arabe. À l'écran, la page est un lien : il mène
+   directement à la pratique visée, dans la langue courante. */
+
+/** Un titre arabe dépouillé de ce qui l'orne : diacritiques,
+    parenthèses « (٣٦) », séparateurs — pour reconnaître
+    « سُورَةُ الْفَتْح (٤٨) » dans le titre « سُورَةُ الفَتْح ». */
+function normaliserTitreAr(s: string): string {
+  return s
+    .replace(/[\u064b-\u0652\u0670\u0640]/g, '')
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/[۞٭«»﴾﴿:،.]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Les chiffres arabes du kitāb (٧) redevenus latins (7). */
+export function chiffresLatins(s: string): number {
+  return Number(s.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))))
+}
+
+/** Les chiffres latins (4) en chiffres du kitāb (٤). */
+export function chiffresArabes(n: number): string {
+  return String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[Number(d)])
+}
+
+/** La pratique visée par un renvoi de page — par le titre arabe
+    d'abord (la page du cahier n'est pas celle du kitāb : le renvoi
+    « سُورَةُ الْفَتْح ← ص ٤٩ » de la Waẓîfa aṣ-Ṣubḥ compte les pages
+    du CAHIER, seul le titre désigne la bonne pièce), puis par la
+    page imprimée du livre correspondant. Renvoie l'identifiant de
+    la PRATIQUE (stable d'une langue à l'autre), ou null. */
+export function pratiqueDuRenvoi(
+  livre: LangueAdhkar,
+  page: number,
+  titreAvant?: string,
+): string | null {
+  let idChapitre: string | null = null
+
+  if (livre === 'ar') {
+    const cherche = titreAvant ? normaliserTitreAr(titreAvant) : ''
+    if (cherche) {
+      const k = CHAPITRES_ARABES.find((c) => normaliserTitreAr(c.titreAr) === cherche)
+      if (k) idChapitre = k.id
+    }
+    if (!idChapitre) {
+      const k = CHAPITRES_ARABES.find((c) => c.debut <= page && page <= c.fin)
+      if (k) idChapitre = k.id
+    }
+  } else {
+    const c = CHAPITRES_CAHIER.find((x) => x.debut <= page && page <= x.fin)
+    if (c) idChapitre = c.id
+  }
+
+  if (!idChapitre) return null
+  const p = PRATIQUES_WADHIFA.find(
+    (x) => x.ph?.id === idChapitre || x.ar?.id === idChapitre,
+  )
+  return p ? p.id : idChapitre
 }

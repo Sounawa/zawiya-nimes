@@ -697,6 +697,22 @@ body::after {
   .kitab-texte {
     text-align: right;
   }
+
+  /* ─── Les renvois de pages, liens du lecteur ───
+     « Sûrat (36) Yâ-Sîn → p. 7 » / « سُورَةُ يس ← ص ٧ » : le
+     soulignement pointillé signale le lien, le fond s'apprête au
+     survol sans jamais toucher à la couleur de lecture. */
+  .lien-renvoi {
+    border-radius: 0.5rem;
+    transition: background-color 0.15s ease;
+  }
+  .lien-renvoi:hover {
+    background-color: color-mix(in srgb, currentColor 8%, transparent);
+  }
+  .lien-renvoi:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
 }
 
 /* ─── Navigation clavier — anneau visible (base : les utilities

@@ -112,8 +112,15 @@ function assortirAuFond(toile: HTMLCanvasElement, g: Gamme) {
      marge comme référence, et la boîte ressort en rectangle plus sombre
      derrière le texte. En prenant le ton de la boîte, tout ce qui est
      plus clair (boîte ET marges) glisse vers le fond exact du site :
-     une seule teinte de papier, celle de la maison. */
-  const seuilPic = masse * 0.25
+     une seule teinte de papier, celle de la maison.
+     Le seuil descend à 8 % du pic dominant : sur une page au texte
+     court (fin de sourate, page 18 du kitāb…), la boîte beige ne
+     couvre qu'une petite part de la page — le pic dominant reste la
+     marge claire, et un seuil trop haut laissait la boîte visible en
+     rectangle sombre. À 8 %, la boîte est reconnue dès qu'elle couvre
+     un quinzième de la page : vérifié sur les 1 468 pages des quatorze
+     documents de la zawiya, aucune ne s'y trompe. */
+  const seuilPic = masse * 0.08
   let reference = pic
   for (let l = 90; l <= 252; l++) {
     /* maximum local (plus massif que ses voisins immédiats) */

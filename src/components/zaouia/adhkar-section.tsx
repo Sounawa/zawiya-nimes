@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { create } from 'zustand'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -9,18 +9,21 @@ import {
   FileDown,
   List,
   Minus,
+  MoveUpRight,
   Music,
   Plus,
-  Printer,
   Type,
   X,
 } from 'lucide-react'
 import {
   DOCUMENTS_ADHKAR,
   GROUPES_WADHIFA,
-  ORDRE_KITAB,
+  ORDRE_LECTURE_ARABE,
   chapitresDuDoc,
+  chiffresArabes,
+  chiffresLatins,
   pdfDuDoc,
+  pratiqueDuRenvoi,
   type ChapitreLecture,
   type DocAdhkar,
   type GroupeWadhifa,
@@ -28,7 +31,6 @@ import {
 } from '@/data/adhkar-docs'
 import {
   useLecture,
-  usePrint,
   type PoliceArabe,
   type PoliceLecture,
   type Interligne,
@@ -85,8 +87,108 @@ const ACCENTS: { id: AccentLecture; nom: string; couleur: string }[] = [
   { id: 'brun', nom: 'Brun', couleur: '#8a5a2e' },
 ]
 
-/* ─── Une ligne du texte, répétitions « x 100 » / « × ١٠٠ » en badge ─── */
-function LigneInvocation({ ligne, accent }: { ligne: string; accent: string }) {
+/* ─── Les renvois de pages — des liens, pas des chiffres morts ───
+   Le cahier imprimé renvoie ses pratiques les unes aux autres :
+   « Sûrat (36) Yâ-Sîn → p. 7 » en phonétique, « سُورَةُ يس ← ص ٧ »
+   dans le kitāb. À l'écran, la page devient un lien qui mène
+   directement à la pratique visée. */
+export interface RenvoiLecture {
+  /** la page imprimée visée et le texte avant le renvoi (le titre) :
+      l'index de la pratique dans le lecteur, ou −1 */
+  cible: (livre: 'ph' | 'ar', page: number, titreAvant: string) => number
+  /** y aller */
+  aller: (i: number) => void
+}
+
+/* « → p. 7 » (cahier phonétique) ou « ← ص ٧ » (kitāb arabe) */
+const RENVOI_PAGE = /(→\s*p\.\s*(\d+)|←\s*ص\s*([٠-٩]+))/g
+/* la ligne ENTIÈRE est un renvoi : « Sûrat Yâ-Sîn → p. 7 » */
+const RENVOI_SEUL = /^\s*([^\n]{1,90}?)\s*(→\s*p\.\s*(\d+)|←\s*ص\s*([٠-٩]+))\s*$/
+
+function LigneInvocation({
+  ligne,
+  accent,
+  renvoi,
+}: {
+  ligne: string
+  accent: string
+  renvoi?: RenvoiLecture
+}) {
+  /* 1. La ligne entière est un renvoi — le titre souligné, la page
+        en médaillon pointillé : tout est cliquable */
+  const seul = renvoi ? ligne.match(RENVOI_SEUL) : null
+  if (seul) {
+    const livre: 'ph' | 'ar' = seul[3] !== undefined ? 'ph' : 'ar'
+    const page = seul[3] !== undefined ? Number(seul[3]) : chiffresLatins(seul[4])
+    const i = renvoi.cible(livre, page, seul[1])
+    if (i >= 0) {
+      return (
+        <button
+          type="button"
+          onClick={() => renvoi.aller(i)}
+          title="Aller directement à cette pratique"
+          className="lien-renvoi my-0.5 inline-flex flex-wrap items-baseline gap-x-1.5 py-0.5 text-start align-baseline active:scale-[0.985]"
+          style={{ color: accent }}
+        >
+          {seul[1] && (
+            <span className="underline decoration-dotted decoration-1 underline-offset-[3px] opacity-90">
+              {seul[1]}
+            </span>
+          )}
+          <span
+            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed px-2 py-px text-[0.72em] font-bold"
+            style={{ borderColor: `${accent}80`, backgroundColor: `${accent}14` }}
+          >
+            {seul[2]}
+            <MoveUpRight className="h-[1.05em] w-[1.05em] rtl:-scale-x-100" aria-hidden />
+          </span>
+        </button>
+      )
+    }
+  }
+
+  /* 2. Un renvoi au milieu d'une ligne plus longue : le segment
+        « → p. 49 » seul devient le lien */
+  if (renvoi) {
+    const rencontres = [...ligne.matchAll(RENVOI_PAGE)]
+    if (rencontres.length) {
+      const parties: ReactNode[] = []
+      let curseur = 0
+      rencontres.forEach((m, j) => {
+        const debut = m.index ?? 0
+        if (debut > curseur) {
+          parties.push(<Fragment key={`t${j}`}>{ligne.slice(curseur, debut)}</Fragment>)
+        }
+        const livre: 'ph' | 'ar' = m[2] !== undefined ? 'ph' : 'ar'
+        const page = m[2] !== undefined ? Number(m[2]) : chiffresLatins(m[3])
+        const i = renvoi.cible(livre, page, ligne.slice(0, debut))
+        if (i < 0) {
+          parties.push(<Fragment key={`r${j}`}>{m[0]}</Fragment>)
+        } else {
+          parties.push(
+            <button
+              key={`r${j}`}
+              type="button"
+              onClick={() => renvoi.aller(i)}
+              title="Aller directement à cette pratique"
+              className="lien-renvoi mx-0.5 inline-flex items-baseline gap-1 rounded-md px-1.5 py-px align-baseline text-[0.78em] font-bold active:scale-[0.96]"
+              style={{ color: accent, backgroundColor: `${accent}14` }}
+            >
+              {m[0]}
+              <MoveUpRight className="h-[1.05em] w-[1.05em] rtl:-scale-x-100" aria-hidden />
+            </button>,
+          )
+        }
+        curseur = debut + m[0].length
+      })
+      if (curseur < ligne.length) {
+        parties.push(<Fragment key="fin">{ligne.slice(curseur)}</Fragment>)
+      }
+      return <span className="block">{parties}</span>
+    }
+  }
+
+  /* 3. Les répétitions « x 100 » / « × ١٠٠ » en badge */
   const m = ligne.match(/^(.*?)(\s*[×x]\s*[٠-٩\dHh '’]+)$/u)
   if (m && m[2].trim()) {
     return (
@@ -320,6 +422,8 @@ interface EntreeLecture extends ChapitreLecture {
   /** la pratique n'existe pas dans la langue demandée — repli */
   repli?: boolean
   groupe?: GroupeWadhifa
+  /** la pratique du cahier de wadhifa — cible des renvois de pages */
+  idPratique?: string
 }
 
 /* ═══ LE LECTEUR PLEIN ÉCRAN ═══════════════════════════════════════ */
@@ -333,7 +437,6 @@ interface LecteurProps {
 
 function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps) {
   const l = useLecture()
-  const imprimer = usePrint((s) => s.imprimer)
 
   /* Le diwân de samâ‘ (398 chants) n'entre pas dans le fil principal :
      il se charge paresseusement à l'ouverture du document. */
@@ -355,10 +458,11 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
      porte sa langue effective — le sommaire ne change jamais quand
      on bascule phonétique ⇄ عربي, la pratique lue reste en place.
      ORDRE : en phonétique, l'ordre du cahier imprimé ; en arabe,
-     l'ordre du kitāb imprimé (ce qui est ensemble dans le livre
-     reste ensemble, dans l'ordre — Yā-Sīn p.4 d'abord, Ṣalāt
-     'alâ an-Nabī p.65 en dernier). Les pièces sans chapitre arabe
-     (absentes du kitāb) suivent, dans l'ordre du cahier. */
+     l'ORDRE DU KITĀB IMPRIMÉ (k01 p.4 → k21 p.65), où s'insèrent
+     à leur place du cahier les pratiques absentes du kitāb — le
+     Mujarrad reste entre Muwaḥḥad et Kabîr, les dhikrs restent
+     collés à la Mashîshiyya : ce qui est ensemble dans un livre
+     reste ensemble, dans l'ordre. */
   const entrees = useMemo<EntreeLecture[]>(() => {
     if (doc.pratiques) {
       const converties = doc.pratiques
@@ -372,19 +476,16 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
             langue: prefere ? langue : langue === 'ph' ? 'ar' : 'ph',
             repli: !prefere,
             groupe: p.groupe,
+            idPratique: p.id,
           }
         })
         .filter((e): e is EntreeLecture => e !== null)
       if (langue !== 'ar') return converties
-      const positionKitab = (id: string) => ORDRE_KITAB.indexOf(id)
-      return converties.sort((a, b) => {
-        const pa = positionKitab(a.id)
-        const pb = positionKitab(b.id)
-        if (pa >= 0 && pb >= 0) return pa - pb
-        if (pa >= 0) return -1
-        if (pb >= 0) return 1
-        return 0
-      })
+      const position = (e: EntreeLecture) => {
+        const i = ORDRE_LECTURE_ARABE.indexOf(e.idPratique ?? e.id)
+        return i >= 0 ? i : ORDRE_LECTURE_ARABE.length
+      }
+      return [...converties].sort((a, b) => position(a) - position(b))
     }
     if (doc.id === 'sama' && langue === 'ph') {
       return (samaTexte ?? []).map((c) => ({ ...c, langue: 'ph' as const }))
@@ -561,6 +662,23 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
     const cible = cartesRef.current[i]
     if (cible) cible.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
+
+  /* Les renvois « → p. 7 » / « ← ص ٧ » deviennent des liens : la page
+     imprimée désigne une pratique du cahier ou du kitāb, on y mène
+     directement — dans la langue courante. */
+  const renvoi = useMemo<RenvoiLecture>(
+    () => ({
+      cible: (livre, page, titreAvant) => {
+        const id = pratiqueDuRenvoi(livre, page, titreAvant)
+        if (!id) return -1
+        return chapitres.findIndex((e) => e.idPratique === id)
+      },
+      aller: (i) => {
+        if (i >= 0) allerAuChapitre(i)
+      },
+    }),
+    [chapitres, allerAuChapitre],
+  )
 
   /* ─── Le chapitre visible suit le défilement ─── */
   useEffect(() => {
@@ -1016,8 +1134,12 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                                       className="pointer-events-none absolute inset-0 rounded-lg bg-current opacity-0 transition-opacity duration-200 group-hover:opacity-[0.05] group-focus-visible:opacity-[0.05]"
                                     />
                                     <span className="min-w-0 flex-1 truncate text-[13.5px]">
-                                      <span className="mr-1.5 inline-block w-5 shrink-0 text-right text-[10px] font-bold tabular-nums opacity-45">
-                                        {e.debut > 0 ? `ص ${e.debut}` : i + 1}
+                                      <span className="mr-1.5 inline-block min-w-[30px] shrink-0 text-right text-[10px] font-bold tabular-nums opacity-45" dir="ltr">
+                                        {e.debut > 0
+                                          ? e.langue === 'ar'
+                                            ? `ص ${chiffresArabes(e.debut)}`
+                                            : `p. ${e.debut}`
+                                          : i + 1}
                                       </span>
                                       <span
                                         dir={e.langue === 'ar' ? 'rtl' : undefined}
@@ -1095,8 +1217,12 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                                         className="pointer-events-none absolute inset-0 rounded-lg bg-current opacity-0 transition-opacity duration-200 group-hover:opacity-[0.05] group-focus-visible:opacity-[0.05]"
                                       />
                                       <span className="min-w-0 flex-1 truncate text-[13.5px]">
-                                        <span className="mr-1.5 inline-block w-5 shrink-0 text-right text-[10px] font-bold tabular-nums opacity-45">
-                                          {i + 1}
+                                        <span className="mr-1.5 inline-block min-w-[30px] shrink-0 text-right text-[10px] font-bold tabular-nums opacity-45" dir="ltr">
+                                          {e.debut > 0
+                                            ? e.langue === 'ar'
+                                              ? `ص ${chiffresArabes(e.debut)}`
+                                              : `p. ${e.debut}`
+                                            : i + 1}
                                         </span>
                                         <span
                                           dir={e.langue === 'ar' ? 'rtl' : undefined}
@@ -1181,6 +1307,32 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                       {c.sousTitre}
                     </p>
                   ) : null}
+                  {/* La page du livre imprimé — le repère du livre papier :
+                      on sait toujours où l'on en est, et les renvois
+                      « ← ص ٧ » y répondent */}
+                  {c.debut > 0 && (
+                    <p className="mt-2.5" dir="ltr">
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[3px] text-[10.5px] font-semibold tracking-[0.05em] [@media(orientation:landscape)_and_(max-height:540px)]:mt-1! [@media(orientation:landscape)_and_(max-height:540px)]:text-[9px]!"
+                        style={{
+                          borderColor: `${accent.couleur}4d`,
+                          color: accent.couleur,
+                          backgroundColor: `${accent.couleur}0d`,
+                        }}
+                      >
+                        <BookOpen className="h-3 w-3 opacity-70" aria-hidden />
+                        {arabeC ? (
+                          <span dir="rtl" lang="ar" className="font-arabic text-[12px] tracking-normal">
+                            {`ص ${chiffresArabes(c.debut)}${c.fin > c.debut ? ` – ${chiffresArabes(c.fin)}` : ''}`}
+                          </span>
+                        ) : (
+                          <span className="tabular-nums">
+                            {`p. ${c.debut}${c.fin > c.debut ? ` – ${c.fin}` : ''}`}
+                          </span>
+                        )}
+                      </span>
+                    </p>
+                  )}
                   {/* La pratique n'existe pas dans la langue demandée —
                       on la lit dans l'autre, avec une mention discrète */}
                   {c.repli && (
@@ -1224,27 +1376,10 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                         police={policeC.id}
                       />
                     ) : (
-                      <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
+                      <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} renvoi={renvoi} />
                     )
                   )}
                 </div>
-
-                {/* Imprimer ce chapitre — pas pour le diwân, qui
-                    s'imprime depuis sa page numérisée */}
-                {!estSama && (
-                  <footer className="mt-6 flex justify-center border-t pt-4" style={{ borderColor: `${accent.couleur}30` }}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        imprimer({ kind: arabeC ? 'kitab' : 'cahier', chapitreId: c.id })
-                      }
-                      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] transition-all active:scale-95"
-                      style={{ color: accent.couleur }}
-                    >
-                      <Printer className="h-3.5 w-3.5" /> Imprimer ce chapitre
-                    </button>
-                  </footer>
-                )}
               </article>
               )
             })}

@@ -736,3 +736,45 @@ Stage Summary:
 - Tout le terrain est prêt : le même code tournera en local (SQLite) et sur Netlify (Turso) sans rien changer d'autre
 - Les données sont exportées et prêtes à migrer ; schéma Prisma compatible driverAdapters
 - Bloqué uniquement sur les tokens de l'utilisateur — instructions précises données dans le chat (GitHub Settings→Developer settings→Tokens classic scope repo · Netlify via « Continue with GitHub » puis User settings→Applications→Personal access tokens · Turso via « with GitHub » puis Tokens)
+
+---
+Task ID: round-25-mehdi-gestion-membres
+Agent: Z.ai Code (session principale)
+Task: « efface les membres qui sont deja inscrit… laisse moi la possibilité à moi l'administrateur qui aura le pseudo Mehdi de pouvoir egalement ajouter et effacer des membres et attribuer les roles »
+
+Work Log:
+- 18 MEMBRES EFFACÉS (scripts/reset-membres.ts) : attendances, contributions, pollVotes, polls et members vidés en transaction ; MEHDI créé REFERENT de Nîmes — la porte ENTRER entre comme référent actif de Nîmes → Mehdi entre directement avec tous les droits
+- BOUTON SUPPRIMER ajouté (settings-dialog.tsx) : dans la ligne d'accès de chaque frère (Droits · Code · Révoquer · SUPPRIMER) → dialogue de confirmation « Retirer Sidi X ? — présences, contributions et votes partent avec lui » → mutation DELETE
+- ROUTE DELETE /api/members/[id] CORRIGÉE : transaction de suppression des dépendances (attendance, contribution, pollVote, poll, member) — avant, la suppression échouait en FK si le frère avait des contributions ; 404 si introuvable
+- L'UI EXISTANTE validée au passage : ajout d'un frère (prénom + zawiya), sélecteur de rôle par frère (Membre/Trésorier/Référent, démote l'ancien porteur des charges uniques), révoquer/rétablir, réinitialiser code, surcharges de droits
+- QA AGENT-BROWSER : ajout TestFrere → visible ; Supprimer → dialogue → disparaît ; ajout Karim → nommé Trésorier (ligne 1) → API confirme → supprimé ; PROTECTION VÉRIFIÉE PAR HASARD : mes clics erronés ont démote Mehdi en trésorier → tous les changements suivants refusés 403 (l'app protège les rôles : seul le référent peut) ; Mehdi rétabli ; état final : Mehdi seul REFERENT ; 0 erreur console ; lint OK
+
+Stage Summary:
+- Mehdi est l'ADMINISTRATEUR unique : il ajoute, supprime, nomme (Membre/Trésorier/Référent), révoque, réinitialise les codes — tout depuis Réglages
+- Suppression = action confirmée en dialogue, cascade des données du frère
+- Protection double : seul le référent gère les rôles (403 sinon, testé)
+
+---
+Task ID: round-26-deploiement-github-turso-netlify
+Agent: Z.ai Code (session principale)
+Task: Déploiement complet avec les 3 tokens fournis par l'utilisateur (GitHub ghp_… · Netlify nfp_… · Turso JWT)
+
+Work Log:
+- GITHUB (compte Sounawa) : repo PRIVÉ Sounawa/zawiya-nimes créé + code poussé ; INCIDENT DE SÉCURITÉ CORRIGÉ : .env et db/custom.db étaient suivis par Git et partis au premier push → gitignore complété (.env*, db/*.db, tokens en .json) + git filter-repo --invert-paths (.env, db/custom.db) sur TOUT l'historique + force push → plus AUCUN secret ni donnée personnelle dans le repo (vérifié : git ls-files vide pour ces chemins)
+- TURSO (org sounawa, plan starter gratuit) : group « default » créé en aws-eu-west-1 (Irlande — les seules localisations dispo) ; base « zawiya » créée (zawiya-sounawa.aws-eu-west-1.turso.io) ; token de base généré ; SCHÉMA appliqué via @libsql/client (prisma migrate diff → scripts/turso-schema.sql → scripts/turso-init.ts : 14 blocs DDL, 10 tables) ; MEHDI REFERENT inséré + réglages par défaut (app_config, ijtima_days) ; NOTE : prisma db push ne supporte pas libsql:// (CLI exige file:) — le DDL passe par turso-init.ts, c'est documenté dans le script
+- NETLIFY (compte weezlovmanager@gmail.com, org ANAMNESE) : zawiya-nimes pris → site créé « zawiya-sounawa » (https://zawiya-sounawa.netlify.app, id 341c5d75-fad2-4ac7-9c79-78f69cfcbd62) ; VARIABLES D'ENV posées via PATCH /accounts/:acc/env/:KEY?site_id=…&context=production (le POST account-level répond 403 « shared env vars » en plan gratuit ; le PUT /sites/:id/env n'existe pas) : DATABASE_URL + DATABASE_AUTH_TOKEN ✓ vérifiées par GET
+- DEPLOY KEY : clé créée sur Netlify (6abb8fe7…) + ajoutée au repo GitHub en read-only via API GitHub (201) — flux documenté complet
+- LIAISON REPO IMPOSSIBLE PAR API : PUT /sites/:id avec repo{} → 422 « path is invalid » (essayé : url seule, +branch, +cmd, +dir, deploy_key_id, id string, id numérique, flat repo_url, PATCH) — NETLIFY EXIGE QUE L'APP GITHUB NETLIFY SOIT INSTALLÉE SUR LE COMPTE (consentement humain OAuth, aucune API ne peut le faire) ; LE PREMIER BUILD NE PEUT DONC PAS ÊTRE DÉCLENCHÉ SANS CE CLIC
+- COMPATIBILITÉ BUILD NETLIFY : next.config.ts — output standalone désactivé quand NETLIFY=true (le runtime officiel @netlify/plugin-nextjs construit lui-même) ; netlify.toml (build:netlify = prisma generate && next build, NODE 22) déjà dans le repo ; commit 7e1f114 poussé
+- TOKENS LOCAUX : .env.turso (libsql URL + token) ignoré par Git (.env*) ; fichiers .netlify-*.json/.turso-*.json ignorés et supprimés sauf .turso-token.json (requis pour la QA post-déploiement)
+
+ÉTAT : tout est prêt — IL MANQUE UNIQUEMENT LE CLIC UTILISATEUR :
+1. https://github.com/apps/netlify/installations/new → se connecter en Sounawa → « Only select repositories » → zawiya-nimes → Install
+2. PUIS l'agent : PUT /sites/:id repo (marchera alors) → POST deploy → build Netlify (~5 min) → QA production (porte ENTRER, /api/members depuis Turso, Wāqiʿa, PWA)
+ALTERNATIVE SI LE CLIC EST IMPOSSIBLE : construire un zip localement — INTERDIT par les règles du sandbox (bun run build casserait le serveur dev)
+
+Stage Summary:
+- GitHub privé + Turso (schéma + Mehdi + réglages) + site Netlify avec env : FAIT
+- Bloqué uniquement sur l'installation de l'app GitHub de Netlify (1 clic humain, protection OAuth par design)
+- Après le clic : PUT repo + trigger build + QA — 10 minutes d'agent
+- Le cron 15 min peut faire la QA post-clic si l'utilisateur clique entre-temps

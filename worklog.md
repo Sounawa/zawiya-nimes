@@ -778,3 +778,25 @@ Stage Summary:
 - Bloqué uniquement sur l'installation de l'app GitHub de Netlify (1 clic humain, protection OAuth par design)
 - Après le clic : PUT repo + trigger build + QA — 10 minutes d'agent
 - Le cron 15 min peut faire la QA post-clic si l'utilisateur clique entre-temps
+
+---
+Task ID: round-26b-finalisation-site-netlify
+Agent: Z.ai Code (session principale)
+Task: Nettoyage Netlify — site définitif zawiya-nimes.netlify.app
+
+Work Log:
+- DÉCOUVERTE : la 1re création « zawiya-nimes » avait RÉUSSI (la réponse « subdomain must be unique » venait d'une 2e tentative) → site f4dee7b5-a55f-4223-acd6-cfca4894c846 = https://zawiya-nimes.netlify.app, vide, créé à 10:11:39
+- TRANSFERT : DATABASE_URL + DATABASE_AUTH_TOKEN posées sur le site zawiya-nimes (PATCH account env, context production) ✓ vérifiées par GET ; site doublon « zawiya-sounawa » supprimé (204) ; site test « zawiya-sounawa-2 » supprimé (204)
+- TENTATIVES LIAISON REPO ÉPUISÉES (toutes → 422 « path is invalid ») : PUT repo complet/minimal/flat/id-string/id-numérique, POST /sites avec repo+deploy_key, PATCH, POST /git/init (404), deploy_key_id, allowed_branches — CONCLUSION CONFIRMÉE : Netlify exige l'installation de son APP GITHUB sur le compte (consentement humain OAuth)
+- TOKENS PRÉSERVÉS en local pour la suite (ignorés par Git, vérifié) : .netlify-token (nfp_…) et .github-token (ghp_…) ; .turso-token.json et .env.turso déjà en place
+
+PROCÉDURE DE FIN (dès que l'utilisateur a cliqué sur https://github.com/apps/netlify/installations/new → Sounawa → zawiya-nimes → Install) :
+1. NT=$(cat .netlify-token) ; curl -X PUT -H "Authorization: Bearer $NT" -H "Content-Type: application/json" https://api.netlify.com/api/v1/sites/f4dee7b5-a55f-4223-acd6-cfca4894c846 -d '{"name":"zawiya-nimes","repo":{"url":"https://github.com/Sounawa/zawiya-nimes","branch":"main","cmd":"npm run build:netlify","dir":".next","deploy_key_id":"6abb8fe73fee498cc76f3e07"}}' → doit répondre 200 avec repo rempli
+2. Si le webhook n'a pas déjà déclenché : curl -X POST -H "Authorization: Bearer $NT" https://api.netlify.com/api/v1/sites/f4dee7b5-a55f-4223-acd6-cfca4894c846/deploys (body vide) → build ~5 min (vérifier via GET /deploys)
+3. QA : https://zawiya-nimes.netlify.app — porte ENTRER (entre comme Mehdi), /api/members doit renvoyer Mehdi depuis Turso, carte Wāqiʿa, hors-ligne SW
+4. ERREURS BUILD POSSIBLES À SURVEILLER : prisma generate (schéma driverAdapters OK), Turso latence eu-west-1, plugin @netlify/plugin-nextjs installé automatiquement depuis netlify.toml
+
+Stage Summary:
+- Site définitif : https://zawiya-nimes.netlify.app avec DATABASE_URL + DATABASE_AUTH_TOKEN (Turso) — prêt à construire
+- Le repo GitHub est propre (plus aucun secret, force push post filter-repo)
+- UNIQUE ÉTAPES RESTANTES : 1 clic utilisateur (app GitHub Netlify) puis 2 appels API + QA (procédure exacte ci-dessus)

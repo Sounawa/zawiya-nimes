@@ -33,13 +33,7 @@ export async function GET() {
     return NextResponse.json(members)
   } catch (e) {
     console.error('[api/members] GET :', e)
-    return NextResponse.json(
-      {
-        error: 'Erreur serveur',
-        detail: e instanceof Error ? e.message : String(e),
-      },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 

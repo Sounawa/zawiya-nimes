@@ -164,18 +164,28 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 }
 
-// DELETE /api/members/:id — retirer un frère (référent seul)
+// DELETE /api/members/:id — retirer un frère (référent seul).
+// Ses présences, contributions et votes partent avec lui ; les sondages
+// qu'il a créés sont supprimés (createdBy obligatoire).
 export async function DELETE(req: Request, { params }: Params) {
   try {
     const { refus } = await exiger(req, 'membres.gerer')
     if (refus) return refus
     const { id } = await params
     const membre = await db.member.findUnique({ where: { id } })
-    await db.member.delete({ where: { id } })
+    if (!membre) return NextResponse.json({ error: 'Membre introuvable' }, { status: 404 })
+
+    await db.$transaction([
+      db.attendance.deleteMany({ where: { memberId: id } }),
+      db.contribution.deleteMany({ where: { memberId: id } }),
+      db.pollVote.deleteMany({ where: { memberId: id } }),
+      db.poll.deleteMany({ where: { createdBy: id } }),
+      db.member.delete({ where: { id } }),
+    ])
     await journaliser({
       kind: 'MEMBER',
       action: 'DELETE',
-      label: `${membre?.name ?? 'Un frère'} quitte la liste`,
+      label: `${membre.name} quitte la liste`,
       actor: null,
     })
     return NextResponse.json({ ok: true })

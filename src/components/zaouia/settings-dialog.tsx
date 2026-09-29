@@ -14,6 +14,7 @@ import {
   Shield,
   ShieldCheck,
   SlidersHorizontal,
+  Trash2,
   UserRound,
   UserRoundPlus,
   Wallet,
@@ -94,6 +95,8 @@ export function SettingsDialog({
   const [nouveauNom, setNouveauNom] = useState('')
   const [villeAjout, setVilleAjout] = useState<Ville>('NIMES')
   const [membreDroits, setMembreDroits] = useState<Member | null>(null)
+  /* Confirmation avant suppression définitive d'un frère */
+  const [aSupprimer, setASupprimer] = useState<Member | null>(null)
 
   /* ─── Lieu des ijtima' ─── */
   const configDefaut = settings?.app_config ?? { nom: 'Nimes', ville: 'Nîmes', lieu: '' }
@@ -535,6 +538,13 @@ export function SettingsDialog({
                       <Ban className="h-3 w-3" /> Révoquer
                     </button>
                   )}
+                  <button
+                    onClick={() => setASupprimer(m)}
+                    className="inline-flex items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    title="Retirer Sidi de la liste — ses présences et contributions partent avec lui"
+                  >
+                    <Trash2 className="h-3 w-3" /> Supprimer
+                  </button>
                 </div>
               </div>
             ))}
@@ -602,6 +612,51 @@ export function SettingsDialog({
         membre={membreDroits}
         onOpenChange={(v) => !v && setMembreDroits(null)}
       />
+
+      {/* Confirmation avant de supprimer définitivement un frère */}
+      {aSupprimer && (
+        <div className="fixed inset-0 z-[60] grid place-items-center bg-encre/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl border border-destructive/20 bg-ivoire p-6 shadow-2xl">
+            <h3 className="font-display text-xl text-encre">Retirer Sidi {aSupprimer.name} ?</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Il disparaît de la liste des frères — avec ses présences, contributions et
+              votes. Cette action est définitive.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setASupprimer(null)}
+                className="rounded-full"
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() =>
+                  retirerMembre.mutate(aSupprimer.id, {
+                    onSuccess: () => {
+                      toast({
+                        title: `Sidi ${aSupprimer.name} a quitté la liste`,
+                        description: 'Ses données ont été retirées.',
+                      })
+                      setASupprimer(null)
+                    },
+                    onError: () =>
+                      toast({
+                        title: 'Suppression impossible',
+                        variant: 'destructive',
+                      }),
+                  })
+                }
+                disabled={retirerMembre.isPending}
+                className="rounded-full"
+              >
+                <Trash2 className="mr-1 h-4 w-4" /> Supprimer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Dialog>
   )
 }

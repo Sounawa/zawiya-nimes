@@ -684,3 +684,29 @@ Stage Summary:
 - AL-WĀQIʿA EST LE TEXTE DU FRÈRE : k03 remplacé mot pour mot (96 versets, 3 blocs), visible dans la carte Adhkâr n°4 ET dans le cahier de wadhifa (pratique 4) — Scheherazade partout, SW v8
 - La phonétique (ch04-sratalwqia du cahier) est inchangée ; les PDF numérisés legacy (waqia-ar.pdf) restent accessibles via l'onglet « Numérisé » du lecteur
 - Restes/pistes : si le frère veut la version Warsh maghrébine de la Wāqiʿa un jour (le texte fourni est en notation standard), remplacer k03 de la même façon ; Taha (P0 du document Word) toujours disponible pour une section
+
+---
+Task ID: round-24-plan-deploiement
+Agent: Z.ai Code (session principale)
+Task: Mise en ligne GitHub + Netlify + Turso — l'utilisateur veut TOUT GRATUIT (annonces + réunions incluses) et demande que l'agent fasse tout avec ses tokens
+
+Work Log:
+- RÉPONSE DONNÉE À L'UTILISATEUR (explication des rôles) : GitHub = l'armoire du code (compte existant) · Netlify = la machine qui sert le site 24/7 (compte à créer via « Continue with GitHub ») · Turso = la base de données externe gratuite (SQLite-compatible, 9 Go free, 1B lectures/mois — l'app utilise 120 Ko) — nécessaire car SQLite local ne survit pas sur Netlify (filesystem serverless éphémère)
+- OFFRES GRATUITES VÉRIFIÉES (recherche web 2026) : Netlify Free = 100 Go trafic + 125k invocations fonctions + 300 min build/mois (zawiya utilisera <1 %) · Turso Free = 9 Go, dialecte SQLite → migration Prisma minimale (provider reste sqlite, adapter @prisma/adapter-libsql + DATABASE_URL)
+- DIVISION DU TRAVAIL CONVENTIONNÉE : l'utilisateur colle 3 tokens dans le chat (GitHub PAT classic scope repo · Netlify PAT · Turso API token) et l'agent fait TOUT : création repo GitHub + push, création DB Turso + migration des données (membres/annonces/réunions/sondages), création du site Netlify + config + déploiement, QA finale
+- SEULE EXCEPTION ANNONCÉE : la liaison Netlify↔GitHub (OAuth) exige un clic humain — aucune API ne remplace le consentement du propriétaire du compte ; prévu : soit l'utilisateur clique « Import from GitHub » guidé (2 min), soit vérifier si l'API PUT /sites/:id avec repo fonctionne après connexion des comptes
+- WEBROOTS : pas de websocket en usage dans l'app (grep io/ → seul aspect-ratio.tsx, faux positif) → déploiement Next.js standard SANS mini-services, le gateway Caddy du sandbox ne concerne que le dev local
+
+TRAVAIL PRÉPARATOIRE À FAIRE SANS LES TOKENS (pour le cron 15 min ou la prochaine session) :
+1. Créer netlify.toml à la racine (build: bun run build via @netlify/plugin-nextjs, node 20) — NE PAS exécuter bun run build dans le sandbox (règle), la compilation aura lieu sur les serveurs Netlify
+2. Rendre src/lib/db.ts compatible dual : PrismaClient local si DATABASE_URL fichier sqlite:, adapter libSQL (@prisma/adapter-libsql + @prisma/client/runtime/library) si URL turso/libsql — installer le paquet d'abord
+3. Prisma schema : datasource url = env("DATABASE_URL") déjà ? vérifier ; garder provider sqlite (Turso = libSQL) ; prévoir binaryTargets/prisma generate OK pour serverless
+4. Données : script d'export seed (membres, annonces, réunions, sondages, présences, réglages) vers JSON → import Turso une fois le token reçu
+5. SW : autoriser les origines Netlify ? — non, SW est same-origin, rien à changer ; vérifier robots.txt/manifest paths restent relatifs
+6. Committer netlify.toml + db.ts dual + script export (SANS lancer db:push ni build)
+- RÈGLES DE SÉCURITÉ pour ces étapes : ne pas toucher aux textes coraniques (src/data), ne pas supprimer la porte ENTRER, ne pas reset la base locale
+
+Stage Summary:
+- Plan de déploiement gratuit validé et expliqué à l'utilisateur (Netlify + Turso, 0 €) : attente des 3 tokens pour exécution
+- L'utilisateur a un compte GitHub ; devra créer Netlify + Turso (bouton GitHub, 3 min) et coller les 3 codes
+- Prochaine étape immédiate : travail préparatoire ci-dessus (netlify.toml, db.ts dual-mode, export JSON) — réalisable avant l'arrivée des tokens

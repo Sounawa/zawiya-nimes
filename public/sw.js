@@ -1,12 +1,14 @@
 /* ─── Service worker de la Zawiya Nîmes ──────────────────────────────
-   Objectif : l'application reste ouvrable hors-ligne (app-shell).
-   Stratégies :
-   — navigation (HTML)  : réseau d'abord, coquille en cache en secours
+   Objectif : l'application reste ouvrable hors-ligne (app-shell)
+   et ne consomme quasi rien en ligne :
+   — navigation (HTML)  : réseau d'abord (quelques Ko), coquille en secours
    — /api/*             : réseau seul (données de communauté toujours fraîches)
-   — éléments statiques : stale-while-revalidate (icônes, polices, manifest)
-   Cache versionné — toute nouvelle version purge l'ancienne. */
+   — immuables (build)  : cache d'abord, jamais re-téléchargés en arrière-plan
+   — autres statiques   : stale-while-revalidate
+   Cache versionné — toute nouvelle version purge l'ancienne.
+   ⚠ Changer une image (logo, tariqa…) exige de bumper VERSION. */
 
-const VERSION = 'zawiya-v8'
+const VERSION = 'zawiya-v9'
 const SHELL = [
   '/logo.png',
   '/icone-192.png',
@@ -74,10 +76,34 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  /* Statique : stale-while-revalidate */
-  const estStatique =
-    url.pathname.startsWith('/_next/static/') ||
-    /\.(png|svg|ico|webmanifest|woff2?|jpg|webp)$/.test(url.pathname)
+  /* Immuables — chunks du build (noms hachés : un nouveau déploiement
+     = nouveaux noms = téléchargement naturel) et coquille pré-cachée.
+     Servis depuis le cache SANS re-téléchargement en arrière-plan :
+     c'est ce qui protège la data des frères. */
+  const estImmutable =
+    url.pathname.startsWith('/_next/static/') || SHELL.includes(url.pathname)
+  if (estImmutable) {
+    event.respondWith(
+      caches.match(request).then(
+        (enCache) =>
+          enCache ??
+          fetch(request).then((reponse) => {
+            if (reponse.ok) {
+              const copie = reponse.clone()
+              caches
+                .open(VERSION)
+                .then((cache) => cache.put(request, copie))
+                .catch(() => {})
+            }
+            return reponse
+          })
+      )
+    )
+    return
+  }
+
+  /* Autres statiques (polices locales, images de contenu…) : SWR */
+  const estStatique = /\.(png|svg|ico|webmanifest|woff2?|jpg|webp)$/.test(url.pathname)
   if (!estStatique) return
 
   event.respondWith(

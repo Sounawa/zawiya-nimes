@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://www.netlify.com/pricing",
+    "name": "Pricing and Plans",
+    "snippet": "Build free. Scale when you need it. · Free. $0 forever. Build and deploy free forever. Deploy any framework: Deploy from AI, Git, or API · Personal. $9 /month.",
+    "host_name": "www.netlify.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://northflank.com/blog/vercel-vs-netlify-choosing-the-deployment-platform-in-2026",
+    "name": "Vercel vs Netlify: which deployment platform should you",
+    "snippet": "Netlify allows commercial use on the free tier within usage limits. For solo developers testing an idea with low traffic and early traction ...",
+    "host_name": "northflank.com",
+    "rank": 1,
+    "date": "Apr 18, 2025",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.luckymedia.dev/insights/hosting",
+    "name": "Vercel vs Netlify vs Cloudflare vs Render",
+    "snippet": "Netlify has slightly more generous serverless function limits on the free tier. What is the best hosting for a Next.js app? Vercel. Server ...",
+    "host_name": "www.luckymedia.dev",
+    "rank": 2,
+    "date": "Apr 1, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.reddit.com/r/nextjs/comments/tfmmr2/where_to_deploy_that_doesnt_really_cost_anything",
+    "name": "where to deploy that doesn't really cost anything for a small",
+    "snippet": "I'm starting a new project, it will be myself and a couple of other dev's part-time and will be a 'commercial' venture. My goto deployment is Cloudflare ...",
+    "host_name": "www.reddit.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.netlify.com/blog/introducing-netlify-free-plan",
+    "name": "Introducing Netlify's Free plan",
+    "snippet": "Generous monthly limits: Each month receives 100 GB bandwidth, 300 build minutes, 125,000 function and 1 million edge function invocations, 10 ...",
+    "host_name": "www.netlify.com",
+    "rank": 4,
+    "date": "Nov 12, 2024",
+    "favicon": ""
+  },
+  {
+    "url": "https://vercel.com/kb/guide/nextjs-on-vercel-vs-netlify",
+    "name": "Next.js on Vercel vs Netlify",
+    "snippet": "Netlify caps synchronous function execution at 60 seconds, and the limit is not configurable. Vercel Functions run up to 300s on Hobby and 800s ...",
+    "host_name": "vercel.com",
+    "rank": 5,
+    "date": "Jun 11, 2026",
+    "favicon": ""
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "url": "https://notanothertool.com",
+    "name": "Supabase vs Turso (2026) — feature & pricing comparison",
+    "snippet": "Pricing: Turso is completely free (Free 9 GB total storage), which makes it the obvious pick if budget is the top concern. Supabase starts at $25/mo, but Free ... Read more",
+    "host_name": "notanothertool.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://gautamkhorana.com",
+    "name": "Serverless databases in 2026: Supabase, Neon, PlanetScale, Turso",
+    "snippet": "Turso , distributed SQLite ( libSQL ), edge-first replication, free tier 9GB and 1B row reads, Scaler $29/month. The fastest at the edge for read-heavy workloads.",
+    "host_name": "gautamkhorana.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://vault.llbbl.com",
+    "name": "Turso | Astro Vault",
+    "snippet": "Mar 23, 2026 — Turso is an edge-hosted distributed database built on LibSQL . Its generous free tier and low latency make it perfect for modern edge-deployed ...",
+    "host_name": "vault.llbbl.com",
+    "rank": 2,
+    "date": "Mar 23, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.pkgpulse.com",
+    "name": "Neon vs Supabase vs Turso 2026",
+    "snippet": "Mar 16, 2026 — Multi-database architecture is Turso's unique feature — 100 databases on the free plan , unlimited on the $4.99/mo Developer tier:. Read more",
+    "host_name": "www.pkgpulse.com",
+    "rank": 3,
+    "date": "Mar 16, 2026",
+    "favicon": ""
+  },
+  {
+    "url": "https://gab.ae",
+    "name": "Best Free Databases in 2026 — Every Option Compared",
+    "snippet": "Turso (libSQL) Free Tier 9GB storage 1K databases . Generous free tier, blazing fast edge reads. the free tier goes far. Complex pricing makes the \"free\" tier ...",
+    "host_name": "gab.ae",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://faun.dev",
+    "name": "Turso Review: Score, Pros and Cons",
+    "snippet": "A 4.99 dollar plan with unlimited databases and no compute bill fits database -per-tenant designs. Row-based billing turns unindexed queries into cost , because a ... Read more",
+    "host_name": "faun.dev",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  }
+]

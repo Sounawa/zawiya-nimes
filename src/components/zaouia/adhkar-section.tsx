@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { create } from 'zustand'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -182,19 +182,101 @@ function BasculeAndalouse<T extends string>({
 /* ─── Un vers de qaṣīda — deux hémistiches pleine largeur ───
    Le Nasiri ou la Munfarija n'est plus une colonne étroite
    alignée à droite : chaque distique s'étale en deux colonnes
-   comme dans le kitāb imprimé, le séparateur ۞ au centre. */
-function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
+   comme dans le kitāb imprimé, le séparateur ۞ au centre.
+   Sur téléphone en portrait, le vers ENTIER tient sur une
+   ligne : la taille se resserre d'elle-même pour que le vers
+   le plus long ne déborde jamais — mesuré au pixel près,
+   quelle que soit la police ou la taille choisies. */
+function VersPoeme({
+  ligne,
+  accent,
+  taille,
+  police,
+}: {
+  ligne: string
+  accent: string
+  /** la taille de lecture choisie — re-mesure le vers si elle change */
+  taille: number
+  /** la police de lecture choisie — re-mesure le vers si elle change */
+  police: string
+}) {
   const coupe = ligne.split('۞')
   if (coupe.length !== 2) {
     return <LigneInvocation ligne={ligne} accent={accent} />
   }
   return (
-    <span className="poesie-vers">
-      <span className="poesie-shatr">{coupe[0].trim()}</span>
+    <VersDeuxShatr
+      shatrDroite={coupe[0].trim()}
+      shatrGauche={coupe[1].trim()}
+      accent={accent}
+      taille={taille}
+      police={police}
+    />
+  )
+}
+
+/* Le vers à deux hémistiches — monté seulement quand le ۞ sépare */
+function VersDeuxShatr({
+  shatrDroite,
+  shatrGauche,
+  accent,
+  taille,
+  police,
+}: {
+  shatrDroite: string
+  shatrGauche: string
+  accent: string
+  taille: number
+  police: string
+}) {
+  const ref = useRef<HTMLSpanElement | null>(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const ajuster = () => {
+      /* D'abord rendre la taille choisie par le frère */
+      el.style.fontSize = ''
+      /* Hors du mode une-ligne (tablette, paysage : deux colonnes
+         du kitāb), la taille choisie s'applique telle quelle */
+      if (getComputedStyle(el).display !== 'flex') return
+      const shatrs = el.querySelectorAll('.poesie-shatr')
+      const fasl = el.querySelector('.poesie-fasl')
+      if (shatrs.length !== 2 || !fasl) return
+
+      /* Largeur naturelle du vers entier, nowrap */
+      const gap =
+        2 * (parseFloat(getComputedStyle(el).columnGap) || 0) || 0
+      const nat =
+        shatrs[0].getBoundingClientRect().width +
+        shatrs[1].getBoundingClientRect().width +
+        fasl.getBoundingClientRect().width +
+        gap
+      const dispo = el.clientWidth
+      if (nat <= dispo + 1 || nat === 0) return
+
+      /* Resserrer juste ce qu'il faut — jamais au-dessous de 11 px.
+         Deux pixels de grâce : les largeurs mesurées sont arrondies
+         au quart de pixel près par le moteur de rendu. */
+      const heritee = parseFloat(getComputedStyle(el).fontSize)
+      el.style.fontSize = `${Math.max(11, Math.floor((heritee * (dispo - 2)) / nat))}px`
+    }
+
+    ajuster()
+    /* La fenêtre bouge (rotation, redimensionnement) : re-mesurer */
+    const ro = new ResizeObserver(ajuster)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [shatrDroite, shatrGauche, taille, police])
+
+  return (
+    <span ref={ref} className="poesie-vers">
+      <span className="poesie-shatr">{shatrDroite}</span>
       <span aria-hidden className="poesie-fasl" style={{ color: accent }}>
         ۞
       </span>
-      <span className="poesie-shatr">{coupe[1].trim()}</span>
+      <span className="poesie-shatr">{shatrGauche}</span>
     </span>
   )
 }
@@ -471,8 +553,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
       {/* ─── La barre du haut : titre, sommaire, réglages, fermeture ─── */}
       <header className="relative z-10 flex-none border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90">
         <div
-          className="flex items-center gap-1 px-2.5"
-          style={{ paddingTop: 'calc(10px + env(safe-area-inset-top))', paddingBottom: 10 }}
+          className="flex items-center gap-1 px-2.5 pt-[calc(10px+env(safe-area-inset-top))] pb-2.5 [@media(orientation:landscape)_and_(max-height:540px)]:pt-[3px]! [@media(orientation:landscape)_and_(max-height:540px)]:pb-1!"
         >
           {/* Réglages de lecture — le texte seulement */}
           {!vueDoc && (
@@ -557,7 +638,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
             sur porcelaine), ou le livre imprimé à l'identique — en
             tuiles de zellige */}
         {aLesDeux && (
-          <div className="flex justify-center border-t border-border py-2">
+          <div className="flex justify-center border-t border-border py-2 [@media(orientation:landscape)_and_(max-height:540px)]:py-0.5!">
             <BasculeAndalouse
               libelle="Vue du document"
               taille="sm"
@@ -770,7 +851,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
         >
           <div
             className={cn(
-              'mx-auto flex w-full max-w-[840px] flex-col items-stretch gap-3 px-3 pb-[calc(110px+env(safe-area-inset-bottom))] pt-3 sm:px-5'
+              'mx-auto flex w-full max-w-[840px] flex-col items-stretch gap-3 px-3 pb-[calc(110px+env(safe-area-inset-bottom))] pt-3 sm:px-5 [@media(orientation:landscape)_and_(max-height:540px)]:pb-[calc(24px+env(safe-area-inset-bottom))]! [@media(orientation:landscape)_and_(max-height:540px)]:gap-2!'
             )}
           >
             {estSama && !samaTexte && (
@@ -945,17 +1026,17 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 dir={arabeC ? 'rtl' : undefined}
                 lang={arabeC ? 'ar' : undefined}
                 className={cn(
-                  'grain-papier poesie-page relative scroll-mt-3 overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7',
+                  'grain-papier poesie-page relative scroll-mt-3 overflow-hidden rounded-2xl border p-4 shadow-sm sm:p-7 [@media(orientation:landscape)_and_(max-height:540px)]:p-4!',
                   theme.fond,
                   theme.texte,
                   theme.cadre
                 )}
               >
                 {/* En-tête du chapitre — un souffle de mihrab */}
-                <header className="mb-5 text-center">
+                <header className="mb-5 text-center [@media(orientation:landscape)_and_(max-height:540px)]:mb-2!">
                   <span
                     aria-hidden
-                    className="ornement-mihrab mb-2 flex items-center justify-center gap-2"
+                    className="ornement-mihrab mb-2 flex items-center justify-center gap-2 [@media(orientation:landscape)_and_(max-height:540px)]:mb-0.5!"
                     style={{ color: accent.couleur }}
                   >
                     <span className="ornement-filet" />
@@ -963,7 +1044,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                     <span className="ornement-filet" />
                   </span>
                   <h3
-                    className={cn('leading-tight', arabeC ? 'font-arabic text-[30px] font-semibold leading-snug' : 'text-[22px] font-semibold')}
+                    className={cn('leading-tight', arabeC ? 'font-arabic text-[30px] font-semibold leading-snug [@media(orientation:landscape)_and_(max-height:540px)]:text-[19px]!' : 'text-[22px] font-semibold [@media(orientation:landscape)_and_(max-height:540px)]:text-[15px]!')}
                     style={{ fontFamily: policeC.css, color: accent.couleur }}
                   >
                     {c.titre}
@@ -1011,7 +1092,13 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                     : c.texte.split('\n')
                   ).map((ligne, j) =>
                     arabeC && c.poesie ? (
-                      <VersPoeme key={j} ligne={ligne} accent={accent.couleur} />
+                      <VersPoeme
+                        key={j}
+                        ligne={ligne}
+                        accent={accent.couleur}
+                        taille={tailleC}
+                        police={policeC.id}
+                      />
                     ) : (
                       <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
                     )

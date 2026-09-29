@@ -8,7 +8,7 @@
    Cache versionné — toute nouvelle version purge l'ancienne.
    ⚠ Changer une image (logo, tariqa…) exige de bumper VERSION. */
 
-const VERSION = 'zawiya-v9'
+const VERSION = 'zawiya-v10'
 const SHELL = [
   '/logo.png',
   '/icone-192.png',
@@ -46,6 +46,14 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
+
+  /* Le badge Netlify (HUD) ne part pas avec la data des frères :
+     son script ne charge jamais — la page porte déjà le piège
+     #nl-hud-frame qui l'empêche de s'afficher. */
+  if (url.pathname.startsWith('/.netlify/scripts/hud')) {
+    event.respondWith(new Response('', { status: 204 }))
+    return
+  }
 
   /* Données de la communauté : réseau seul, jamais de cache */
   if (url.pathname.startsWith('/api/')) return

@@ -117,7 +117,9 @@ export function BandeauProchainIjtima() {
       transition={{ duration: 0.5, ease: 'easeOut' }}
       role="region"
       aria-label={`Rappel — prochaine réunion ${m.title}`}
-      className="group relative mx-auto flex w-full max-w-3xl items-stretch gap-0 overflow-hidden rounded-2xl border border-gold/35 bg-gradient-to-r from-feuille via-card to-or-pale shadow-sm transition-all hover:border-gold/60 hover:shadow-[0_8px_24px_-10px_rgba(184,146,58,0.35)]"
+      /* En paysage sur téléphone (hauteur courte), le rappel s'efface :
+         la place de lire prime — il reste dans la section Al-Ijtimâ'. */
+      className="group relative mx-auto flex w-full max-w-3xl items-stretch gap-0 overflow-hidden rounded-2xl border border-gold/35 bg-gradient-to-r from-feuille via-card to-or-pale shadow-sm transition-all hover:border-gold/60 hover:shadow-[0_8px_24px_-10px_rgba(184,146,58,0.35)] [@media(orientation:landscape)_and_(max-height:540px)]:hidden"
     >
       {/* Filigrane ornemental */}
       <span aria-hidden className="pointer-events-none absolute -right-2 -top-4 select-none font-display text-5xl text-accent/10">

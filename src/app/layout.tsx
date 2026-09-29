@@ -90,6 +90,9 @@ export default function RootLayout({
           <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
         <Toaster />
+        {/* Le badge Netlify ne s'affichera pas : son script s'abstient
+            dès qu'il trouve #nl-hud-frame déjà posé dans la page. */}
+        <div id="nl-hud-frame" hidden aria-hidden="true" />
       </body>
     </html>
   );

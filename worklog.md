@@ -906,3 +906,20 @@ Stage Summary:
 - PROD VALIDÉE : qaṣīdas une ligne par vers (portrait), lecteur compact + 2 colonnes (paysage), badge Netlify neutralisé, économie de données SW v9+v10 en ligne
 - Turso : ancien token toujours valide (aucune action), nouveau token d'org en secours dans la conversation
 - ⚠ NOTE : si l'utilisateur révoque encore des tokens, penser à VÉRIFIER les deploy keys GitHub du repo (Settings → Deploy keys) — 2 clés actives désormais (restaurée + v2)
+
+---
+Task ID: round-30b-automatisation-webhook
+Agent: Z.ai Code (session principale)
+Task: Rétablir l'automatisation complète du déploiement + cron de revue
+
+Work Log:
+- CAUSE DU WEBHOOK MORT : le site Netlify est connecté via deploy key (pas l'app GitHub), donc aucun push ne déclenchait de build
+- FIX : build hook Netlify créé (push-github, branche main, id 6abbbe9790a60c07fb1cd665) + webhook GitHub (id 688321019, event push) qui appelle le hook
+- TEST RÉEL : commit vide 30264ae poussé → deploy 6abbbed8 parti SEUL → ready ; le deploy précédent (worklog 40d05d2 → 6abbbe98) aussi ready
+- PROD STABLE : accueil 200, SW zawiya-v10 en ligne
+- Cron : ancien job 423639 (désactivé, contexte obsolète) supprimé → nouveau job 423828 (15 min, webDevReview, contexte à jour)
+
+Stage Summary:
+- PIPELINE 100 % AUTOMATISÉ : git push → webhook GitHub → build hook Netlify → build → deploy (validé en conditions réelles)
+- Clés actives sur le repo GitHub : 2 deploy keys Netlify (restaurée 164821577 + v2 164822733) — NE PAS SUPPRIMER
+- Cron 423828 actif avec règles de sécurité à jour

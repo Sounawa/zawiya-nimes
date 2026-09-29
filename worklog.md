@@ -710,3 +710,29 @@ Stage Summary:
 - Plan de déploiement gratuit validé et expliqué à l'utilisateur (Netlify + Turso, 0 €) : attente des 3 tokens pour exécution
 - L'utilisateur a un compte GitHub ; devra créer Netlify + Turso (bouton GitHub, 3 min) et coller les 3 codes
 - Prochaine étape immédiate : travail préparatoire ci-dessus (netlify.toml, db.ts dual-mode, export JSON) — réalisable avant l'arrivée des tokens
+
+---
+Task ID: round-24b-prep-deploiement
+Agent: Z.ai Code (session principale)
+Task: Travail préparatoire déploiement Netlify+Turso (réalisé SANS les tokens — voir round-24-plan-deploiement)
+
+Work Log:
+- DÉPENDANCES : @prisma/adapter-libsql épingle en 6.11.1 (la 7.x était incompatible avec notre @prisma/client 6.11.1) + @libsql/client 0.18 — installées
+- prisma/schema.prisma : generator + previewFeatures = ["driverAdapters"] ; client régénéré (bun run db:generate OK)
+- src/lib/db.ts RÉÉCRIT EN DOUBLE MODE : DATABASE_URL file:… → PrismaClient classique (sandbox inchangée) · libsql://… → PrismaClient + PrismaLibSQL(createClient({url, authToken: DATABASE_AUTH_TOKEN})) — chargement dynamique require() pour ne pas peser en dev local ; log réduit à ['error'] en production ; CHOIX AUTOMATIQUE à la lecture de l'URL, zéro config
+- package.json : script "build:netlify": "prisma generate && next build" (SANS la copie standalone propre à la sandbox)
+- netlify.toml CRÉÉ : command npm run build:netlify · publish .next · NODE_VERSION 22 · plugin @netlify/plugin-nextjs (SSR + routes API)
+- scripts/export-donnees.ts CRÉÉ et TESTÉ : export JSON complet — 18 membres, 0 annonces, 1 réunion, 0 sondages, 9 présences, 27 contributions, 2 réglages → scripts/tmp-export/donnees-zawiya.json (ignoré par Git)
+- VÉRIFICATIONS : GET / 200 · GET /api/members 200 avec données (db.ts modifié ne casse rien en local) · lint 0 erreur · commit b4f09a3
+
+ÉTAPES RESTANTES (ATTENDENT LES 3 TOKENS de l'utilisateur : GitHub ghp_… · Netlify nfp_… · Turso) :
+1. Token GitHub → git remote add + push vers repo privé « zawiya-nimes » (NE PAS pousser scripts/tmp-export/ — déjà ignoré ; vérifier aussi que .env n'est pas commité)
+2. Token Turso → créer la base (turso db create zawiya) · appliquer le schéma (prisma db push avec DATABASE_URL libsql) · importer donnees-zawiya.json (script d'import à écrire, en s'assurant que les id/createdAt sont préservés)
+3. Token Netlify → créer le site via API · variables d'environnement : DATABASE_URL (libsql://…), DATABASE_AUTH_TOKEN, NODE_ENV=production · lier au repo GitHub (soit API PUT /sites/:id repo, soit 2 clics « Import from GitHub » guidés — l'OAuth Netlify↔GitHub ne peut PAS être fait par token à la place de l'utilisateur, règle GitHub)
+4. QA finale sur l'URL .netlify.app : porte ENTRER, sections, API membres/annonces/réunions (données Turso), installation PWA, mode hors-ligne
+5. APRÈS : l'utilisateur peut supprimer/révoquer les 3 tokens ; GitHub PAT expire seul (30 jours demandés)
+
+Stage Summary:
+- Tout le terrain est prêt : le même code tournera en local (SQLite) et sur Netlify (Turso) sans rien changer d'autre
+- Les données sont exportées et prêtes à migrer ; schéma Prisma compatible driverAdapters
+- Bloqué uniquement sur les tokens de l'utilisateur — instructions précises données dans le chat (GitHub Settings→Developer settings→Tokens classic scope repo · Netlify via « Continue with GitHub » puis User settings→Applications→Personal access tokens · Turso via « with GitHub » puis Tokens)

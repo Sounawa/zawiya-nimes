@@ -308,6 +308,11 @@ export function LecteurPdf({
         const pdfjs = await chargerPdfjs()
         const tache = pdfjs.getDocument({
           url: src,
+          /* Une SEULE requête complète, pas de plages partielles :
+             le service worker peut ainsi garder le livre ENTIER en
+             mémoire du téléphone — ouvert une fois en ligne, le scan
+             reste disponible hors-ligne pour toujours. */
+          disableRange: true,
           cMapUrl: '/pdfjs-cmaps/',
           cMapPacked: true,
           standardFontDataUrl: '/pdfjs-standard-fonts/',
@@ -328,7 +333,21 @@ export function LecteurPdf({
           setPret(true)
         }
       } catch {
-        if (!annule) setErreur('Le document n’a pas pu être ouvert.')
+        if (annule) return
+        /* Distinguer : le réseau (ou le serveur) manque → le livre
+           n'est pas encore en mémoire du téléphone ; le fichier
+           répond mais reste illisible → message générique. */
+        let reseau = false
+        try {
+          await fetch(src, { method: 'HEAD' })
+        } catch {
+          reseau = true
+        }
+        setErreur(
+          reseau
+            ? 'Hors-ligne — ce livre numérisé n\u2019est pas encore en mémoire. Ouvre-le une fois en ligne : il restera ensuite disponible hors-ligne.'
+            : 'Le document n\u2019a pas pu être ouvert.'
+        )
       }
     })()
     return () => {

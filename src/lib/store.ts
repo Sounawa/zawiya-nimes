@@ -153,6 +153,21 @@ export const useLecture = create<LectureState>()(
   )
 )
 
+/* ─── État du réseau — la zawiya sert hors-ligne, elle le dit ───
+   Hors-ligne, le service worker sert les dernières données connues
+   de la communauté (annonces, ijtimâ') : ce drapeau l'annonce à
+   l'écran, discrètement. */
+interface ReseauState {
+  /** les données affichées viennent du relais hors-ligne (cache) */
+  relais: boolean
+  basculer: (v: boolean) => void
+}
+
+export const useReseau = create<ReseauState>((set) => ({
+  relais: false,
+  basculer: (relais) => set({ relais }),
+}))
+
 /* ─── Zone d'impression (feuille de présence / comptes) ─── */
 export type CibleImpression =
   | { kind: 'presence'; meetingId: string }

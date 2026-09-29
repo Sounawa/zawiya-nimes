@@ -638,7 +638,6 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
       }
     }, 60)
     return () => window.clearTimeout(minuteur)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [langue])
 
   useEffect(() => {
@@ -1248,7 +1247,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                               </ul>
                             </div>
                           )
-                        })}
+                        })
                         )}
                       </div>
                     </motion.div>

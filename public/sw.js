@@ -8,7 +8,7 @@
    Cache versionné — toute nouvelle version purge l'ancienne.
    ⚠ Changer une image (logo, tariqa…) exige de bumper VERSION. */
 
-const VERSION = 'zawiya-v11'
+const VERSION = 'zawiya-v12'
 const SHELL = [
   '/favicon-96.png',
   '/apple-touch-icon.png',
@@ -56,8 +56,47 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  /* Données de la communauté : réseau seul, jamais de cache */
-  if (url.pathname.startsWith('/api/')) return
+  /* Données de la communauté : le réseau d'abord — toujours fraîches
+     en ligne. Hors-ligne, les dernières CONNUES servent de relais
+     (réponses minuscules : 2 à 200 octets, cachées au passage, jamais
+     re-téléchargées) — mieux que des sections vides qui laisseraient
+     croire que tout a disparu. Marquées X-Hors-Ligne : l'écran le dit.
+     Seuls les GET : les écritures ne passent jamais par le cache. */
+  if (url.pathname.startsWith('/api/')) {
+    if (request.method !== 'GET') return
+    event.respondWith(
+      fetch(request)
+        .then((reponse) => {
+          if (reponse.ok) {
+            const copie = reponse.clone()
+            caches.open(VERSION).then((cache) => cache.put(request, copie)).catch(() => {})
+          }
+          return reponse
+        })
+        .catch(() =>
+          caches.match(request).then(
+            (enCache) => {
+              if (!enCache) {
+                /* rien de connu : l'app affiche son état vide habituel */
+                return new Response(JSON.stringify({ erreur: 'hors-ligne' }), {
+                  status: 503,
+                  headers: { 'Content-Type': 'application/json' },
+                })
+              }
+              /* les en-têtes de la réponse cachée, PLUS le marqueur */
+              const enTete = new Headers(enCache.headers)
+              enTete.set('X-Hors-Ligne', '1')
+              return new Response(enCache.body, {
+                status: enCache.status,
+                statusText: enCache.statusText,
+                headers: enTete,
+              })
+            }
+          )
+        )
+    )
+    return
+  }
 
   /* Navigation : réseau d'abord, coquille en secours */
   if (request.mode === 'navigate') {
@@ -86,11 +125,16 @@ self.addEventListener('fetch', (event) => {
   }
 
   /* Immuables — chunks du build (noms hachés : un nouveau déploiement
-     = nouveaux noms = téléchargement naturel) et coquille pré-cachée.
-     Servis depuis le cache SANS re-téléchargement en arrière-plan :
-     c'est ce qui protège la data des frères. */
+     = nouveaux noms = téléchargement naturel), coquille pré-cachée et
+     moteur de lecture numérisée (worker + alphabets cjk). Servis depuis
+     le cache SANS re-téléchargement en arrière-plan : c'est ce qui
+     protège la data des frères. */
   const estImmutable =
-    url.pathname.startsWith('/_next/static/') || SHELL.includes(url.pathname)
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/pdfjs-cmaps/') ||
+    url.pathname.startsWith('/pdfjs-standard-fonts/') ||
+    url.pathname === '/pdf.worker.min.mjs' ||
+    SHELL.includes(url.pathname)
   if (estImmutable) {
     event.respondWith(
       caches.match(request).then(
@@ -98,6 +142,31 @@ self.addEventListener('fetch', (event) => {
           enCache ??
           fetch(request).then((reponse) => {
             if (reponse.ok) {
+              const copie = reponse.clone()
+              caches
+                .open(VERSION)
+                .then((cache) => cache.put(request, copie))
+                .catch(() => {})
+            }
+            return reponse
+          })
+      )
+    )
+    return
+  }
+
+  /* ─── Les livres numérisés (PDF) : le hors-ligne d'abord ───
+     Un scan ne change jamais. Ouvert une fois en ligne, il reste
+     en mémoire du téléphone pour toujours : les relectures et le
+     hors-ligne ne coûtent PAS UN OCTET de data. Jamais de
+     re-téléchargement en arrière-plan — la sobriété avant tout. */
+  if (url.pathname.endsWith('.pdf')) {
+    event.respondWith(
+      caches.match(request).then(
+        (enCache) =>
+          enCache ??
+          fetch(request).then((reponse) => {
+            if (reponse.ok && reponse.status === 200) {
               const copie = reponse.clone()
               caches
                 .open(VERSION)

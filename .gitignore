@@ -55,3 +55,5 @@ server.log
 
 # Export temporaire de données (avant migration Turso)
 scripts/tmp-export/
+db/*.db
+db/*.db-journal

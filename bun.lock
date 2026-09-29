@@ -83,6 +83,7 @@
         "eslint": "^9",
         "eslint-config-next": "^16.1.1",
         "tailwindcss": "^4",
+        "turso": "^0.6.0",
         "tw-animate-css": "^1.3.5",
         "typescript": "^5",
       },
@@ -732,6 +733,16 @@
     "@tanstack/react-table": ["@tanstack/react-table@8.21.3", "https://registry.npmjs.com/@tanstack/react-table/-/react-table-8.21.3.tgz", { "dependencies": { "@tanstack/table-core": "8.21.3" }, "peerDependencies": { "react": ">=16.8", "react-dom": ">=16.8" } }, "sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww=="],
 
     "@tanstack/table-core": ["@tanstack/table-core@8.21.3", "https://registry.npmjs.com/@tanstack/table-core/-/table-core-8.21.3.tgz", {}, "sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg=="],
+
+    "@tursodatabase/cli-darwin-arm64": ["@tursodatabase/cli-darwin-arm64@0.6.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-NTtoGzyvGyu7yTtKs/RR3L+6+9lF6bRS8ipXRJpGSvnNv4AhARNlCNbuRnAGBx8mps4JeHg8+qJvYk9J641KuA=="],
+
+    "@tursodatabase/cli-darwin-x64": ["@tursodatabase/cli-darwin-x64@0.6.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-ZYinwU5+FJgbJhh/Qhcyjr+3Xm/ix8vG+kfwfKyJzU2JE8Ys45BjmsUv1nYATDU3OWTYzix08B9dG5CMI/IRbA=="],
+
+    "@tursodatabase/cli-linux-arm64-gnu": ["@tursodatabase/cli-linux-arm64-gnu@0.6.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-JbVQLa+oXS4CQxsDO6jFbWaxW3cMGDYhAheLfP/dcy2Gt7wTXyqdw6cEMOt7/ulXB/opHL+ueotl95xQEVxHLg=="],
+
+    "@tursodatabase/cli-linux-x64-gnu": ["@tursodatabase/cli-linux-x64-gnu@0.6.0", "", { "os": "linux", "cpu": "x64" }, "sha512-bhiFKQ7JPtQKW7NQ3uh+yks5JsrngAPJYXxIkUnpkafbp6yRMEbV1UgaAkiZTxfB2MVE2gwj/qpXJ+tONgmZRw=="],
+
+    "@tursodatabase/cli-win32-x64-msvc": ["@tursodatabase/cli-win32-x64-msvc@0.6.0", "", { "os": "win32", "cpu": "x64" }, "sha512-yyy1+lKDu/AIkK2UUgvaGgBwsFhtgc+9MqgRMW20SKVXhPgFnUtPCIDUoFlH1ArCY6UCvLWQKY39LMPxUGuWLQ=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "https://registry.npmjs.com/@tybys/wasm-util/-/wasm-util-0.10.1.tgz", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
@@ -1822,6 +1833,8 @@
     "tsconfig-paths": ["tsconfig-paths@3.15.0", "https://registry.npmjs.com/tsconfig-paths/-/tsconfig-paths-3.15.0.tgz", { "dependencies": { "@types/json5": "^0.0.29", "json5": "^1.0.2", "minimist": "^1.2.6", "strip-bom": "^3.0.0" } }, "sha512-2Ac2RgzDe/cn48GvOe3M+o82pEFewD3UPbyoUHHdKasHwJKjds4fLXWf/Ux5kATBKN20oaFGu+jbElp1pos0mg=="],
 
     "tslib": ["tslib@2.8.1", "https://registry.npmjs.com/tslib/-/tslib-2.8.1.tgz", {}, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
+
+    "turso": ["turso@0.6.0", "", { "optionalDependencies": { "@tursodatabase/cli-darwin-arm64": "0.6.0", "@tursodatabase/cli-darwin-x64": "0.6.0", "@tursodatabase/cli-linux-arm64-gnu": "0.6.0", "@tursodatabase/cli-linux-x64-gnu": "0.6.0", "@tursodatabase/cli-win32-x64-msvc": "0.6.0" }, "bin": { "turso": "src/index.js" } }, "sha512-DHGFc3GL8vsWFj5ka6fkk1cEZQVrGNQWyzjIeXYHrEY2To3493FqLAVI10U4fdA1QvRhQO84KLYpczcy+zhceA=="],
 
     "tw-animate-css": ["tw-animate-css@1.4.0", "https://registry.npmjs.com/tw-animate-css/-/tw-animate-css-1.4.0.tgz", {}, "sha512-7bziOlRqH0hJx80h/3mbicLW7o8qLsH5+RaLR2t+OHM3D0JlWGODQKQ4cxbK7WlvmUxpcj6Kgu6EKqjrGFe3QQ=="],
 

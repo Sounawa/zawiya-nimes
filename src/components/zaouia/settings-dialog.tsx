@@ -615,7 +615,12 @@ export function SettingsDialog({
 
       {/* Confirmation avant de supprimer définitivement un frère */}
       {aSupprimer && (
-        <div className="fixed inset-0 z-[60] grid place-items-center bg-encre/40 p-4 backdrop-blur-sm">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Retirer Sidi ${aSupprimer.name} de la liste`}
+          className="fixed inset-0 z-[60] grid place-items-center bg-encre/40 p-4 backdrop-blur-sm"
+        >
           <div className="w-full max-w-sm rounded-3xl border border-destructive/20 bg-ivoire p-6 shadow-2xl">
             <h3 className="font-display text-xl text-encre">Retirer Sidi {aSupprimer.name} ?</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

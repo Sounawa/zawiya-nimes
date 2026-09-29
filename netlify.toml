@@ -1,0 +1,15 @@
+# ─── Déploiement Netlify — la Zawiya Nîmes ────────────────────────────
+# La compilation a lieu sur les serveurs Netlify (pas en local).
+# build:netlify = prisma generate + next build, SANS la copie standalone
+# propre au serveur de la sandbox.
+
+[build]
+  command = "npm run build:netlify"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Exécution Next.js (SSR + routes API) sur les fonctions Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

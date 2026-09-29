@@ -7,24 +7,23 @@
      LibSQL — le système de fichiers des fonctions serverless étant
      éphémère, la base doit vivre à l'extérieur.
    Le choix est fait à la lecture de l'URL : rien à configurer.
-   NB : imports STATIQUES (pas de require dynamique) — le bundler du
-   runtime Netlify doit trouver les modules au moment de l'empaquetage. */
+   NB : PrismaLibSQL attend la CONFIG { url, authToken } — il crée
+   lui-même le client libsql en interne (ne PAS lui passer un client,
+   il le prendrait pour une config et l'URL deviendrait « undefined »). */
 
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
-import { createClient } from '@libsql/client'
 
 const url = process.env.DATABASE_URL ?? ''
 const estTurso = url.startsWith('libsql://')
 
 function creerClient(): PrismaClient {
   if (estTurso) {
-    const libsql = createClient({
-      url,
-      authToken: process.env.DATABASE_AUTH_TOKEN,
-    })
     return new PrismaClient({
-      adapter: new PrismaLibSQL(libsql),
+      adapter: new PrismaLibSQL({
+        url,
+        authToken: process.env.DATABASE_AUTH_TOKEN,
+      }),
       log: process.env.NODE_ENV === 'production' ? ['error'] : ['query'],
     })
   }

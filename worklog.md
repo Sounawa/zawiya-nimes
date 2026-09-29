@@ -858,3 +858,25 @@ Stage Summary:
 - SW v9 prêt et validé localement : ~10 Ko par ouverture (HTML 8 Ko + API 0,2 Ko) au lieu de ~750 Ko — dépensés UNIQUEMENT si une mise à jour est publiée
 - BLOQUANT DÉPLOIEMENT : nouveau token GitHub PAT nécessaire (classic, scope repo) pour pousser 6fde5ae et déclencher le build Netlify
 - Turso : token .env.turso présent (validité non re-testée ce round)
+
+---
+Task ID: round-29-qaṣidas-telephone-et-hud-netlify
+Agent: Z.ai Code (session principale)
+Task: Fix rapport utilisateur — Du'â Nassiri/Munfarija en arabe : chaque vers s'affichait sur 2 lignes en portrait ; en paysage la barre du lecteur + le badge Netlify coupaient la vue
+
+Work Log:
+- PROBLÈME 1 reproduit et quantifié (agent-browser 390×844, doc nasiri عربي) : 119 vers, chaque hémistiche wrappait sur 2 lignes (95px de haut à 25px), colonnes de 139px pour un vers médian de 452px et un max de 585px
+- FIX PORTRAIT : @media (max-width: 639px) .poesie-vers passe en flex nowrap (شطر ۞ شطر sur UNE ligne) ; le composant VersDeuxShatr (extrait de VersPoeme pour respecter les hooks) mesure la largeur naturelle du vers (rects des 3 enfants + gaps) et resserre la font-size au pixel (plancher 11px, 2px de grâce pour les arrondis sous-pixel) — re-mesure via ResizeObserver (rotation/resize) et deps [shatrs, taille, police] (réglages lecteur)
+- FIX PAYSAGE (max-height 540px + orientation landscape, variant Tailwind arbitraire [@media(orientation:landscape)_and_(max-height:540px)] avec ! en SUFFIXE v4) : barre du lecteur pt/pb compactés, bascule Texte/Numérisé py-0.5, padding bas du corps 24px, en-têtes de chapitre (mb-2, titre 19px), gap-2 ; bandeau ijtimâ' masqué sur l'accueil
+- FIX BADGE NETLIFY : analysé le script /.netlify/scripts/hud (34 Ko) — il s'abstient de s'afficher si #nl-hud-frame ou #nl-badge-frame existe déjà → piège <div id="nl-hud-frame" hidden/> posé dans layout.tsx ; SW v10 bloque aussi /.netlify/scripts/hud
+- DÉCOUVERTE EMPIRIQUE : Chromium ne déclenche PAS le fetch handler du SW pour /.netlify/* (chemin réservé) — testé offline : logo/manifest servis du cache ✓ mais HUD non intercepté ; le piège DOM reste LA protection (garantie par le code officiel du HUD)
+- ERREURS RENCONTRÉES : ① variant arbitraire Tailwind exige des UNDERSCORES pour les espaces ([@media..._and_...]) ② le ! important v4 se met en SUFFIXE (pt-[3px]!) ③ cache Turbopack périmé après corrections → redémarrage du dev server nécessaire
+- QA VALIDÉE (agent-browser) : PORTRAIT 390×844 → 119/119 vers sur UNE ligne, 0 débordement, fs 13–23px ; +5 clics taille (30px) → re-mesure, toujours 119/119 une ligne ; PAYSAGE 844×390 → 119 vers en 2 colonnes (taille 25px restaurée), header lecteur 84px, zone texte 306px (79% de l'écran), bandeau masqué ; VLM confirme les deux rendus (pas de coupure, centré, propre) ; SW v10 enregistré (cache zawiya-v10, shell servi offline) ; piège #nl-hud-frame présent dans le DOM
+- Captures : download/qa-nassiri-portrait-*.png, qa-nassiri-paysage.png
+- Commit 3a6efc2 (local uniquement — tokens GitHub/Netlify toujours révoqués)
+
+Stage Summary:
+- PORTRAIT : une ligne par vers ✓ (la demande exacte de l'utilisateur), taille ajustée par vers pour rester lisible
+- PAYSAGE : disposition 2 colonnes conservée (rien à redire), chrome compacté, zone de texte maximisée
+- BADGE NETLIFY : ne s'affichera plus pour personne, dès le premier chargement (piège DOM) — à valider en production dès le déploiement
+- DÉPLOIEMENT TOUJOURS EN ATTENTE : un token GitHub PAT (scope repo) est nécessaire pour pousser 6fde5ae (SW v9 économie data) + 3a6efc2 (ce round) et déclencher le build Netlify

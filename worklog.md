@@ -923,3 +923,28 @@ Stage Summary:
 - PIPELINE 100 % AUTOMATISÉ : git push → webhook GitHub → build hook Netlify → build → deploy (validé en conditions réelles)
 - Clés actives sur le repo GitHub : 2 deploy keys Netlify (restaurée 164821577 + v2 164822733) — NE PAS SUPPRIMER
 - Cron 423828 actif avec règles de sécurité à jour
+
+---
+Task ID: round-31-favicon-logo-tariqa
+Agent: Z.ai Code (session principale)
+Task: Remplacer l'icône IA de l'onglet par le logo tariqa du site + rappel consommation data minimale
+
+Work Log:
+- PROBLÈME : le favicon (onglet navigateur) était /logo.png = copie de l'icône générée par IA (147 Ko) ; l'utilisateur veut le logo du site (tariqa.png, la calligraphie affichée sur l'accueil et l'en-tête)
+- ANALYSE : tariqa.png = 520×413 RGBA fond transparent (87 %), calligraphie vert foncé (luminance ~52/255) → invisible en onglet sombre sans fond
+- GÉNÉRATION (PIL) : badge carré arrondi parchemin #fbf9f4 + calligraphie centrée à 86 % (ratio choisi après comparaison VLM 74 % vs 86 % — le 86 % est plus reconnaissable) :
+  * favicon-96.png 96×96 (2 Ko) — onglet
+  * apple-touch-icon.png 180×180 plein (5 Ko) — iOS
+  * icone-192.png (6 Ko), icone-512.png (24 Ko) — manifest PWA, MÊMES chemins → manifest inchangé
+  * icone-masque-512.png plein, logo 68 % zone sûre (16 Ko)
+- OPTIMISATION DATA (primordial selon l'utilisateur) : quantization 192 couleurs + optimize → coquille SW passe de 273 Ko (logo IA 147 + icônes 126) à 48 Ko (favicon 2 + apple 5 + icônes 46) ; le favicon lui-même : 147 Ko → 2 Ko
+- RÉFÉRENCES MIS À JOUR : layout.tsx (icons → favicon-96 + apple-touch-icon), notifications.ts (icon → icone-192, badge → favicon-96), sw.js VERSION → zawiya-v11 + SHELL (favicon-96, apple-touch-icon, icônes, tariqa, manifest — logo.png retiré), public/logo.png SUPPRIMÉ (147 Ko d'IA définitivement partis)
+- QA LOCALE : favicon-96 200 (2,9 Ko), apple-touch 200, icone-192 200, SW v11 actif, caches = ['zawiya-v11'] uniquement (v10 purgée), <link rel=icon> → /favicon-96.png, dev.log propre, lint propre
+- QA PROD (deploy 6abbc180 ready, commit 0947c43, déclenché automatiquement par le webhook) : favicon-96.png 200 (2 905 o), sw.js = zawiya-v11, HTML référence favicon-96 ×2 et AUCUN logo.png, navigateur confirme faviconOnglet=/favicon-96.png + SW actif
+- Vérifications visuelles VLM : calligraphie visible/centrée/pas de clipping ✓ ; à 32 px l'emblème se lit comme sceau vert sur parchemin (limite inhérente à une calligraphie détaillée en 16-32 px — silhouette + couleur identifiables, même aspect que le logo 85×74 de l'en-tête d'origine)
+
+Stage Summary:
+- L'ONGLET AFFICHE MAINTENANT LE LOGO TARIQA DU SITE (badge parchemin, calligraphie verte) — plus aucune trace de l'icône IA nulle part (favicon, PWA, écran d'accueil iOS/Android, notifications)
+- DATA : coquille SW réduite de 225 Ko (−83 %) ; une ouverture continue de coûter ~10 Ko (HTML + petites API) ; les nouveaux fichiers ne sont téléchargés qu'UNE fois puis servis du cache v11
+- PWA installée sur les téléphones : l'icône d'accueil devient le logo tariqa dès la prochaine ouverture (SW v11 remplace la coquille)
+- Pipeline auto-déploy confirmé encore une fois : push 0947c43 → deploy ready sans intervention

@@ -835,3 +835,26 @@ Stage Summary:
 - Le cahier de wadhifa (onglet 1) et les pratiques gardent le texte imprimé COMPLET — rien n'est perdu pour la wadhifa quotidienne.
 - Fichiers touchés : src/data/adhkar-docs.ts uniquement (helper epures + réordonnancement + entrées épurées).
 - Risque résiduel faible : si la zawiya veut conserver le sceau ﴿سُبْحَانَ رَبِّك﴾ après les sourates des onglets à part, c'est un marqueur à retirer d'epures() ; non demandé à ce jour (« rien d'autres »).
+
+---
+Task ID: 7
+Agent: main (Z.ai Code)
+Task: Onglets hors kitāb al-adhkār : LE DOCUMENT SEUL, rien d'autre (waqi'a 3, nasiri 4) — finalisation
+
+Work Log:
+- Push du commit 1fe19b3 (réordonnancement waqi'a=3 / nasiri=4 + épuration des séquences de wadhifa) avec le token GitHub fourni (credential-helper jetable)
+- Déploiement Netlify automatique vérifié : building → ready en ~30 s, prod 200
+- QA agent-browser sur prod : ordre confirmé (1 cahier, 2 Yā-Sīn, 3 Waqi'a, 4 Nasiri-Munfarija, 5-8 pièces, 9 Fath, 10 Mulk, 11 Taha)
+- DÉCOUVERTE en QA : le lecteur affichait encore DEUX titres — le h2 « Surat al-Waqi'a » dans la barre du lecteur ET le h3 « Sûrat al-Wâqi‘a » (en-tête mihrab) au-dessus du texte + badge de page + marqueur « fin du document »
+- CORRECTION (adhkar-section.tsx) : nouveau drapeau documentSeul = doc.id !== 'kitab' && doc.id !== 'sama' — pour tous les onglets hors kitāb : barre du lecteur sans titre (espace respire entre commandes, dialogue garde aria-label), article sans en-tête mihrab (pas de h3, pas de sous-titre, pas de badge de page imprimée), pas de marqueur « · fin du document · » — la pièce commence au ta'awwudh et finit au dernier verset
+- Le cahier de wadhifa (kitāb) garde SA mise en page imprimée intégrale (35 titres h3 + barre titre + badges pages) — vérifié 1 h2 / 35 h3
+- Le diwân de samâ' garde le nom de ses 398 chants (navigation nécessaire)
+- La notice « repli » (pièce absente dans la langue demandée) reste en secours fonctionnel
+- Vérifié agent-browser local : waqi'a phonétique 0 h2/0 h3/1 article (débute « A'ûdhu billâhi… », finit « Fasabbiḥ bismi rabbikal 'adhîm », aucun marqueur) ; nasiri 0/0/2 articles (les deux poèmes Yâ man… + Ichtaddi…) ; waqi'a arabe 0/0/1 (Warsh : أَعُوذُ بِاللهِ مِنَ اَ۬لشَّيْطَٰنِ) ; kitab 1/35 inchangé
+- VLM sur capture : « aucun titre visible, le document commence directement par le texte coranique, pas de problème de mise en page »
+- lint 0 erreur ; l'erreur « useRef is not defined » vue dans dev.log était un artefact HMR transitoire (import correct en place, reload propre ensuite, toutes API 200)
+
+Stage Summary:
+- GitHub = local (push 1fe19b3 + ce round en cours de commit) ; Netlify redéploie automatiquement
+- Les onglets 2-11 montrent désormais LE DOCUMENT ET RIEN D'AUTRE — ni titre, ni en-tête ornement, ni badge de page, ni marqueur de fin ; le cahier (1) et le diwân de samâ' conservent leur structure imprimée
+- Prochaine étape : commit + push + vérification prod Netlify

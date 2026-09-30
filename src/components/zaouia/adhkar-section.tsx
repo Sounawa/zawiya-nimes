@@ -455,6 +455,15 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
   /* Le diwân de samâ‘ (398 chants) n'entre pas dans le fil principal :
      il se charge paresseusement à l'ouverture du document. */
   const estSama = doc.id === 'sama' && langue === 'ph'
+  /* ─── Les onglets hors kitāb al-adhkār : LE DOCUMENT SEUL ───
+     Le cahier de wadhifa garde sa mise en page imprimée (titres de
+     pièces, repères de pages du livre) ; le diwân de samâ‘ garde le
+     nom de ses 398 chants. Tous les autres onglets — sourates,
+     du‘â’, qaṣîda — montrent la pièce et RIEN d'autre : pas de titre,
+     pas d'en-tête ornement, pas de badge de page, pas de marque de
+     fin. Le nom est déjà sur l'onglet qu'on a ouvert ; le dialogue
+     du lecteur porte le sien en aria-label. */
+  const documentSeul = doc.id !== 'kitab' && doc.id !== 'sama'
   const [samaTexte, setSamaTexte] = useState<ChapitreLecture[] | null>(null)
   useEffect(() => {
     if (doc.id !== 'sama' || langue !== 'ph') return
@@ -782,17 +791,24 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
             </button>
           )}
 
-          {/* Le titre, centré — le nom de la pièce */}
-          <h2
-            className={cn(
-              'min-w-0 flex-1 truncate text-center text-[16px] font-medium text-encre',
-              arabe && 'font-arabic text-[19px]'
-            )}
-            dir={arabe ? 'rtl' : undefined}
-            title={titre}
-          >
-            {titre}
-          </h2>
+          {/* Le titre, centré — le nom de la pièce. Les onglets
+              « document seul » ne le montrent pas : le nom vit déjà
+              sur l'onglet ouvert ; ici, un espace respire simplement
+              entre les commandes et la fermeture. */}
+          {documentSeul ? (
+            <span className="min-w-0 flex-1" aria-hidden />
+          ) : (
+            <h2
+              className={cn(
+                'min-w-0 flex-1 truncate text-center text-[16px] font-medium text-encre',
+                arabe && 'font-arabic text-[19px]'
+              )}
+              dir={arabe ? 'rtl' : undefined}
+              title={titre}
+            >
+              {titre}
+            </h2>
+          )}
 
           {/* Fermeture */}
           <button
@@ -1295,7 +1311,10 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                   theme.cadre
                 )}
               >
-                {/* En-tête du chapitre — un souffle de mihrab */}
+                {/* En-tête du chapitre — un souffle de mihrab.
+                    Les onglets « document seul » n'en veulent pas :
+                    la pièce commence à sa première ligne, rien avant. */}
+                {!documentSeul && (
                 <header className="mb-5 text-center [@media(orientation:landscape)_and_(max-height:540px)]:mb-2!">
                   <span
                     aria-hidden
@@ -1361,6 +1380,16 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                     aria-hidden
                   />
                 </header>
+                )}
+                {/* La pratique n'existe pas dans la langue demandée —
+                    mention toute seule pour un document seul */}
+                {documentSeul && c.repli && (
+                  <p className="mb-3 text-[10px] italic opacity-55">
+                    {arabeC
+                      ? 'texte arabe du kitāb — pas de transcription dans le cahier'
+                      : 'transcription du cahier — pas de version arabe dans le kitāb'}
+                  </p>
+                )}
 
                 {/* Le texte sacré — phonétique rejointe en paragraphes
                     coulant sur toute la largeur ; arabe verset à verset ;
@@ -1397,8 +1426,10 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
               )
             })}
 
-            {/* La fin du document — pas pendant l'ouverture du diwân */}
-            {!(estSama && !samaTexte) && (
+            {/* La fin du document — pas pendant l'ouverture du diwân,
+                et jamais pour les onglets « document seul » : la pièce
+                finit sur son dernier mot. */}
+            {!documentSeul && !(estSama && !samaTexte) && (
               <p className="py-2 text-center text-[10px] font-medium uppercase tracking-[0.25em] text-brouillard">
                 · fin du document ·
               </p>

@@ -1,7 +1,8 @@
 # Déploiement — Zawiya Nîmes
 
-> **État actuel (round 10)** : le site est EN LIGNE sur **Vercel** (plan
-> Hobby gratuit) après le blocage Netlify (crédits de build épuisés).
+> **État actuel (round 11)** : le site est EN LIGNE sur **Vercel** (plan
+> Hobby gratuit) à l'adresse officielle **https://zawiya-nimes.vercel.app**
+> (le blocage Netlify — crédits de build épuisés — a forcé la migration).
 
 ---
 
@@ -10,13 +11,39 @@
 | Brique | Où | Détail |
 |---|---|---|
 | **Code source** | GitHub `Sounawa/zawiya-nimes` (privé) | La source de vérité — tout est poussé à chaque round |
-| **Site en ligne** | https://zawiya-nimes-zawiya2.vercel.app | Vercel, équipe « Zawiya » (`zawiya2`), projet `zawiya-nimes` |
+| **Adresse officielle** | **https://zawiya-nimes.vercel.app** | Domaine de production Vercel, vérifié — LA seule adresse à partager |
+| **Alias technique** | https://zawiya-nimes-zawiya2.vercel.app | Alias automatique Vercel (`projet-équipe`) — même site, même déploiement, non supprimable, à ne pas partager |
 | **Base de données** | Turso `libsql://zawiya-sounawa.aws-eu-west-1.turso.io` | SQLite hébergée gratuite — membres, réunions, annonces |
-| **Ancien site** | https://zawiya-nimes.netlify.app | TOUJOURS EN LIGNE mais figé au round 7 (Netlify bloqué : « Account credit usage exceeded ») |
+| **Ancien site** | https://zawiya-nimes.netlify.app | ENCORE EN LIGNE mais figé au round 7 (Netlify bloqué : « Account credit usage exceeded ») — À FERMER pour n'avoir qu'une seule adresse |
 
-Les frères doivent désormais utiliser l'adresse **Vercel** — l'ancienne
-adresse Netlify ne recevra plus les mises à jour tant que le compte est
-bloqué.
+### L'histoire des adresses (pour éviter toute confusion)
+
+1. **Netlify a bloqué le compte** (crédits de build gratuits épuisés le
+   29-30 sept.) → l'ancienne adresse ne pouvait plus recevoir de mises à
+   jour : elle est restée figée au round 7 (SW v14), sans le bandeau
+   ijtimâ', ni le message d'annonce facultatif, ni l'installation PWA.
+2. **Migration vers Vercel** (round 10, avec le token fourni par le
+   frère) → le site est déployé avec la dernière version (SW v16).
+3. Vercel attache automatiquement **deux** adresses à chaque projet :
+   - **zawiya-nimes.vercel.app** — le domaine officiel (vérifié,
+     enregistré sur le projet) ;
+   - **zawiya-nimes-zawiya2.vercel.app** — l'alias technique
+     `nom-du-projet-nom-de-l'équipe` que Vercel génère toujours et
+     qu'on ne peut pas supprimer. Ce n'est **pas un deuxième site** :
+     c'est exactement le même, comme un numéro de porte et un code
+     postal pour la même maison.
+4. **L'adresse à garder et à partager : zawiya-nimes.vercel.app** ✅
+5. **L'ancienne adresse Netlify doit être fermée** pour qu'il n'existe
+   qu'une seule adresse. Deux moyens :
+   - depuis le dashboard Netlify : `app.netlify.com` → site `zawiya-nimes`
+     → **Site settings** → tout en bas → **Delete site** (30 secondes) ;
+   - ou redonner le token Netlify (`nfp_…`) à l'agent, qui la fermera
+     par API (`DELETE /api/v1/sites/f4dee7b5-a55f-4223-acd6-cfca4894c846`).
+
+> ⚠️ Avant de fermer Netlify : les frères qui ont installé la PWA depuis
+> l'ancienne adresse devront la réinstaller depuis
+> **zawiya-nimes.vercel.app** (l'app installée pointe sur l'ancienne
+> origine).
 
 ## 2. Comment fonctionne un déploiement Vercel
 

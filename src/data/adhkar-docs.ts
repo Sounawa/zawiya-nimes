@@ -136,6 +136,21 @@ function depuisKitab(ids: string[]): ChapitreLecture[] {
     }))
 }
 
+/* ─── Les onglets à part : LE DOCUMENT, RIEN D'AUTRE ───
+   Le cahier et le kitāb impriment après chaque pièce la séquence de
+   la wadhifa quotidienne : khatm « Ṣadaqa llâh… », du'â', renvois
+   vers les pièces suivantes, « fa-inna ma'a al-'usri yusrân » ×100,
+   Ṣalât al-Jamâliyya, sceau ﴿ Subḥâna rabbika… ﴾. Cette séquence
+   appartient à la wadhifa — pas à la pièce. L'onglet d'une sourate
+   ou d'un poème ne montre QUE la pièce : du ta'awwudh au dernier
+   verset. Le cahier de wadhifa, lui, garde le texte imprimé entier. */
+function epures(chapitres: ChapitreLecture[], borne: string): ChapitreLecture[] {
+  return chapitres.map((c) => {
+    const i = c.texte.indexOf(borne)
+    return { ...c, texte: (i > 0 ? c.texte.slice(0, i) : c.texte).trimEnd() }
+  })
+}
+
 /* ─── Le Jazr — pièce d'une page, texte réel extrait du document original ─── */
 const JAZR_PHONETIQUE: ChapitreLecture[] = [
   {
@@ -295,11 +310,16 @@ function kitab(id: string): ChapitreLecture | undefined {
 }
 
 /* ═══ Les documents de la zawiya ════════════════════════════════════
-   Les neuf pièces du site original (cahier de wadhifa, Yā-Sīn, Nasirî,
-   Wāqi‘a, Laṭîf, Zajr, samâ‘, Mashîshiyya, Dalâ’il) puis, en sections
-   à part demandées par la zawiya : Surat al-Fatḥ en 9ᵉ position et
-   Surat al-Mulk en 10ᵉ — le cahier de samâ‘ a sa propre section en bas
-   de page, il est filtré de la liste numérotée. */
+   Les pièces du site original — le cahier de wadhifa d'abord (1),
+   puis les sourates et poèmes à part, CHACUN DANS SON ONGLET : la
+   pièce et rien d'autre (les séquences de la wadhifa qui suivent
+   l'imprimé — khatm, du'â', renvois, ×100, Ṣalât al-Jamâliyya —
+   restent dans le cahier de wadhifa). Ordre demandé par la zawiya :
+   Yâ-Sîn (2), la Wāqi'a (3), le Nasirî et la Munfarija (4), le
+   Laṭîf (5), le Zajr (6), la Mashîshiyya (7), les Dalâ'il (8), puis
+   Al-Fatḥ en 9ᵉ position et Al-Mulk en 10ᵉ, Ṭā-Hā en 11ᵉ — le cahier
+   de samâ‘ a sa propre section en bas de page, il est filtré de la
+   liste numérotée. */
 export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
   {
     id: 'kitab',
@@ -376,8 +396,19 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     detailAr: 'قلب القرآن',
     pdfPh: '/adhkar/yasin-ph.pdf',
     pdfAr: '/adhkar/yasin-ar.pdf',
-    ph: depuisCahier(['ch02-sratysn']),
-    ar: depuisKitab(['k01']),
+    ph: epures(depuisCahier(['ch02-sratysn']), '﴿Subḥâna rabbika'),
+    ar: epures(depuisKitab(['k01']), '﴿ سُبْحَانَ رَبِّك'),
+  },
+  {
+    id: 'waqia',
+    titreFr: "Surat al-Waqi'a",
+    titreAr: 'سورة الواقعة',
+    detailFr: "l'inéluctable",
+    detailAr: 'الواقعة الكبرى',
+    pdfPh: '/adhkar/waqia-ph.pdf',
+    pdfAr: '/adhkar/waqia-ar.pdf',
+    ph: epures(depuisCahier(['ch04-sratalwqia']), 'Ṣadaqa llâhul'),
+    ar: epures(depuisKitab(['k03']), 'صَدَقَ اللهُ'),
   },
   {
     id: 'nasiri',
@@ -388,18 +419,10 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     pdfPh: '/adhkar/nasiri-ph.pdf',
     pdfAr: '/adhkar/nasiri-ar.pdf',
     ph: depuisCahier(['ch05-adduannir', 'ch06-qadatalmunfarija']),
-    ar: depuisKitab(['k17', 'k18']),
-  },
-  {
-    id: 'waqia',
-    titreFr: "Surat al-Waqi'a",
-    titreAr: 'سورة الواقعة',
-    detailFr: "l'inéluctable",
-    detailAr: 'الواقعة الكبرى',
-    pdfPh: '/adhkar/waqia-ph.pdf',
-    pdfAr: '/adhkar/waqia-ar.pdf',
-    ph: depuisCahier(['ch04-sratalwqia']),
-    ar: depuisKitab(['k03']),
+    ar: [
+      ...depuisKitab(['k17']),
+      ...epures(depuisKitab(['k18']), '﴿ فَإِنَّ مَعَ الْعُسْرِ'),
+    ],
   },
   {
     id: 'latif',
@@ -451,8 +474,11 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     detailAr: 'الافتتاح والختم',
     pdfPh: '/adhkar/dalail.pdf',
     pdfAr: '/adhkar/dalail.pdf',
-    ph: depuisCahier(['ch17-iftitassilkaiftitd', 'ch19-khatmdalilalkhayrt']),
-    ar: depuisKitab(['k16']),
+    ph: [
+      ...depuisCahier(['ch17-iftitassilkaiftitd']),
+      ...epures(depuisCahier(['ch19-khatmdalilalkhayrt']), 'Du‘â- an Nâṣiriy'),
+    ],
+    ar: epures(depuisKitab(['k16']), 'الدُّعَاءُ النَّاصِرِيُّ ←'),
   },
   /* ── Les deux sections à part, demandées par la zawiya —
      onglets 9 et 10, après les pièces du site original ── */
@@ -462,8 +488,8 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     titreAr: 'سُورَةُ الفَتْح',
     detailFr: "l'ouverture de la victoire — riwāyat Warsh",
     detailAr: 'سورة الفتح',
-    ph: depuisCahier(['ch12-sratalfat']),
-    ar: depuisKitab(['k02']),
+    ph: epures(depuisCahier(['ch12-sratalfat']), '﴿Subḥâna rabbika'),
+    ar: epures(depuisKitab(['k02']), '﴿ سُبْحَانَ رَبِّك'),
   },
   {
     id: 'mulk',
@@ -471,7 +497,7 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     titreAr: 'سُورَةُ المُلْك',
     detailFr: 'la royauté — riwāyat Warsh',
     detailAr: 'سورة الملك',
-    ar: depuisKitab(['k04']),
+    ar: epures(depuisKitab(['k04']), '﴿ سُبْحَانَ رَبِّك'),
   },
   /* Onglet 11 — Taha, texte Warsh du cahier d'ijtimā' (sans équivalent
      phonétique : le lecteur s'ouvre directement en arabe, comme Mulk) */
@@ -481,7 +507,7 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     titreAr: 'سُورَةُ طٰهٰ',
     detailFr: "l'épître de la guidée — riwāyat Warsh",
     detailAr: 'سورة طه',
-    ar: TAHA_ARABE,
+    ar: epures(TAHA_ARABE, '﴿ سُبْحَانَ رَبِّك'),
   },
 ]
 

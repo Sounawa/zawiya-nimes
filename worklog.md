@@ -813,3 +813,25 @@ Stage Summary:
 - Mode sombre : opérationnel et validé visuellement (palette nuit encre verte).
 - Notifications : uniquement annonces et sondages (prévenir d'un ijtima') — testées en conditions réelles avec détection à distance.
 - Restes connus : la numérotation des versets de Taha suit le docx (134) ; les ṣila marks ont été ajoutées sur les versets vérifiés mais pas systématiquement sur tous les pronominaux du kitāb (les litanies non coraniques ne sont pas concernées) ; 8:30/17:81/28:85/30:47/5:67 n'ont pas été revérifiés visuellement (aucune variante connue, texte déjà conforme).
+
+---
+Task ID: 8
+Agent: main (Z.ai Code)
+Task: « Dans les onglets hors kitab al-adhkar il ne doit avoir que le document et rien d'autres (ex. section 4 Wâqi'a = uniquement la waqi'a ; section 3 Nasiri = uniquement les deux poèmes) + inverser les numéros : waqi'a = 3, nasiri/munfarija = 4 »
+
+Work Log:
+- DIAGNOSTIC : les onglets à part réutilisaient les chapitres complets du kitāb/cahier, qui impriment après chaque pièce la séquence de la wadhifa — après la Wāqi'a (k03/ch04) : khatm صَدَقَ اللهُ + long du'â' + sceau + renvois « Nasirî ← ص ٥٥ / Munfarija ← ص ٥٩ » + ﴿فَإِنَّ مَعَ الْعُسْرِ يُسْرًا﴾ ×100 + Ṣalât al-Jamâliyya + sceau ; après la Munfarija (k18) : ×100 + Jamaliyya ; dalail (k16/ch19) : renvois + titre Jamaliyya.
+- PRINCIPE IMPLÉMENTÉ (src/data/adhkar-docs.ts) : nouveau helper epures(chapitres, borne) qui coupe le texte au marqueur exact de la séquence wadhifa (chaque borne vérifiée présente 1 seule fois, coup pile après le dernier verset) ; les onglets à part reçoivent la PIÈCE SEULE (ta'awwudh + basmala + sourate/poème), le cahier de wadhifa garde le texte imprimé entier.
+- MARQUEURS : waqia ar 'صَدَقَ اللهُ' / ph 'Ṣadaqa llâhul' ; k18 '﴿ فَإِنَّ مَعَ الْعُسْرِ' ; k01/k02/k04/TAHA '﴿ سُبْحَانَ رَبِّك' ; ch02/ch12 '﴿Subḥâna rabbika' ; k16 'الدُّعَاءُ النَّاصِرِيُّ ←' ; ch19 'Du'â- an Nâṣiriy'.
+- ONGLETS ÉPURÉS : yasin (2), waqia (3), nasiri (4 — k17 intact, k18 coupé après le vers-boucle اِشْتَدِّي أَزْمَةُ تَنْفَرِجِ, ph déjà propre), dalail (khatm fini à يَا رَبَّ الْعَالَمِينَ, renvois retirés), fath (9), mulk (10), taha (11 — khatm ﴿سُبْحَانَ رَبِّك﴾ retiré). Latif/Jazr/Mashishiyya/Samâ' inchangés (leur structure imprimée EST le document).
+- INVERSION DES NUMÉROS : DOCUMENTS_ADHKAR réordonné — la Wāqi'a passe en 3ᵉ position, le Nasirî + Munfarija en 4ᵉ (1 cahier, 2 Yâ-Sîn, 3 Wāqi'a, 4 Nasirî, 5 Laṭîf, 6 Zajr, 7 Mashîshiyya, 8 Dalâ'il, 9 Fath, 10 Mulk, 11 Taha) ; commentaire d'en-tête du fichier actualisé.
+- Vérification script bun : ordre ✓, fins de texte épurées ✓ (waqia ar finit فَسَبِّحْ بِاسْمِ رَبِّكَ الْعَظِيمِ ﴾ ; k18 finit اِشْتَدِّي أَزْمَةُ تَنْفَرِجِ), wadhifa INTACTE (k03 du cahier garde khatm + Jamaliyya + ×100) ✓.
+- QA AGENT-BROWSER (Mehdi) : pastilles vérifiées par DOM — «3 — Surat al-Waqi'a», «4 — Dua Nasiri-Al Munfarijah» ✓ ; lecteur Waqi'a arabe : aKhatm=false, aJamaliyya=false, aRenvoiNasiri=false, aSabhana=false, fin = فَسَبِّحْ بِاسْمِ رَبِّكَ الْعَظِيمِ ﴾ ✓ ; lecteur Nasiri arabe : 2 articles (Nasirî + Munfarija), aX100=false, aJamaliyya=false ✓ ; lecteur cahier de wadhifa : pratique Wāqi'a AVEC khatm + Jamaliyya + sceau ✓ ; waqi'a phonétique : fin Fasabbiḥ bismi rabbikal 'adhîm, aucune trace Ṣadaqa/Jamâliyya/renvois ✓ ; 0 erreur console/page, lint 0 erreur ; VLM sur capture : « texte RTL correct, mise en page propre, aucun défaut ».
+- Cron webDevReview 15 min recréé (id 426349, Europe/Paris — les 4 anciens étaient « Disabled due to exec limits exceeded »).
+
+Stage Summary:
+- Chaque onglet hors kitab al-adhkar ne montre plus QUE son document — la Wāqi'a du ta'awwudh au dernier verset ﴾, le Nasirî et la Munfarija les deux poèmes seuls (plus de ﴿فَإِنَّ مَعَ الْعُسْرِ يُسْرًا﴾ ×100 ni Ṣalât al-Jamâliyya), Yâ-Sîn/Fath/Mulk/Taha sans khatm ni sceau, Dalâ'il sans renvois.
+- Numérotation inversée : Wāqi'a = onglet 3, Nasirî-Munfarija = onglet 4 (vérifié au rendu).
+- Le cahier de wadhifa (onglet 1) et les pratiques gardent le texte imprimé COMPLET — rien n'est perdu pour la wadhifa quotidienne.
+- Fichiers touchés : src/data/adhkar-docs.ts uniquement (helper epures + réordonnancement + entrées épurées).
+- Risque résiduel faible : si la zawiya veut conserver le sceau ﴿سُبْحَانَ رَبِّك﴾ après les sourates des onglets à part, c'est un marqueur à retirer d'epures() ; non demandé à ce jour (« rien d'autres »).

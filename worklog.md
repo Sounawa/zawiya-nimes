@@ -998,3 +998,24 @@ Stage Summary:
 - L'alias -zawiya2 est automatique chez Vercel (nom-projet + nom-équipe) : pas un 2e site, non supprimable, à ignorer
 - RESTE À FAIRE POUR N'AVOIR QU'UNE ADRESSE : fermer le site Netlify (figé au round 7) — soit par le frère dans le dashboard Netlify (Site settings → Delete site), soit par l'agent si le frère redonne le token Netlify ; penser à faire réinstaller la PWA aux frères qui l'avaient installée depuis l'ancienne adresse
 - Docs DEPLOIEMENT.md mises à jour en local (commit GitHub en attente de token : ghp_…) ; aucun changement de code nécessaire
+
+---
+Task ID: 14
+Agent: main (Z.ai Code)
+Task: Round 12 — Fermeture de l'ancien site Netlify avec le token fourni (une seule adresse : zawiya-nimes.vercel.app)
+
+Work Log:
+- Le frère a fourni le token Netlify complet (nfp_1RKk…) dans le chat
+- Vérification du token : GET /api/v1/sites → un seul site « zawiya-nimes » (f4dee7b5-a55f-4223-acd6-cfca4894c846), https://zawiya-nimes.netlify.app
+- Backup final des variables d'env Netlify avant suppression : DATABASE_URL (libsql Turso) et DATABASE_AUTH_TOKEN (jeton Turso) — déjà copiées sur Vercel au round 10 et vérifiées en prod, rien à récupérer
+- SUPPRESSION : DELETE /api/v1/sites/f4dee7b5-a55f-4223-acd6-cfca4894c846 → HTTP 204 ✓
+- Vérifications post-suppression : liste des sites = [] (compte Netlify vide) ; https://zawiya-nimes.netlify.app → HTTP 404 (immédiat et après 5 s) ✓
+- Contrôle de l'adresse officielle après la fermeture : https://zawiya-nimes.vercel.app → HTTP 200, SW v16 (dernière version) ; /api/settings répond (base Turso OK : ijtima_days mardi 17:45) ✓
+- DEPLOIEMENT.md mis à jour : ancien site marqué FERMÉ, section « L'histoire des adresses » point 5 devenu ✅ FAIT, avertissement PWA à réinstaller conservé
+- Commit + push GitHub (c04e88e → nouveau commit docs)
+
+Stage Summary:
+- ÉTAT FINAL DES ADRESSES : une seule — https://zawiya-nimes.vercel.app (l'alias technique -zawiya2 sert le même site, non supprimable, à ignorer) ; Netlify = compte vide, ancienne adresse en 404
+- Les données (membres, réunions, annonces, réglages) vivent sur Turso et n'ont JAMAIS été sur Netlify → rien n'a été perdu
+- À rappeler aux frères : ceux qui avaient installé la PWA depuis l'ancienne adresse doivent la réinstaller depuis zawiya-nimes.vercel.app
+- Le token Netlify peut être révoqué maintenant (il ne sert plus à rien) : dashboard Netlify → User settings → Applications → Personal access tokens

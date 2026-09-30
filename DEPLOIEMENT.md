@@ -14,7 +14,7 @@
 | **Adresse officielle** | **https://zawiya-nimes.vercel.app** | Domaine de production Vercel, vérifié — LA seule adresse à partager |
 | **Alias technique** | https://zawiya-nimes-zawiya2.vercel.app | Alias automatique Vercel (`projet-équipe`) — même site, même déploiement, non supprimable, à ne pas partager |
 | **Base de données** | Turso `libsql://zawiya-sounawa.aws-eu-west-1.turso.io` | SQLite hébergée gratuite — membres, réunions, annonces |
-| **Ancien site** | https://zawiya-nimes.netlify.app | ENCORE EN LIGNE mais figé au round 7 (Netlify bloqué : « Account credit usage exceeded ») — À FERMER pour n'avoir qu'une seule adresse |
+| **Ancien site** | ~~https://zawiya-nimes.netlify.app~~ | **FERMÉ le 1er oct. 2026** (HTTP 404) — supprimé du compte Netlify pour ne garder qu'une seule adresse ; les données vivaient sur Turso, rien n'a été perdu |
 
 ### L'histoire des adresses (pour éviter toute confusion)
 
@@ -33,17 +33,15 @@
      c'est exactement le même, comme un numéro de porte et un code
      postal pour la même maison.
 4. **L'adresse à garder et à partager : zawiya-nimes.vercel.app** ✅
-5. **L'ancienne adresse Netlify doit être fermée** pour qu'il n'existe
-   qu'une seule adresse. Deux moyens :
-   - depuis le dashboard Netlify : `app.netlify.com` → site `zawiya-nimes`
-     → **Site settings** → tout en bas → **Delete site** (30 secondes) ;
-   - ou redonner le token Netlify (`nfp_…`) à l'agent, qui la fermera
-     par API (`DELETE /api/v1/sites/f4dee7b5-a55f-4223-acd6-cfca4894c846`).
+5. **✅ FAIT (1er oct. 2026)** : le site Netlify a été **supprimé** par
+   API avec le token redonné par le frère (`DELETE /api/v1/sites/…` →
+   HTTP 204, liste des sites vide, l'ancienne adresse répond 404).
+   Le compte Netlify est maintenant vide.
 
-> ⚠️ Avant de fermer Netlify : les frères qui ont installé la PWA depuis
-> l'ancienne adresse devront la réinstaller depuis
+> ⚠️ Les frères qui avaient installé la PWA depuis l'ancienne adresse
+> Netlify doivent la **réinstaller** depuis
 > **zawiya-nimes.vercel.app** (l'app installée pointe sur l'ancienne
-> origine).
+> origine désormais fermée).
 
 ## 2. Comment fonctionne un déploiement Vercel
 

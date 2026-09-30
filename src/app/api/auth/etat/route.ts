@@ -20,10 +20,14 @@ export async function GET(req: Request) {
       return NextResponse.json({ etat: 'INCONNU' })
     }
 
-    const membre = await db.member.findUnique({
-      where: { name_city: { name, city: ville } },
-      select: { status: true, pin: true },
+    /* Le prénom est cherché sans égard à la casse : mehdi = Mehdi */
+    const deLaVille = await db.member.findMany({
+      where: { city: ville },
+      select: { name: true, status: true, pin: true },
     })
+    const membre = deLaVille.find(
+      (m) => m.name.trim().toLowerCase() === name.toLowerCase()
+    )
 
     if (!membre) return NextResponse.json({ etat: 'INCONNU' })
     if (membre.status === 'PENDING') return NextResponse.json({ etat: 'ATTENTE' })

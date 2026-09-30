@@ -73,16 +73,21 @@ export async function PATCH(req: Request, { params }: Params) {
     const cible = await db.member.findUnique({ where: { id } })
     if (!cible) return NextResponse.json({ error: 'Membre introuvable' }, { status: 404 })
 
-    /* Le prénom doit rester unique dans sa zawiya */
+    /* Le prénom doit rester unique dans sa zawiya — sans égard
+       à la casse : mehdi et Mehdi désignent le même frère. */
     if (data.name || data.city) {
       const nom = data.name ?? cible.name
       const ville = data.city ?? cible.city
-      const conflit = await db.member.findUnique({
-        where: { name_city: { name: nom, city: ville } },
+      const deLaVille = await db.member.findMany({
+        where: { city: ville },
+        select: { id: true, name: true },
       })
-      if (conflit && conflit.id !== id) {
+      const conflit = deLaVille.find(
+        (m) => m.id !== id && m.name.trim().toLowerCase() === nom.toLowerCase()
+      )
+      if (conflit) {
         return NextResponse.json(
-          { error: `Sidi ${nom} est déjà inscrit dans cette zawiya` },
+          { error: `Sidi ${conflit.name} est déjà inscrit dans cette zawiya` },
           { status: 409 }
         )
       }
@@ -105,6 +110,16 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
     const member = await db.member.update({ where: { id }, data, select: CHAMPS_MEMBRE })
+
+    /* Correction de prénom au registre — la maison en garde la trace */
+    if (data.name && data.name !== cible.name) {
+      await journaliser({
+        kind: 'MEMBER',
+        action: 'UPDATE',
+        label: `${cible.name} devient ${member.name} au registre`,
+        actor: body.actor || null,
+      })
+    }
 
     if (data.role && data.role !== cible.role) {
       await journaliser({

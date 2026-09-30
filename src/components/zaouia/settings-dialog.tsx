@@ -10,6 +10,7 @@ import {
   Hourglass,
   KeyRound,
   MapPin,
+  Pencil,
   Plus,
   Shield,
   ShieldCheck,
@@ -43,6 +44,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -94,6 +104,12 @@ export function SettingsDialog({
   const [nouveauNom, setNouveauNom] = useState('')
   const [villeAjout, setVilleAjout] = useState<Ville>('NIMES')
   const [membreDroits, setMembreDroits] = useState<Member | null>(null)
+  /* Le frère dont on corrige le prénom au registre */
+  const [membreRenomme, setMembreRenomme] = useState<Member | null>(null)
+  /* Le frère que l'on retire complètement du registre */
+  const [membreRetire, setMembreRetire] = useState<Member | null>(null)
+  const monId = useUser((s) => s.memberId)
+  const setName = useUser((s) => s.setName)
 
   /* ─── Lieu des ijtima' ─── */
   const configDefaut = settings?.app_config ?? { nom: 'Nimes', ville: 'Nîmes', lieu: '' }
@@ -154,19 +170,26 @@ export function SettingsDialog({
       role?: string
       city?: string
       status?: string
+      name?: string
       perms?: Record<string, boolean> | null
       resetPin?: boolean
     }) => api(`/api/members/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onSuccess: (maj: { id: string; name: string }) => {
       qc.invalidateQueries({ queryKey: ['members'] })
+      /* C'est moi que je renomme — l'en-tête suit le registre */
+      if (maj?.id && maj.id === monId) setName(maj.name)
     },
   })
 
   const retirerMembre = useMutation({
     mutationFn: (id: string) =>
       api(`/api/members/${id}`, { method: 'DELETE', body: JSON.stringify({}) }),
-    onSuccess: () => {
+    onSuccess: (_d, id) => {
       qc.invalidateQueries({ queryKey: ['members'] })
+      qc.invalidateQueries({ queryKey: ['meetings'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+      /* Si je me retire moi-même, je rends la clé — la porte se referme */
+      if (id === monId) useUser.getState().logout()
     },
   })
 
@@ -212,7 +235,7 @@ export function SettingsDialog({
             Réglages de la zaouia
           </DialogTitle>
           <DialogDescription>
-            Jours d'ijtima et conduite des frères — du ressort du référent.
+            Jours d'ijtima et conduite des frères — les réglages de la maison.
           </DialogDescription>
         </DialogHeader>
 
@@ -469,8 +492,15 @@ export function SettingsDialog({
                   </div>
                 </div>
 
-                {/* Ligne d'accès : droits particuliers, code, révocation */}
+                {/* Ligne d'accès : prénom, droits particuliers, code, révocation */}
                 <div className="flex flex-wrap items-center gap-1.5 pl-6">
+                  <button
+                    onClick={() => setMembreRenomme(m)}
+                    className="inline-flex items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                    title="Corriger son prénom au registre de la maison"
+                  >
+                    <Pencil className="h-3 w-3" /> Prénom
+                  </button>
                   <button
                     onClick={() => setMembreDroits(m)}
                     className="inline-flex items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
@@ -533,6 +563,17 @@ export function SettingsDialog({
                       title="Révoquer son accès — s'il quitte la zaouia ou perd son téléphone"
                     >
                       <Ban className="h-3 w-3" /> Révoquer
+                    </button>
+                  )}
+                  {/* Retirer du registre — sauf soi-même : la maison
+                      garderait sa clé et sa porte close */}
+                  {m.id !== monId && (
+                    <button
+                      onClick={() => setMembreRetire(m)}
+                      className="inline-flex items-center gap-1 rounded-full bg-sand px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+                      title="Retirer du registre de la maison — ses présences et cotisations partent avec lui"
+                    >
+                      <X className="h-3 w-3" /> Retirer
                     </button>
                   )}
                 </div>
@@ -602,6 +643,52 @@ export function SettingsDialog({
         membre={membreDroits}
         onOpenChange={(v) => !v && setMembreDroits(null)}
       />
+
+      {/* Dialogue de correction du prénom au registre */}
+      <RenommerDialog
+        membre={membreRenomme}
+        onOpenChange={(v) => !v && setMembreRenomme(null)}
+        onRenommer={(id, nom) => majMembre.mutate({ id, name: nom })}
+      />
+
+      {/* Confirmation avant de retirer un frère du registre */}
+      <AlertDialog
+        open={membreRetire !== null}
+        onOpenChange={(v) => !v && setMembreRetire(null)}
+      >
+        <AlertDialogContent className="max-w-sm rounded-3xl border-primary/15 bg-ivoire p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-2xl text-encre">
+              Retirer Sidi {membreRetire?.name} du registre ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Son prénom disparaît de la maison — ses présences aux ijtima' et ses
+              cotisations partent avec lui. Il pourra toujours revenir en écrivant
+              son prénom à la porte.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction
+              onClick={() => {
+                if (membreRetire) {
+                  retirerMembre.mutate(membreRetire.id)
+                  toast({
+                    title: 'Retiré du registre',
+                    description: `Sidi ${membreRetire.name} n'est plus inscrit à la zawiya.`,
+                  })
+                }
+                setMembreRetire(null)
+              }}
+              className="w-full rounded-full bg-destructive text-white hover:bg-destructive/90"
+            >
+              Retirer du registre
+            </AlertDialogAction>
+            <AlertDialogAction className="w-full rounded-full bg-sand text-muted-foreground hover:bg-primary/10 hover:text-primary">
+              Garder au registre
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }
@@ -761,6 +848,110 @@ function DroitsDialog({
   )
 }
 
+/* ═══════════════ Correction du prénom au registre ═══════════════ */
+function RenommerDialog({
+  membre,
+  onOpenChange,
+  onRenommer,
+}: {
+  membre: Member | null
+  onOpenChange: (v: boolean) => void
+  onRenommer: (id: string, nom: string) => void
+}) {
+  const qc = useQueryClient()
+  const { toast } = useToast()
+  const open = membre !== null
+
+  const [nom, setNom] = useState('')
+  const [erreur, setErreur] = useState<string | null>(null)
+  const [initialise, setInitialise] = useState(false)
+  if (open && !initialise && membre) {
+    setNom(membre.name)
+    setInitialise(true)
+  }
+  if (!open && initialise) {
+    setInitialise(false)
+    setErreur(null)
+  }
+
+  if (!membre) return null
+
+  const enregistrer = () => {
+    const propre = nom.trim()
+    if (!propre) {
+      setErreur('Le prénom ne peut pas être vide.')
+      return
+    }
+    if (propre.length > 40) {
+      setErreur('Ce prénom est trop long.')
+      return
+    }
+    if (propre === membre.name) {
+      onOpenChange(false)
+      return
+    }
+    onRenommer(membre.id, propre)
+    toast({
+      title: 'Prénom corrigé',
+      description: `Sidi ${membre.name} s’appelle désormais Sidi ${propre} au registre.`,
+    })
+    setNom('')
+    qc.invalidateQueries({ queryKey: ['members'] })
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm rounded-3xl border-primary/15 bg-ivoire p-6">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 font-display text-2xl text-encre">
+            <Pencil className="h-5 w-5 text-primary" /> Corriger le prénom
+          </DialogTitle>
+          <DialogDescription>
+            Une faute de frappe à la porte, une majuscule oubliée — corrige ici le prénom
+            de Sidi {membre.name} tel qu’il figure au registre de la maison.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-[11px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+              Prénom au registre
+            </Label>
+            <Input
+              value={nom}
+              onChange={(e) => {
+                setNom(e.target.value)
+                setErreur(null)
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && enregistrer()}
+              autoFocus
+              maxLength={40}
+              placeholder="Le prénom corrigé…"
+              className="rounded-full border-primary/25 bg-card text-center"
+            />
+          </div>
+          <p className="text-center text-[11px] leading-relaxed text-brouillard">
+            La personne entre avec ce prénom — avec ou sans majuscule, il sera toujours reconnu.
+          </p>
+          {erreur && (
+            <p role="alert" className="text-center text-xs font-medium text-gold-vif">
+              {erreur}
+            </p>
+          )}
+          <Button
+            onClick={enregistrer}
+            disabled={!nom.trim()}
+            className="w-full rounded-full bg-primary py-3 text-white hover:bg-emerald-deep"
+          >
+            Enregistrer
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 /* ═══════════════ Profil : « Je suis… » — avec code personnel ═══════════════ */
 export function ProfileDialog({
   open,
@@ -780,10 +971,12 @@ export function ProfileDialog({
   const [erreur, setErreur] = useState<string | null>(null)
   const choix = choixManuel ?? name ?? ''
 
-  /* Les frères de MA zawiya — on y cherche, on y entre */
+  /* Les frères de MA zawiya — on y cherche, on y entre.
+     Le prénom est reconnu sans égard à la casse : mehdi = Mehdi. */
   const freresVille = (membres ?? []).filter((m) => m.city === ville && m.status === 'ACTIVE')
-  const monMembre: Member | undefined = freresVille.find((m) => m.name === name)
-  const cestMoi = monMembre !== undefined && choix.trim() === monMembre.name
+  const insensible = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
+  const monMembre: Member | undefined = freresVille.find((m) => insensible(m.name, name ?? ''))
+  const cestMoi = monMembre !== undefined && insensible(choix, monMembre.name)
 
   const valider = () => {
     const v = choix.trim()
@@ -797,7 +990,7 @@ export function ProfileDialog({
 
     /* La porte est ouverte : on entre sans code — la sécurité
        reviendra avec les champs de la porte d'entrée. */
-    const frere = freresVille.find((m) => m.name === v)
+    const frere = freresVille.find((m) => insensible(m.name, v))
     if (!frere) {
       setErreur('Ce prénom n’est pas inscrit à la zawiya.')
       return
@@ -817,7 +1010,11 @@ export function ProfileDialog({
           <DialogTitle className="font-display text-2xl text-encre">Je suis…</DialogTitle>
           <DialogDescription>
             {monMembre
-              ? `Sidi ${monMembre.name} — ${ROLE_LABEL[monMembre.role] ?? 'membre'} de la zawiya de ${VILLE_LABEL[monMembre.city] ?? 'Nîmes'}`
+              ? `Sidi ${monMembre.name} — ${
+                  /* La charge de la maison ne s'affiche pas : un frère
+                     de la zaouia reste un frère, sans distinction. */
+                  monMembre.role === 'REFERENT' ? 'membre' : (ROLE_LABEL[monMembre.role] ?? 'membre')
+                } de la zawiya de ${VILLE_LABEL[monMembre.city] ?? 'Nîmes'}`
               : `Indique ton prénom pour la zawiya de ${VILLE_LABEL[ville] ?? 'Nîmes'}.`}
           </DialogDescription>
         </DialogHeader>

@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUser } from '@/lib/store'
-import { useMembers } from '@/lib/api'
+import { api, useMembers } from '@/lib/api'
 import { ThemeToggle } from '@/components/zaouia/theme-toggle'
-import { VILLE_LABEL, type Ville } from '@/lib/types'
+import { VILLE_LABEL, type Member, type Ville } from '@/lib/types'
 
 /** PRNG arithmétique pur (mulberry32) — strictement identique serveur/client,
  *  contrairement à Math.sin dont la précision varie selon le moteur JS. */
@@ -129,14 +129,16 @@ function TitreLettres() {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   LA PORTE OUVERTE — la sécurité est retirée pour le moment :
-   plus de zawiya à choisir, plus de prénom, plus de code.
-   Un seul bouton fait entrer, comme référent de Nîmes (la maison-mère)
-   — tous les droits, pour tout voir et tout régler.
+   LA PORTE DE LA ZAWIYA — celui qui entre écrit son prénom :
+   · prénom déjà inscrit (avec ou sans majuscule : mehdi = Mehdi)
+     → il entre sous ce nom, avec les droits de la maison ;
+   · prénom inconnu → il entre au registre de la maison et entre
+     comme simple membre ;
+   · accès révoqué → la porte reste fermée pour ce prénom.
 
    Les routes /api/auth/* restent en place, intactes : le jour où la
-   porte sécurisée revient, il suffira de réinstaller les champs
-   (l'ancienne version vit dans l'historique git).
+   porte sécurisée revient (code personnel), il suffira de réinstaller
+   les champs (l'ancienne version vit dans l'historique git).
    ═════════════════════════════════════════════════════════════════════ */
 export function WelcomeGate() {
   const setName = useUser((s) => s.setName)
@@ -148,18 +150,15 @@ export function WelcomeGate() {
   /* L'entrée se fait toujours à la maison-mère */
   const ville: Ville = 'NIMES'
 
-  /* Celui qui entre signe de son prénom — le référent de Nîmes
-     sert de porte par défaut si la liste ne répond pas. */
-  const hote = useMemo(
-    () =>
-      (membres ?? []).find(
-        (m) => m.city === 'NIMES' && m.status === 'ACTIVE' && m.role === 'REFERENT'
-      ) ??
-      (membres ?? []).find((m) => m.city === 'NIMES' && m.status === 'ACTIVE'),
-    [membres]
-  )
+  /* Un prénom est reconnu sans égard à la casse — mehdi, Mehdi ou
+     MEHDI désignent le même frère du registre. */
+  const trouverMembre = (brut: string, liste?: Member[]) =>
+    (liste ?? membres ?? []).find(
+      (m) => m.city === ville && m.name.trim().toLowerCase() === brut.toLowerCase()
+    )
 
   const [passage, setPassage] = useState(false)
+  const [erreur, setErreur] = useState<string | null>(null)
   const [heure, setHeure] = useState('')
   /* Le prénom de celui qui entre — écrit sur la première page,
      comme à la porte de la zawiya. */
@@ -181,14 +180,62 @@ export function WelcomeGate() {
     return () => clearInterval(t)
   }, [])
 
-  /* Entrer — sous le prénom écrit, ou celui de la maison */
-  const entrer = () => {
-    if (!hote || passage) return
+  /* Entrer — sous le prénom écrit, reconnu sans égard à la casse.
+     Un prénom inconnu entre au registre de la maison (simple membre). */
+  const entrer = async () => {
+    const v = prenom.trim()
+    if (!v || passage || isPending) return
     setPassage(true)
-    setVille(ville)
-    setName(prenom.trim() || hote.name)
-    setMember(hote.id, hote.role, hote.city, hote.perms)
-    qc.invalidateQueries({ queryKey: ['members'] })
+    setErreur(null)
+    try {
+      let membre = trouverMembre(v)
+
+      /* Prénom inconnu : il entre au registre de la maison */
+      if (!membre) {
+        const r = await fetch('/api/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: v, ville }),
+        })
+        if (r.ok) {
+          membre = (await r.json()) as Member
+        } else if (r.status === 409) {
+          /* Inscrit entre-temps, peut-être sous une autre casse :
+             on relit le registre et on cherche à nouveau */
+          const relus = await qc.fetchQuery({
+            queryKey: ['members'],
+            queryFn: () => api<Member[]>('/api/members'),
+          })
+          membre = trouverMembre(v, relus)
+        }
+      }
+
+      if (!membre) throw new Error('registre')
+
+      if (membre.status === 'BLOCKED') {
+        setErreur('Ce prénom ne peut plus entrer — demande à la maison de rouvrir l’accès.')
+        setPassage(false)
+        return
+      }
+      if (membre.status === 'PENDING') {
+        setErreur('Ton inscription attend la validation de la maison.')
+        setPassage(false)
+        return
+      }
+
+      /* Le registre est relu AVANT d'ouvrir la session : la garde de
+         la page doit déjà voir le nouveau frère, sinon elle le
+         prendrait pour un intrus et refermerait la porte sur lui. */
+      await qc.invalidateQueries({ queryKey: ['members'] })
+
+      /* Le prénom du registre fait foi — l'orthographe y est la sienne */
+      setVille(membre.city)
+      setName(membre.name)
+      setMember(membre.id, membre.role, membre.city, membre.perms)
+    } catch {
+      setErreur('La porte ne répond pas — vérifie ta connexion.')
+      setPassage(false)
+    }
   }
 
   return (
@@ -392,11 +439,12 @@ export function WelcomeGate() {
             />
             <motion.button
               onClick={entrer}
-              disabled={!hote || passage}
-              whileHover={hote ? { scale: 1.045 } : undefined}
-              whileTap={hote ? { scale: 0.955 } : undefined}
+              disabled={!prenom.trim() || isPending || passage}
+              whileHover={prenom.trim() ? { scale: 1.045 } : undefined}
+              whileTap={prenom.trim() ? { scale: 0.955 } : undefined}
               aria-label="Entrer dans la zawiya"
-              className="group relative flex w-[250px] max-w-full items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-br from-primary to-emerald-deep py-4 pl-6 pr-5 text-white shadow-xl shadow-primary/35 ring-1 ring-gold/40 disabled:cursor-wait"
+              suppressHydrationWarning
+              className="group relative flex w-[250px] max-w-full items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-br from-primary to-emerald-deep py-4 pl-6 pr-5 text-white shadow-xl shadow-primary/35 ring-1 ring-gold/40 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {/* Reflet doré qui balaie le bouton */}
               <motion.span
@@ -437,16 +485,14 @@ export function WelcomeGate() {
               )}
             </motion.button>
           </div>
-          {(isError || (!isPending && !hote)) && (
+          {(erreur || isError) && (
             <motion.p
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               role="alert"
               className="mt-3 text-center text-xs font-medium text-gold-vif"
             >
-              {isError
-                ? 'La porte ne répond pas — vérifie ta connexion.'
-                : 'Aucun frère actif à Nîmes — impossible d’entrer.'}
+              {erreur ?? 'La porte ne répond pas — vérifie ta connexion.'}
             </motion.p>
           )}
         </motion.div>

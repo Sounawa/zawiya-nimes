@@ -24,7 +24,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
   const perms = useUser((s) => s.perms)
   const logout = useUser((s) => s.logout)
 
-  /* Les réglages de la zaouia ne regardent que le référent */
+  /* Les réglages de la zaouia ne regardent que la maison */
   const gereReglages = peut(ville, role, 'reglages.gerer', perms)
 
   /* Les demandes d'inscription en attente — pastille dorée sur l'engrenage */
@@ -74,7 +74,8 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
 
         <div className="flex-1" />
 
-        {/* Utilisateur (+ pastille de charge) */}
+        {/* Utilisateur — le prénom seul s'affiche : la charge de la maison
+            reste discrète, rien ne la distingue à l'œil */}
         <Button
           variant="ghost"
           size="sm"
@@ -83,16 +84,6 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
         >
           <UserRound className="h-4 w-4 shrink-0 text-primary" />
           <span className="max-w-24 truncate">{name}</span>
-          {role === 'REFERENT' && (
-            <span className="hidden shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary sm:inline-block">
-              Référent
-            </span>
-          )}
-          {role === 'TREASURER' && (
-            <span className="hidden shrink-0 rounded-full bg-accent/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-vif sm:inline-block">
-              Trésorier
-            </span>
-          )}
         </Button>
 
         <RechercheGlobale />
@@ -109,7 +100,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
             title={
               demandes
                 ? `${demandes} demande${demandes > 1 ? 's' : ''} d’inscription à valider`
-                : 'Réglages de la zaouia (référent)'
+                : 'Réglages de la zaouia'
             }
             className="relative h-9 w-9 shrink-0 rounded-full text-primary hover:bg-primary/8 sm:h-10 sm:w-10"
           >

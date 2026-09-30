@@ -858,3 +858,22 @@ Stage Summary:
 - GitHub = local (push 1fe19b3 + ce round en cours de commit) ; Netlify redéploie automatiquement
 - Les onglets 2-11 montrent désormais LE DOCUMENT ET RIEN D'AUTRE — ni titre, ni en-tête ornement, ni badge de page, ni marqueur de fin ; le cahier (1) et le diwân de samâ' conservent leur structure imprimée
 - Prochaine étape : commit + push + vérification prod Netlify
+
+---
+Task ID: 8
+Agent: main (Z.ai Code)
+Task: Publication round 7 — GitHub, Netlify, vérification prod, cron
+
+Work Log:
+- Commit 959edb6 « Lecteur document seul » poussé sur GitHub (1fe19b3..959edb6)
+- Netlify a redéployé automatiquement : building → uploading → ready en ~45 s
+- PROD vérifiée via agent-browser : waqi'a (onglet 3) = 0 h2/0 h3/1 article commençant au ta'awwudh ; nasiri (onglet 4) = 0/0/2 articles (les deux poèmes), aucun marqueur « fin du document »
+- SW v14 conservé : navigation en network-first + chunks hachés = mise à jour naturelle des données adhkâr pour les visiteurs
+- 5 anciens crons désactivés (« exec limits exceeded ») supprimés ; cron webDevReview 15 min recréé (job 426429)
+- Tokens utilisés ce round (à révoquer quand la zawiya le souhaite) : GitHub ghp_31ky… (push), Netlify nfp_1RKk… (API déploiements)
+
+Stage Summary:
+- ÉTAT FINAL : GitHub = local = prod Netlify au commit 959edb6 — https://zawiya-nimes.netlify.app/ en ligne
+- Les onglets hors kitāb al-adhkār (2 Yā-Sīn, 3 Waqi'a, 4 Nasiri+Munfarija, 5 Laṭîf, 6 Zajr, 7 Mashîshiyya, 8 Dalâ'il, 9 Fath, 10 Mulk, 11 Taha) montrent LE DOCUMENT ET RIEN D'AUTRE
+- Cahier de wadhifa (1) et diwân de samâ' : mise en page imprimée conservée (titres, badges pages)
+- Rien en attente : toutes les demandes du round précédent (Warsh, Taha, mode sombre, notifications ijtima' uniquement, document seul, renumérotation) sont livrées et déployées

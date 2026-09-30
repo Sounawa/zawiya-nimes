@@ -32,8 +32,8 @@ export function notifierNavigateur(titre: string, corps: string): boolean {
   try {
     const n = new Notification(titre, {
       body: corps,
-      icon: '/logo.png',
-      badge: '/logo.png',
+      icon: '/icone-192.png',
+      badge: '/favicon-96.png',
       tag: 'zawiya-nimes', // remplace la précédente au lieu de s'empiler
     })
     /* Clic → ramener l'onglet au premier plan */

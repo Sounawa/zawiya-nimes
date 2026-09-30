@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useUser } from './store'
+import { useUser, useReseau } from './store'
 import type {
   AppSettings,
   Announcement,
@@ -41,6 +41,11 @@ export function api<T>(url: string, init?: RequestInit): Promise<T> {
     },
     body,
   }).then((r) => {
+    /* Hors-ligne, le service worker sert les dernières données
+       connues (réponses minuscules, mises en cache au passage) —
+       l'écran le dit discrètement plutôt que de laisser croire
+       que tout a disparu. */
+    useReseau.getState().basculer(r.headers.get('X-Hors-Ligne') === '1')
     if (!r.ok) throw new Error('Erreur réseau')
     return r.json()
   })

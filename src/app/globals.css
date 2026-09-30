@@ -525,6 +525,26 @@ body::after {
   transform: translateY(-0.4em);
 }
 
+/* Le téléphone en portrait : le vers ENTIER tient sur UNE ligne —
+   شطر ۞ شطر côte à côte, comme le doigt suit le vers sur la
+   planche du diwân. Les deux hémistiches occupent chacun une
+   demi-ligne : le ۞ reste TOUJOURS au même milieu, vers après
+   vers — plus de danse du séparateur. La taille se resserre au
+   vers le plus long, mesurée au pixel près par le composant,
+   quelle que soit la police choisie. En paysage et sur tablette,
+   les deux colonnes du kitāb imprimé restent en place. */
+@media (max-width: 639px) {
+  .poesie-vers {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 0.5em;
+  }
+  .poesie-shatr {
+    white-space: nowrap;
+  }
+}
+
   /* Le grain de papier — un seul, partout le même */
   body,
   .grain-papier {
@@ -677,6 +697,22 @@ body::after {
   /* Le kitāb arabe : chaque verset prend sa ligne, aligné à droite */
   .kitab-texte {
     text-align: right;
+  }
+
+  /* ─── Les renvois de pages, liens du lecteur ───
+     « Sûrat (36) Yâ-Sîn → p. 7 » / « سُورَةُ يس ← ص ٧ » : le
+     soulignement pointillé signale le lien, le fond s'apprête au
+     survol sans jamais toucher à la couleur de lecture. */
+  .lien-renvoi {
+    border-radius: 0.5rem;
+    transition: background-color 0.15s ease;
+  }
+  .lien-renvoi:hover {
+    background-color: color-mix(in srgb, currentColor 8%, transparent);
+  }
+  .lien-renvoi:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
   }
 }
 

@@ -6,7 +6,8 @@ import { BellPlus } from 'lucide-react'
 import { api, creationsLocales } from '@/lib/api'
 import { useUser } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
-import { demanderPermissionNotifications, notifierNavigateur } from '@/lib/notifications'
+import { notifierNavigateur } from '@/lib/notifications'
+import { abonnerPush } from '@/lib/push-client'
 import type { Announcement, Poll } from '@/lib/types'
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -44,23 +45,25 @@ export function VeilleCommunaute() {
     enabled: !!memberId,
   })
 
-  /* ─── Proposer une fois les notifications système (geste utilisateur requis) ─── */
+  /* ─── Proposer une fois les notifications téléphone (geste requis) ─── */
   useEffect(() => {
     if (!memberId || notifAsked) return
     if (typeof Notification === 'undefined') return
 
     if (Notification.permission === 'granted' || Notification.permission === 'denied') {
-      /* Déjà tranché (autre onglet, autre fois) — ne plus demander */
+      /* Déjà tranché (autre onglet, autre fois) — ne plus demander.
+         La permission accordée ne signifie pas l'abonnement push :
+         les réglages permettent de l'activer ensuite. */
       setNotifAsked(true)
       return
     }
 
     const minuteur = setTimeout(() => {
       toast({
-        title: 'Rester informé des annonces ?',
+        title: 'Prévenir ton téléphone des annonces ?',
         description:
-          'Recevoir une notification, même la zawiya ouverte en fond.',
-        duration: 12_000, /* le temps de lire et décider */
+          "Une alerte quand une annonce ou un sondage paraît — même l'application fermée.",
+        duration: 14_000, /* le temps de lire et décider */
         /* Fermeture (✕, balayage ou délai écoulé) = choix de ne pas activer — ne plus reposer */
         onOpenChange: (ouvert) => {
           if (!ouvert) setNotifAsked(true)
@@ -68,18 +71,35 @@ export function VeilleCommunaute() {
         action: (
           <button
             onClick={async () => {
-              const resultat = await demanderPermissionNotifications()
               setNotifAsked(true)
-              toast({
-                title:
-                  resultat === 'granted'
-                    ? '🔔 Notifications activées'
-                    : 'Notifications non activées',
-                description:
-                  resultat === 'granted'
-                    ? "Tu seras prévenu des nouvelles annonces et sondages de la zawiya."
-                    : 'Pas de souci — les toasts dans l’app restent actifs.',
-              })
+              /* L'abonnement push : permission + service push + clé
+                 au serveur. Le téléphone sera prévenu même fermé. */
+              const resultat = await abonnerPush(memberId)
+              if (resultat === 'abonne') {
+                toast({
+                  title: '🔔 Notifications du téléphone activées',
+                  description:
+                    "Tu seras prévenu des annonces et sondages de la zawiya — même l'application fermée.",
+                })
+              } else if (resultat === 'ios-non-installe') {
+                toast({
+                  title: 'Sur iPhone : installe la zawiya',
+                  description:
+                    "Partage ▸ « Sur l'écran d'accueil » — les notifications arrivent ensuite comme pour une app.",
+                  duration: 10_000,
+                })
+              } else if (resultat === 'refuse') {
+                toast({
+                  title: 'Notifications refusées',
+                  description: "Pas de souci — les annonces restent visibles dans la zawiya.",
+                })
+              } else {
+                toast({
+                  title: 'Notifications non activées',
+                  description:
+                    "Ce navigateur ne prend pas encore les alertes fermées — elles restent visibles dans la zawiya.",
+                })
+              }
             }}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm transition-all hover:bg-emerald-deep active:scale-95"
           >
@@ -113,9 +133,13 @@ export function VeilleCommunaute() {
     )
     for (const a of nouvellesAnnonces.slice(0, 3)) {
       const titre = a.title ? `📣 ${a.title}` : '📣 Nouvelle annonce'
-      const corps = a.text.length > 90 ? `${a.text.slice(0, 90)}…` : a.text
-      if (enFond && notifierNavigateur(titre, corps)) continue
-      toast({ title: titre, description: corps })
+      const extrait = a.text
+        ? a.text.length > 90
+          ? `${a.text.slice(0, 90)}…`
+          : a.text
+        : a.title || 'Ouvre la zawiya pour la lire'
+      if (enFond && notifierNavigateur(titre, extrait)) continue
+      toast({ title: titre, description: extrait })
     }
 
     /* Nouveaux sondages — toast doré (celui de cet onglet est ignoré) */

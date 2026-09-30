@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   BadgeCheck,
   Ban,
+  BellOff,
+  BellRing,
   CalendarDays,
   Check,
   Hourglass,
@@ -59,6 +61,13 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import {
+  abonnerPush,
+  desabonnerPush,
+  estAbonnePush,
+  iosSansInstallation,
+  pushDisponible,
+} from '@/lib/push-client'
 
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 
@@ -110,6 +119,61 @@ export function SettingsDialog({
   const [membreRetire, setMembreRetire] = useState<Member | null>(null)
   const monId = useUser((s) => s.memberId)
   const setName = useUser((s) => s.setName)
+
+  /* ─── Notifications téléphone (push) ─── */
+  const [abonne, setAbonne] = useState<boolean | null>(null)
+  const [pushEnCours, setPushEnCours] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    /* L'état réel de CET appareil, relu à chaque ouverture :
+       un frère peut avoir activé ailleurs, ou retiré la permission
+       dans les réglages du navigateur. */
+    let annule = false
+    estAbonnePush().then((etat) => {
+      if (!annule) setAbonne(etat)
+    })
+    return () => {
+      annule = true
+    }
+  }, [open])
+
+  const activerPush = async () => {
+    setPushEnCours(true)
+    const resultat = await abonnerPush(monId)
+    setPushEnCours(false)
+    if (resultat === 'abonne') {
+      setAbonne(true)
+      toast({
+        title: '🔔 Notifications activées',
+        description: "Ce téléphone sera prévenu des annonces et sondages — même la zawiya fermée.",
+      })
+    } else if (resultat === 'ios-non-installe') {
+      toast({
+        title: 'Sur iPhone : installe la zawiya',
+        description: "Partage ▸ « Sur l'écran d'accueil » — puis reviens activer les alertes ici.",
+        duration: 10_000,
+      })
+    } else {
+      toast({
+        title: 'Notifications non activées',
+        description: 'Vérifie la permission dans les réglages du navigateur, puis réessaie.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const couperPush = async () => {
+    setPushEnCours(true)
+    const ok = await desabonnerPush()
+    setPushEnCours(false)
+    setAbonne(false)
+    if (ok) {
+      toast({
+        title: 'Notifications coupées',
+        description: "Ce téléphone ne sera plus prévenu. Réactivables ici à tout moment.",
+      })
+    }
+  }
 
   /* ─── Lieu des ijtima' ─── */
   const configDefaut = settings?.app_config ?? { nom: 'Nimes', ville: 'Nîmes', lieu: '' }
@@ -304,6 +368,65 @@ export function SettingsDialog({
             </div>
           </section>
         )}
+
+        {/* ─── Notifications téléphone ─── */}
+        <section aria-label="Notifications téléphone" className="space-y-3">
+          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
+            <BellRing className="h-4 w-4" /> Notifications du téléphone
+          </h3>
+          <div className="rounded-2xl border border-primary/20 bg-card p-4 shadow-sm">
+            <p className="text-xs leading-relaxed text-brouillard">
+              Une alerte sur CE téléphone quand une <strong className="text-encre">annonce</strong> ou
+              un <strong className="text-encre">sondage</strong> paraît — pour prévenir d'un
+              ijtimâ'. Rien d'autre ne sonne, et même l'application fermée.
+            </p>
+            {iosSansInstallation() && (
+              <p className="mt-2 rounded-xl bg-or-pale px-3 py-2 text-[11px] leading-relaxed text-gold-vif">
+                Sur iPhone, installe d'abord la zawiya sur l'écran d'accueil
+                (Partage ▸ « Sur l'écran d'accueil ») — les notifications arrivent ensuite
+                comme pour une app.
+              </p>
+            )}
+            {abonne === null ? (
+              <div className="mt-3 h-9 animate-pulse rounded-full bg-muted" aria-hidden />
+            ) : abonne ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1.5 text-[11px] font-bold text-primary">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                  </span>
+                  Ce téléphone est prévenu
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={couperPush}
+                  disabled={pushEnCours}
+                  className="h-8 gap-1.5 rounded-full border-primary/25 px-3 text-[11px] text-brouillard hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive"
+                >
+                  <BellOff className="h-3.5 w-3.5" /> Ne plus être prévenu
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                onClick={activerPush}
+                disabled={pushEnCours || !pushDisponible()}
+                className="mt-3 h-9 gap-1.5 rounded-full bg-primary px-5 text-[12px] text-white hover:bg-emerald-deep"
+              >
+                <BellRing className="h-4 w-4" />
+                {pushEnCours ? 'Activation…' : 'Prévenir ce téléphone'}
+              </Button>
+            )}
+            {!pushDisponible() && (
+              <p className="mt-2 text-[11px] italic text-brouillard">
+                Ce navigateur ne prend pas encore les alertes application fermée —
+                les annonces restent visibles en ouvrant la zawiya.
+              </p>
+            )}
+          </div>
+        </section>
 
         {/* ─── Lieu des ijtima' ─── */}
         <section aria-label="Lieu des ijtima" className="space-y-3">

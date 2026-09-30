@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
 import { exiger, membreAppeleur } from '@/lib/auth-serveur'
+import { envoyerPush } from '@/lib/push'
 
 const VILLES = ['NIMES', 'AVIGNON', 'MONTPELLIER']
 
@@ -45,14 +46,18 @@ export async function GET(req: Request) {
 // toutes les zawiya, ou une sélection (ex. Nîmes + Montpellier).
 export async function POST(req: Request) {
   try {
-    const { refus } = await exiger(req, 'annonces.creer')
+    const { membre, refus } = await exiger(req, 'annonces.creer')
     if (refus) return refus
     const body = await req.json()
-    if (!body.text) return NextResponse.json({ error: 'Texte requis' }, { status: 400 })
+    /* Le message est FACULTATIF : le titre seul suffit (ex. « ANNONCE »
+       en gros), de même que le message seul — mais pas les deux vides. */
+    if (!body.text && !body.title) {
+      return NextResponse.json({ error: 'Titre ou message requis' }, { status: 400 })
+    }
     const announcement = await db.announcement.create({
       data: {
         title: body.title || null,
-        text: body.text,
+        text: body.text || '',
         color: body.color === 'CORAIL' ? 'CORAIL' : 'VERT',
         cities: lireDestinataires(body.cities),
       },
@@ -60,9 +65,26 @@ export async function POST(req: Request) {
     await journaliser({
       kind: 'ANNOUNCEMENT',
       action: 'CREATE',
-      label: `Annonce publiée — « ${announcement.title || announcement.text.slice(0, 60)} »`,
+      label: `Annonce publiée — « ${announcement.title || announcement.text.slice(0, 60) || 'sans texte'} »`,
       actor: body.actor || null,
     })
+    /* ——— La notification téléphone : UNIQUEMENT pour une annonce,
+       conformément à la demande — prévenir la communauté d'un
+       ijtimâ'. Les appareils abonnés reçoivent une alerte même la
+       zawiya fermée ; l'auteur n'est pas prévenu de sa propre
+       publication ; les zawiya non ciblées ne reçoivent rien. —— */
+    const villesCibles = lireDestinataires(body.cities)
+      ? (JSON.parse(lireDestinataires(body.cities) as string) as string[])
+      : null
+    const titreNotif = announcement.title || 'Nouvelle annonce'
+    const corpsNotif =
+      announcement.text.length > 120
+        ? `${announcement.text.slice(0, 120)}…`
+        : announcement.text || 'Ouvre la zawiya pour la lire'
+    await envoyerPush(
+      { titre: `📣 ${titreNotif}`, corps: corpsNotif, section: 'annonces' },
+      { villes: villesCibles, membreExclu: membre?.id ?? null }
+    )
     return NextResponse.json(announcement, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

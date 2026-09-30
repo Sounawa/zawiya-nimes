@@ -877,3 +877,28 @@ Stage Summary:
 - Les onglets hors kitāb al-adhkār (2 Yā-Sīn, 3 Waqi'a, 4 Nasiri+Munfarija, 5 Laṭîf, 6 Zajr, 7 Mashîshiyya, 8 Dalâ'il, 9 Fath, 10 Mulk, 11 Taha) montrent LE DOCUMENT ET RIEN D'AUTRE
 - Cahier de wadhifa (1) et diwân de samâ' : mise en page imprimée conservée (titres, badges pages)
 - Rien en attente : toutes les demandes du round précédent (Warsh, Taha, mode sombre, notifications ijtima' uniquement, document seul, renumérotation) sont livrées et déployées
+
+---
+Task ID: 9
+Agent: main (Z.ai Code)
+Task: Trois demandes de la zawiya — notifications push téléphone, message d'annonce facultatif, bandeau prochain ijtima' toujours visible
+
+Work Log:
+- DIAGNOSTIC bandeau disparu : la prod Turso n'a AUCUNE réunion (l'unique réunion du 3 oct. vit dans la DB locale) → le bandeau se cachait faute de réunion à venir
+- CORRECTION bandeau (bandeau-prochain-ijtima.tsx) : mode 1 = réunion programmée (comportement inchangé : titre, décompte vivant, crayon, œil barré) ; mode 2 = SANS réunion, le bandeau reste et montre le prochain jour d'ijtima' configuré (ijtima_days des réglages) avec date calculée + heure + badge « à programmer » + bouton CalendarPlus (pour les frères habilités) qui ouvre le dialogue de création PRÉ-REMPLI de ce jour-là (vérifié : 2026-10-01 jeudi auto). Testé avec réunion passée (20 sept.) puis restaurée (3 oct.)
+- CORRECTION annonce (message facultatif) : POST/PATCH /api/announcements acceptent titre OU message (plus « Texte requis » si titre présent) ; formulaire : label « Message (facultatif) », validation « Un titre ou un message » ; carte : titre seul = rendu en grand (19px) comme message ; aperçu en direct dès l'un des deux ; veille protégée contre texte vide ; journaux audit « sans texte »
+- NOUVEAU — NOTIFICATIONS PUSH TÉLÉPHONE (Web Push, la demande centrale) : prévenir d'un ijtimâ' quand une annonce OU un sondage paraît, MÊME l'application fermée :
+  - Prisma : modèle PushSubscription (endpoint unique, p256dh, auth, memberId?, city?) — poussé en local (db:push) et sur Turso prod (SQL via @libsql/client avec le token Netlify)
+  - VAPID : paire générée (web-push), stockée .env local (gitignoré ✓) + variables VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY créées sur Netlify (scopes builds/functions/runtime, contexte all) — l'API exigeait charset=utf-8 dans le Content-Type
+  - Serveur : src/lib/push.ts (envoyerPush — filtre ville ciblée + exclut les appareils de l'auteur, TTL 24 h, purge des abonnements 404/410, silencieuse en cas d'échec) ; branchée sur POST /api/announcements et POST /api/polls UNIQUEMENT (conforme à « uniquement j'ai bien dis uniquement »)
+  - Routes : GET /api/push/cle (clé publique), POST/DELETE /api/push/abonnements (upsert par endpoint, associe le frère connecté via x-member-id)
+  - SW v15 : gestionnaire push (showNotification avec icône/badge/tag par section/vibration) + notificationclick (focus la fenêtre + postMessage ouvrirSection, sondages → section ijtima ; sinon openWindow /)
+  - Client : src/lib/push-client.ts (abonnerPush/desabonnerPush/estAbonnePush, détection iOS non installé avec conseil d'installation) ; veille : prompt amélioré « Prévenir ton téléphone des annonces ? » qui s'abonne au push réel ; EnregistrementSW écoute les messages du SW et ouvre la section demandée ; Réglages : section « Notifications du téléphone » (état réel relu à l'ouverture, activer/couper, messages iOS et navigateur non compatible)
+  - TEST D'INTÉGRATION RÉEL : abonnements factices en DB dont l'endpoint pointe vers webhook.site (HTTPS public) — publication d'annonce ciblée NIMES par Mehdi → POST REÇU : VAPID signé ✓, TTL 86400 ✓, corps chiffré 204 octets ✓, filtres vérifiés (appareil de Mehdi exclu, Montpellier exclue, neutre reçu) ; création de sondage → 2ᵉ POST reçu ✓ ; nettoyage complet ensuite (annonces/sondage/abonnements de test supprimés, DB propre)
+  - LIMITES sandbox : le Chromium headless refuse la permission notifications (binaire sans service de notifications) → l'activation depuis l'INTERFACE n'a pas pu être testée bout-en-bout ici ; le pipeline serveur est lui vérifié réellement jusqu'au service push externe. Sur un vrai téléphone : Android Chrome direct ; iOS ≥ 16.4 exige l'installation sur l'écran d'accueil (conseil affiché dans l'app)
+- QA agent-browser : bandeau repli « Ijtimâ' du jeudi · Demain · 19:30 · À PROGRAMMER » (VLM : carte propre) ; bouton Programmer ouvre le dialogue pré-rempli 2026-10-01 ✓ ; annonce titre seul « IJTIMA MARDI 19H » publiée (HTTP 201), carte rendue en grand + VLM propre, puis supprimée ; section Réglages notifications rendue avec bouton « Prévenir ce téléphone » ; /api/push/cle 200 ; lint 0 erreur ; aucune erreur runtime dans dev.log
+
+Stage Summary:
+- Les trois demandes sont livrées : push téléphone (annonce + sondage uniquement), message d'annonce facultatif (titre seul suffit), bandeau prochain ijtima' TOUJOURS utile (réunion ou jour configuré)
+- Prod Turso : table PushSubscription créée + clés VAPID dans l'env Netlify — prête pour le déploiement
+- À suivre : commit + push GitHub + déploiement Netlify + vérification prod (le bandeau y montrera « Ijtimâ' du mardi · 17:45 · à programmer » tant qu'aucune réunion n'y est créée — l'utilisateur peut en créer une ou je peux en semer une depuis le docx si demandé)

@@ -5,10 +5,12 @@
    — /api/*             : réseau seul (données de communauté toujours fraîches)
    — immuables (build)  : cache d'abord, jamais re-téléchargés en arrière-plan
    — autres statiques   : stale-while-revalidate
+   — PUSH               : les annonces et sondages réveillent le téléphone,
+                          même la zawiya fermée (prévenir d'un ijtimâ')
    Cache versionné — toute nouvelle version purge l'ancienne.
    ⚠ Changer une image (logo, tariqa…) exige de bumper VERSION. */
 
-const VERSION = 'zawiya-v14'
+const VERSION = 'zawiya-v15'
 const SHELL = [
   '/favicon-96.png',
   '/apple-touch-icon.png',
@@ -196,6 +198,67 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => enCache)
       return enCache ?? reseau
+    })
+  )
+})
+
+/* ─── Les notifications push — le téléphone sonne, la zawiya prévient ───
+   Le serveur (Netlify) signe un message avec la clé VAPID et le
+   confie au service push du navigateur (FCM, Apple). Celui-ci
+   réveille CE service worker — même application fermée — et lui
+   tend la charge. Nous n'avons plus qu'à l'afficher, joliment.
+
+   Seules les annonces et les sondages poussent (prévenir d'un
+   ijtimâ') : la charge l'indique, formatée par le serveur. */
+self.addEventListener('push', (event) => {
+  let titre = 'Zawiya Nîmes'
+  let corps = 'Ouvre la zawiya pour lire la nouvelle.'
+  let section = 'annonces'
+  try {
+    if (event.data) {
+      const charge = event.data.json()
+      if (charge.titre) titre = charge.titre
+      if (charge.corps) corps = charge.corps
+      if (charge.section) section = charge.section
+    }
+  } catch (e) {
+    /* charge illisible : le message par défaut suffit */
+  }
+  event.waitUntil(
+    self.registration.showNotification(titre, {
+      body: corps,
+      icon: '/icone-192.png',
+      badge: '/favicon-96.png',
+      /* Chaque section garde sa notification : une annonce et un
+         sondage simultanés ne s'écrasent pas l'un l'autre. */
+      tag: 'zawiya-' + section,
+      renotify: true,
+      data: { section: section },
+      /* Dire d'office sur Android */
+      vibrate: [80, 40, 80],
+    })
+  )
+})
+
+/* ─── Le clic sur la notification ───
+   La zawiya s'ouvre (ou revient au premier plan) et déplie la
+   section concernée — annonces, ou sondages qui vivent dans la
+   section Al-Ijtimâ' — pour lire la suite. */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const recue = (event.notification.data && event.notification.data.section) || 'annonces'
+  /* les sondages habitent la section Al-Ijtimâ' */
+  const section = recue === 'sondages' ? 'ijtima' : recue
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (fenetres) {
+      /* Une fenêtre existe déjà : la ramener et lui demander
+         d'ouvrir la section */
+      for (var i = 0; i < fenetres.length; i++) {
+        fenetres[i].postMessage({ ouvrirSection: section })
+        return fenetres[i].focus()
+      }
+      /* Aucune fenêtre : ouvrir la zawiya proprement */
+      return self.clients.openWindow('/')
     })
   )
 })

@@ -666,3 +666,19 @@ Stage Summary:
 - Al-Mulk a maintenant SA carte autonome (elle n'existait que dans la wadhifa et le kitāb) ; n'existant qu'en arabe, un badge عربي l'annonce et son lecteur s'ouvre directement en Warsh quelle que soit la langue de lecture
 - La WADHIFA n'a pas bougé (w-fath ch12 + w-mulk k04 restent dans le groupe quotidien, ordre du cahier imprimé)
 - Restes/pistes : si la zawiya fournit un jour la transcription phonétique de Mulk, l'ajouter à cahier.ts et renseigner ph: sur la carte ; Taha (P0 du document Word) reste disponible si une section est demandée
+
+---
+Task ID: 1
+Agent: main (Z.ai Code)
+Task: Corrections arabes — parenthèses inversées, Waqi'a Warsh, voyelles finales
+
+Work Log:
+- Diagnostic parenthèses : les ﴾/﴿ (U+FD3E/FD3F) ornementales coraniques étaient dans l'ordre INVERSÉ dans les données (﴾ ouvrait, ﴿ fermait) → rendu ")(" à l'écran. Swap appliqué dans kitab-arabe.ts (67 paires), kitab-arabe-2.ts (24), cahier.ts (129) = 220 paires corrigées, convention universelle ﴿ texte ﴾ rétablie.
+- Waqi'a (k03) : le texte était resté en graphie standard Hafs (le docx cahier-ijtima ne contenait que le titre de la Wāqi‘a, pas son texte — d'où le retard). Réécriture complète en graphie Warsh maghrébine : wasla اَ۬/اِ۬/اُ۬ (voyelle harmonisée au mot précédent), فِے, tanwīn kabīr ٗ (U+0657) et ٞ (U+065E), madd al-ṣila ۥ/ۦ, hamza élidée اَ۬لَارْضُ/اَ۬لَاخِرِينَ/اَ۬لُولَىٰ, corpus style عَلَيٰ/اَ۬لذِے/ءَامَنُواْ/مُومِنُونَ. Lectures Warsh confirmées : 56:17 وَلَدَانٞ · 56:19 يَنزِفُونَ (actif) · 56:29 وَطَلْعٍ · 56:65 فَظَلِلْتُمْ. Faute v26 corrigée (سَلَٰمًا سَلَٰمًا accusatif, pas ٌ). Commentaire d'en-tête du fichier mis à jour.
+- Voyelles finales : balayage exhaustif des 3 fichiers (mots finaux sans haraka) → tout est déjà vocalisé (أَعُوذُ، الرَّجِيمِ، اللهُ، هُوَ، فَاعْلَمْ، لَا إِلَهَ ✓) ; les formes nues restantes sont des pauses légitimes (يَا لَطِيف، آمِين، titres). Aucun code ne retire les harakat à l'affichage (seulement pour la recherche). VLM confirme : diacritiques rendues proprement.
+- QA agent-browser : navigation Entrer → ADHKÂR → Surat al-Waqi'a → onglet عَرَبِي ; le lecteur affiche le texte Warsh complet ; console sans erreur ; lint OK ; capture qa-waqia-arabe.png ; VLM valide parenthèses + rendu.
+
+Stage Summary:
+- 3 demandes traitées : parenthèses ✓ (220 paires), Waqi'a ✓ (Warsh intégral), voyelles ✓ (vérifiées présentes partout).
+- Risque résiduel faible : tanwīn kabīr appliqué aux mots listés du corpus k01/k02/k04 ; si la zawiya constate une divergence sur un mot précis, le comparer au PDF waqia-ar.pdf (pages 1-3).
+- Prochaine phase : QA générale site (cron webDevReview 15 min), éventuellement harmonisation fine du reste du kitāb vers la convention tanwīn kabīr.

@@ -921,3 +921,28 @@ Stage Summary:
 - ÉTAT : GitHub = local (c7faa7b, tout le round 8 livré) ; prod = 7cac977 (round 7) en attendant les crédits Netlify
 - Rien d'autre en attente côté code : les 3 demandes (push téléphone, message facultatif, bandeau toujours visible) sont complètes et testées
 - Prochaine étape : déployer dès crédits disponibles, puis vérifier la prod (checklist ci-dessus)
+
+---
+Task ID: 11
+Agent: main (Z.ai Code)
+Task: Round 9 — retrait du push (choix du frère), installation PWA dans les réglages, réponse alternative Netlify
+
+Work Log:
+- DÉCISION UTILISATEUR : « pas de notification push pour le moment, on verra ultérieurement » → retrait COMPLET du Web Push (le code reste dans l'historique git, commit c7faa7b, si besoin plus tard)
+- RETRAIT PUSH (commit b4d47ee) : routes /api/push/*, src/lib/push.ts, src/lib/push-client.ts supprimés ; modèle PushSubscription retiré du schema.prisma + db:push (table supprimée de la DB locale ✓) ; web-push/@types/web-push retirés de package.json + bun install ; SW → v16 (handlers push/notificationclick supprimés) ; exiger() redevenu { refus } dans POST announcements/polls (envoyerPush retiré) ; enregistrement-sw.tsx restauré (plus d'écouteur ouvrirSection) ; veille-communaute.tsx revenue au toast in-app « Rester informé des annonces ? » (demanderPermissionNotifications) en gardant l'extrait facultatif (titre seul affiché en fallback) ; section « Notifications du téléphone » retirée des Réglages
+- CONSERVÉS du round 8 (validés) : message d'annonce facultatif (titre OU message suffit — API, formulaire, carte, aperçu, veille) + bandeau prochain ijtimâ' TOUJOURS visible (mode « à programmer » sans réunion)
+- NOUVEAU — INSTALLATION PWA (demande : « je dois pouvoir installer l'application pour le hors-ligne… si je change d'avis je veux pouvoir le faire dans les paramètres ») :
+  - src/lib/installation.ts : store zustand qui capture l'événement beforeinstallprompt POUR TOUTE L'APP (usage unique, mémorisé même si le bandeau est fermé) + estIOS()/estInstallee()
+  - bouton-installation.tsx : capte l'invitation dans le store partagé ; bandeau discret toujours effaçable (zawiya-install-refusee) MAIS l'invitation survit pour les Réglages
+  - Réglages : section « Application hors-ligne » (SectionInstallation, sous-composant remonté à chaque ouverture → état réel relu sans effet) : 4 états — déjà installée (badge BadgeCheck) / bouton « Installer l'application » (invite du navigateur) / instructions iOS (Partager ▸ Sur l'écran d'accueil, 3 étapes avec icône Share) / instructions menu navigateur (⋮ ▸ Installer l'application)
+- QA agent-browser : bandeau « Prochain ijtimâ' — Wadhifa du samedi · sam 3 oct 19:30 · dans 3 j » AU-DESSUS de la voix de la zawiya ✓ (VLM : propre) ; Réglages : section Application hors-ligne avec bouton Installer ✓, AUCUNE trace de notifications téléphone ✓ (VLM : propre) ; annonce TITRE SEUL « IJTIMÂ SPÉCIAL TEST » publiée → carte rendue en grand → supprimée (DB propre) ; lint 0 erreur ; dev.log sans erreur
+- NETLIFY (nouveau token testé) : push GitHub b4d47ee ✓ (c24d428..b4d47ee) ; déploiement TOUJOURS BLOQUÉ : « Account credit usage exceeded - new deploys are blocked » (HTTP 403) ; compte Free « ANAMNESE » (weezlovmanager), 1 seul site, 26 déploys sur 2 jours — le reset attendu le 1er octobre N'A PAS eu lieu (le blocage persiste au 30 sept. 23h UTC / 1er oct. 0h17 heure sandbox) ; la prod reste EN LIGNE sur 7cac977
+- RÉPONSE ALTERNATIVE prévue à l'utilisateur : Vercel (Hobby gratuit, natif Next.js, migration = importer le repo GitHub + mêmes variables d'env Turso) ; autres : Cloudflare Pages (adaptateur nécessaire), Render — recommandation Vercel
+- Cron webDevReview 15 min : ancien job 426429 supprimé (« exec limits exceeded »), recréé job 426555 (toujours marqué exec limits exceeded au 1er oct. — limite plateforme, il s'activera au reset)
+
+Stage Summary:
+- ÉTAT : GitHub = local = b4d47ee (push retiré + installation PWA réglages) ; prod = 7cac977 (round 7 — ni le message facultatif, ni le bandeau restauré, ni l'installation ne sont en ligne !)
+- BLOCAGE : Netlify 403 « credits exceeded » — nos 2 derniers rounds de code ne sont PAS déployés ; le site en ligne reste fonctionnel sur l'ancienne version
+- Chemins possibles : (1) attendre le reset des crédits Netlify (date incertaine — le 1er oct. prévu n'a pas suffi), (2) que l'utilisateur crée un compte Vercel et fournisse un token → migration complète possible en un round, (3) payer Netlify
+- Les frères ne voient donc PAS encore : le bandeau prochain ijtimâ', le message facultatif, la section installation — tout est prêt côté code, il ne manque que le déploiement
+

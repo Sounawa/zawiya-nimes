@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useQueryClient } from '@tanstack/react-query'
@@ -148,8 +148,8 @@ export function WelcomeGate() {
   /* L'entrée se fait toujours à la maison-mère */
   const ville: Ville = 'NIMES'
 
-  /* Celui qui entre : le référent de Nîmes — ou, à défaut,
-     le premier frère actif de la maison-mère. */
+  /* Celui qui entre signe de son prénom — le référent de Nîmes
+     sert de porte par défaut si la liste ne répond pas. */
   const hote = useMemo(
     () =>
       (membres ?? []).find(
@@ -161,6 +161,15 @@ export function WelcomeGate() {
 
   const [passage, setPassage] = useState(false)
   const [heure, setHeure] = useState('')
+  /* Le prénom de celui qui entre — écrit sur la première page,
+     comme à la porte de la zawiya. */
+  const [prenom, setPrenom] = useState('')
+  const champPrenom = useRef<HTMLInputElement | null>(null)
+
+  /* Le curseur attend le prénom dès que la maison est prête */
+  useEffect(() => {
+    if (!isPending) champPrenom.current?.focus()
+  }, [isPending])
 
   useEffect(() => {
     const tick = () =>
@@ -172,12 +181,12 @@ export function WelcomeGate() {
     return () => clearInterval(t)
   }, [])
 
-  /* Entrer — direct, sans formalité : la porte est ouverte */
+  /* Entrer — sous le prénom écrit, ou celui de la maison */
   const entrer = () => {
     if (!hote || passage) return
     setPassage(true)
     setVille(ville)
-    setName(hote.name)
+    setName(prenom.trim() || hote.name)
     setMember(hote.id, hote.role, hote.city, hote.perms)
     qc.invalidateQueries({ queryKey: ['members'] })
   }
@@ -330,14 +339,50 @@ export function WelcomeGate() {
           <span className="h-px w-16 bg-gradient-to-l from-transparent to-accent/60" />
         </motion.div>
 
-        {/* ─── LE BOUTON ENTRER — à la place de la citation ─── */}
+        {/* ─── LE PRÉNOM DE CELUI QUI ENTRE, PUIS LE BOUTON ─── */}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mt-8 flex w-full flex-col items-center"
         >
-          <div className="relative">
+          {/* Le prénom — la porte demande qui entre */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.55 }}
+            className="w-full max-w-[280px]"
+          >
+            <label htmlFor="prenom-entree" className="sr-only">
+              Ton prénom
+            </label>
+            <div className="relative">
+              <input
+                id="prenom-entree"
+                ref={champPrenom}
+                type="text"
+                value={prenom}
+                onChange={(e) => setPrenom(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') entrer()
+                }}
+                placeholder="Ton prénom…"
+                autoComplete="given-name"
+                maxLength={30}
+                className="w-full rounded-full border border-gold/35 bg-card/80 py-3 pl-5 pr-11 text-center text-[15px] font-medium text-encre placeholder:text-brouillard/70 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gold/60"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </span>
+            </div>
+          </motion.div>
+          <div className="relative mt-4">
             {/* Halo qui respire derrière le bouton */}
             <motion.span
               aria-hidden
@@ -348,7 +393,6 @@ export function WelcomeGate() {
             <motion.button
               onClick={entrer}
               disabled={!hote || passage}
-              autoFocus
               whileHover={hote ? { scale: 1.045 } : undefined}
               whileTap={hote ? { scale: 0.955 } : undefined}
               aria-label="Entrer dans la zawiya"

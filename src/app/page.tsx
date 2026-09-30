@@ -59,12 +59,14 @@ export default function Page() {
   const monte = useSyncExternalStore(souscrireRien, () => true, () => false)
 
   /* Résoudre le prénom + la zawiya → membre (id, rôle, droits).
-     L'inscription se fait à la porte d'entrée (avec code et validation) :
-     ici, on ne crée plus rien — on synchronise, et on sors celui dont
-     l'accès a été révoqué ou retiré depuis. */
+     La porte d'entrée accueille sous le prénom écrit de celui qui
+     entre : le nom d'affichage est libre, les droits suivent le
+     membre de la maison (hôte). C'est donc l'identifiant du membre
+     que l'on synchronise — on sors celui dont l'accès a été révoqué
+     ou retiré depuis. */
   useEffect(() => {
     if (!name || !membres) return
-    const m = membres.find((x) => x.name === name && x.city === ville)
+    const m = membres.find((x) => x.id === memberId)
     if (!m) {
       /* Le frère n'existe plus dans cette zawiya (retiré par le référent) */
       logout()
@@ -87,7 +89,7 @@ export default function Page() {
       })
       return
     }
-    if (m.id !== memberId || m.role !== role || m.perms !== perms) {
+    if (m.role !== role || m.perms !== perms) {
       setMember(m.id, m.role, m.city, m.perms)
     }
   }, [name, ville, membres, memberId, role, perms, setMember, logout, toast])

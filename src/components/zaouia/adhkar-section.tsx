@@ -11,7 +11,6 @@ import {
   Minus,
   Music,
   Plus,
-  Printer,
   Type,
   X,
 } from 'lucide-react'
@@ -27,7 +26,6 @@ import {
 } from '@/data/adhkar-docs'
 import {
   useLecture,
-  usePrint,
   type PoliceArabe,
   type PoliceLecture,
   type Interligne,
@@ -84,8 +82,62 @@ const ACCENTS: { id: AccentLecture; nom: string; couleur: string }[] = [
   { id: 'brun', nom: 'Brun', couleur: '#8a5a2e' },
 ]
 
-/* ─── Une ligne du texte, répétitions « x 100 » / « × ١٠٠ » en badge ─── */
-function LigneInvocation({ ligne, accent }: { ligne: string; accent: string }) {
+/* ─── Chiffres arabes-indiens & pages du livre imprimé ───
+   Le kitāb comme le cahier portent la pagination du livre :
+   elle s'affiche en « ص ٧ » (arabe) ou « p. 7 » (phonétique). */
+const CHIFFRES_AR = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
+function versArabe(n: number): string {
+  return String(n).replace(/\d/g, (d) => CHIFFRES_AR[Number(d)])
+}
+function versLatin(s: string): number {
+  const arabe = s.replace(/[٠-٩]/g, (d) => String(CHIFFRES_AR.indexOf(d)))
+  return parseInt(arabe, 10)
+}
+function libellePages(debut: number, fin: number, arabe: boolean): string {
+  if (!debut || !fin) return ''
+  if (arabe) {
+    return debut === fin ? `ص ${versArabe(debut)}` : `ص ${versArabe(debut)} – ${versArabe(fin)}`
+  }
+  return debut === fin ? `p. ${debut}` : `p. ${debut}–${fin}`
+}
+
+/* ─── Une ligne du texte, répétitions « x 100 » / « × ١٠٠ » en badge,
+   renvois « ← ص ٧ » / « → p. 7 » en lien vers la page du livre ─── */
+const RE_RENVOI = /(?:←|→)\s*(?:ص|p\.?)\s*([٠-٩\d]+)/u
+function LigneInvocation({
+  ligne,
+  accent,
+  onPage,
+}: {
+  ligne: string
+  accent: string
+  onPage?: (page: number) => void
+}) {
+  const renvoi = ligne.match(RE_RENVOI)
+  if (renvoi && onPage) {
+    const page = versLatin(renvoi[1])
+    if (Number.isFinite(page)) {
+      return (
+        <button
+          type="button"
+          onClick={() => onPage(page)}
+          title="Aller à la page du livre"
+          className="group/renvoi block w-full text-center transition-colors duration-200"
+          style={{ color: accent }}
+        >
+          <span className="underline decoration-dotted underline-offset-[6px] decoration-[1.5px] group-hover/renvoi:decoration-solid">
+            {ligne}
+          </span>
+          <span
+            aria-hidden
+            className="mx-1.5 inline-block align-middle text-[0.7em] opacity-0 transition-opacity duration-200 group-hover/renvoi:opacity-70"
+          >
+            ↝
+          </span>
+        </button>
+      )
+    }
+  }
   const m = ligne.match(/^(.*?)(\s*[×x]\s*[٠-٩\dHh '’]+)$/u)
   if (m && m[2].trim()) {
     return (
@@ -250,7 +302,6 @@ interface LecteurProps {
 
 function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps) {
   const l = useLecture()
-  const imprimer = usePrint((s) => s.imprimer)
 
   /* Le diwân de samâ‘ (398 chants) n'entre pas dans le fil principal :
      il se charge paresseusement à l'ouverture du document. */
@@ -431,6 +482,29 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
     const cible = cartesRef.current[i]
     if (cible) cible.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
+
+  /* ─── Les renvois « ← ص ٧ » / « → p. 7 » deviennent des liens :
+     la page demandée cherche le chapitre du document courant qui
+     la contient (debut ≤ page ≤ fin) et y fait défiler, avec un
+     filet d'or qui pulse autour de la carte atteinte. Le livre
+     imprimé et le site parlent enfin la même pagination. ─── */
+  const allerALaPage = useCallback(
+    (page: number) => {
+      const i = chapitres.findIndex((c) => c.debut <= page && page <= (c.fin || c.debut))
+      if (i < 0) return
+      allerAuChapitre(i)
+      const cible = cartesRef.current[i]
+      cible?.animate(
+        [
+          { boxShadow: 'inset 0 0 0 3px rgba(184,146,58,0)' },
+          { boxShadow: 'inset 0 0 0 3px rgba(184,146,58,0.8)' },
+          { boxShadow: 'inset 0 0 0 3px rgba(184,146,58,0)' },
+        ],
+        { duration: 1600, easing: 'ease-out' }
+      )
+    },
+    [chapitres, allerAuChapitre]
+  )
 
   /* ─── Le chapitre visible suit le défilement ─── */
   useEffect(() => {
@@ -740,8 +814,21 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                       i === indexActif ? 'bg-primary/10 text-primary' : 'text-encre hover:bg-muted/60'
                     )}
                   >
-                    <span className={cn('min-w-0 flex-1 truncate text-sm', arabe && 'font-arabic text-right text-[16px]')}>
+                    <span
+                      className={cn('min-w-0 flex-1 truncate text-sm', arabe && 'font-arabic text-right text-[16px]')}
+                      dir={arabe ? 'rtl' : undefined}
+                      lang={arabe ? 'ar' : undefined}
+                    >
                       {c.titre}
+                      {libellePages(c.debut, c.fin, arabe) && (
+                        <span
+                          className="ml-1.5 inline-block shrink-0 rounded-full border px-1.5 py-0.5 align-middle text-[9px] font-bold tabular-nums opacity-70"
+                          style={{ borderColor: 'currentColor', color: 'inherit' }}
+                          dir={arabe ? 'rtl' : 'ltr'}
+                        >
+                          {libellePages(c.debut, c.fin, arabe)}
+                        </span>
+                      )}
                     </span>
                     <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-brouillard">
                       {i + 1} / {chapitres.length}
@@ -904,6 +991,15 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                                         >
                                           {e.titre}
                                         </span>
+                                        {libellePages(e.debut, e.fin, e.langue === 'ar') && (
+                                          <span
+                                            className="ml-1.5 inline-block shrink-0 rounded-full border px-1.5 py-0.5 align-middle text-[9px] font-bold tabular-nums opacity-70"
+                                            style={{ borderColor: `${accent.couleur}40`, color: accent.couleur }}
+                                            dir={e.langue === 'ar' ? 'rtl' : 'ltr'}
+                                          >
+                                            {libellePages(e.debut, e.fin, e.langue === 'ar')}
+                                          </span>
+                                        )}
                                         {e.repli && (
                                           <span
                                             className="ml-1.5 inline-block rounded-full border px-1.5 py-0.5 align-middle text-[8.5px] font-bold uppercase tracking-wider opacity-55"
@@ -976,6 +1072,30 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                       {c.sousTitre}
                     </p>
                   ) : null}
+                  {/* La pagination du livre imprimé — « ص ١٣ – ١٥ » ou « p. 17–22 » :
+                      la même numérotation que le renvoi « ← ص ٧ », pour naviguer
+                      entre le papier et l'écran sans se perdre. */}
+                  {libellePages(c.debut, c.fin, arabeC) && (
+                    <p
+                      className="mt-2"
+                      dir={arabeC ? 'rtl' : 'ltr'}
+                      lang={arabeC ? 'ar' : undefined}
+                    >
+                      <span
+                        className={cn(
+                          'inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-[0.14em] tabular-nums',
+                          arabeC && 'font-arabic text-[13px]'
+                        )}
+                        style={{
+                          color: accent.couleur,
+                          borderColor: `${accent.couleur}45`,
+                          backgroundColor: `${accent.couleur}12`,
+                        }}
+                      >
+                        {libellePages(c.debut, c.fin, arabeC)}
+                      </span>
+                    </p>
+                  )}
                   {/* La pratique n'existe pas dans la langue demandée —
                       on la lit dans l'autre, avec une mention discrète */}
                   {c.repli && (
@@ -1013,27 +1133,10 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                     arabeC && c.poesie ? (
                       <VersPoeme key={j} ligne={ligne} accent={accent.couleur} />
                     ) : (
-                      <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
+                      <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} onPage={allerALaPage} />
                     )
                   )}
                 </div>
-
-                {/* Imprimer ce chapitre — pas pour le diwân, qui
-                    s'imprime depuis sa page numérisée */}
-                {!estSama && (
-                  <footer className="mt-6 flex justify-center border-t pt-4" style={{ borderColor: `${accent.couleur}30` }}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        imprimer({ kind: arabeC ? 'kitab' : 'cahier', chapitreId: c.id })
-                      }
-                      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] transition-all active:scale-95"
-                      style={{ color: accent.couleur }}
-                    >
-                      <Printer className="h-3.5 w-3.5" /> Imprimer ce chapitre
-                    </button>
-                  </footer>
-                )}
               </article>
               )
             })}

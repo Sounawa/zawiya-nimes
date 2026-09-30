@@ -682,3 +682,26 @@ Stage Summary:
 - 3 demandes traitées : parenthèses ✓ (220 paires), Waqi'a ✓ (Warsh intégral), voyelles ✓ (vérifiées présentes partout).
 - Risque résiduel faible : tanwīn kabīr appliqué aux mots listés du corpus k01/k02/k04 ; si la zawiya constate une divergence sur un mot précis, le comparer au PDF waqia-ar.pdf (pages 1-3).
 - Prochaine phase : QA générale site (cron webDevReview 15 min), éventuellement harmonisation fine du reste du kitāb vers la convention tanwīn kabīr.
+
+---
+Task ID: 2
+Agent: main (Z.ai Code)
+Task: Session 4 — erreurs Waqi'a signalées par l'utilisateur, wadhifa incomplète, liens hypertexte, pagination, suppression impression, prénom à la porte
+
+Work Log:
+- WAQI'A v26+v51 (les 2 « grossières erreurs ») : vérifiées sur le scan du mushaf (waqia-ar.pdf /tmp/waqia/full-p1.png + full-p2.png, questions VLM binaires). Confirmé : 56:26 = إِلَّا قِيلًا سَلَٰمٞ سَلَٰمٞ (DAMMATAN/tanwīn kabīr, la session 3 avait mis l'accusatif ً à tort) ; 56:51 = ثُمَّ إِنَّكُمُ (damma sur le mim final, pas sukūn). Les deux corrigés dans k03.
+- V7 وَكُنتُمْ : vérifié sur mushaf = sukun (le « kuntumû~~ » du cahier = ishmām, pas damma) → inchangé.
+- QUEUE WAQI'A (k03) RECONSTITUÉE : le cahier phonétique (ch04, pages 21-22 du cahier-wadhifa.pdf) prouve que la Wāqi'a se termine par : ﴿فَإِنَّ مَعَ الْعُسْرِ يُسْرًا إِنَّ مَعَ الْعُسْرِ يُسْرًا﴾ ×100 + دُعَاء الصَّلَاة الْجَمَالِيَّة + سُبْحَانَ رَبِّكَ final. Ajouté avec les renvois الدُّعَاءُ النَّاصِرِيُّ ← ص ٥٥ / قَصِيدَةُ الْمُنْفَرِجَة ← ص ٥٩.
+- WADHIFA (k05) COMPLÉTÉE : après الصَّلَاة النُّورِيَّة ×٣٠ il manquait la fin (photos du cahier-ijtima.docx, pages ١٨٠-١٨١) : سُورَةُ الوَاقِعَة ← ص ١٣ + الدُّعَاء النَّاصِري ← ص ٥٥ + قَصِيدَة المنفرجة ← ص ٥٩ + ﴿فإن مع العسر يسرا﴾ ×١٠٠ + دعاء الصلاة الجمالية + سبحان ربك. C'est le « 100 fa lam et salat jamaliya » que l'utilisateur réclamait.
+- VÉRIFICATION MOT POUR MOT SCRIPTÉE : squelettes consonantiques (diacritiques U+064B-065F/U+06D6-06ED retirés) comparés au cahier d'ijtima (texte numérique exact). k01 Yā-Sīn = 0 mot manquant (sur 725), k02 al-Fatḥ = 0 (sur 560), k04 al-Mulk = 0 (sur 333) — les seuls « + » sont l'isti'ādha, la basmala et les clôtures سبحان ربك propres au kitāb. k03 vérifiée verset par verset contre le cahier phonétique (ch04) + points Warsh du mushaf.
+- RENVOI MUNFARIJA : corrigé ص ٦١ → ص ٥٩ (5 occurrences dans kitab-arabe-2.ts) selon le fihris du kitāb imprimé (Nasiri 55, Munfarija 59, p.2-3 du PDF).
+- LIENS HYPERTEXTE : LigneInvocation détecte «← ص ٧» / «→ p. 7» → bouton souligné pointillé + ↝ au survol ; allerALaPage() trouve le chapitre du document courant dont debut ≤ page ≤ fin, y fait défiler et pulse un filet d'or autour de la carte (animate boxShadow 1,6 s). Vérifié : 13 boutons renvoi en arabe + 33 en phonétique, clic «← ص ٥٥» → scroll exact au Nâṣirî.
+- PAGINATION : pastille «ص ١٣ – ١٥» (arabe, chiffres arabes-indiens) / «p. 17–22» (phonétique) dans l'en-tête de CHAQUE chapitre + dans les sommaires (carte wadhifa et sommaire plat). Conversion versArabe()/versLatin()/libellePages().
+- IMPRESSION SUPPRIMÉE : bouton «Imprimer ce chapitre» retiré du lecteur (usePrint/Printer retirés des imports d'adhkar-section ; print-sheet.tsx conservé pour les autres usages — réunions, cotisations).
+- PRÉNOM À LA PORTE : champ «Ton prénom…» (input arrondi, icône, focus auto, Entrée = entrer) sur la première page — celui qui entre écrit son nom ; setName(prénom || référent). Garde page.tsx réécrite : la session suit l'ID du membre hôte (plus le nom d'affichage) — sinon tout prénom libre était éjecté « Accès fermé ». En-tête affiche le prénom entré (test « Youssef » ✓).
+- QA AGENT-BROWSER : porte → prénom Youssef → en-tête ✓ ; lecteur kitāb arabe : v26 سَلَٰمٞ سَلَٰمٞ ✓, v51 إِنَّكُمُ ✓, queue k03 ✓, queue k05 ✓, pastilles pages ✓, renvois cliquables ✓, plus de bouton imprimer ✓ ; phonétique : p. 17–22 + queue ✓ ; 0 erreur console ; lint 0 erreur. Service worker obsolète désinscrit pendant le test (il servait d'anciens chunks).
+
+Stage Summary:
+- Toutes les demandes de la session traitées : 2 erreurs Waqi'a corrigées (confirmées mushaf), wadhifa complétée (×100 + Salat Jamaliyya + renvois), vérification mot à mot k01-k04 passée (0 divergence), renvois munis de liens, pages numérotées (pastilles), impression supprimée, prénom à l'entrée.
+- Le mushaf Warsh (waqia-ar.pdf) reste la référence pour tout point contesté de k03.
+- Risques/restes : kitab-arabe.pdf (les 65 pages) semble contenir des pages de mushaf dispersées (A'raf p.4, Bayyina p.5, Nisa p.19 d'après VLM) et non la mise en page du livre imprimé — la pagination par chapitre (debut/fin du fihris) fait foi ; les marqueurs de page DANS le texte ne peuvent donc pas être posés avec certitude (seulement par chapitre) ; k06/k07 (wadhifa Fajr/Subh) mériteraient une vérification contre le kitāb imprimé ; Taha disponible (docx) si une section est demandée.

@@ -902,3 +902,22 @@ Stage Summary:
 - Les trois demandes sont livrées : push téléphone (annonce + sondage uniquement), message d'annonce facultatif (titre seul suffit), bandeau prochain ijtima' TOUJOURS utile (réunion ou jour configuré)
 - Prod Turso : table PushSubscription créée + clés VAPID dans l'env Netlify — prête pour le déploiement
 - À suivre : commit + push GitHub + déploiement Netlify + vérification prod (le bandeau y montrera « Ijtimâ' du mardi · 17:45 · à programmer » tant qu'aucune réunion n'y est créée — l'utilisateur peut en créer une ou je peux en semer une depuis le docx si demandé)
+
+---
+Task ID: 10
+Agent: main (Z.ai Code)
+Task: Publication round 8 — push GitHub OK, déploiement Netlify BLOQUÉ (crédits épuisés)
+
+Work Log:
+- Commit c7faa7b poussé sur GitHub (7cac977..c7faa7b) ✓
+- Netlify : le webhook n'a PAS déclenché de build ; déclenchement manuel refusé : « Account credit usage exceeded - new deploys are blocked until credits are added »
+- La prod https://zawiya-nimes.netlify.app/ reste EN LIGNE sur la version précédente (7cac977 : document seul, SW v14)
+- Cause probable : les 300 minutes de build mensuelles du plan gratuit sont consommées (nombreux builds aujourd'hui) — le reset devrait intervenir au cycle de facturation, probablement le 1er octobre (demain)
+- À faire dès que les crédits reviennent : déclencher le déploiement (bouton « Deploys ▸ Trigger deploy » du dashboard, ou API POST /api/v1/sites/f4dee7b5-a55f-4223-acd6-cfca4894c846/deploys, ou simplement pusher un commit) — le cron webDevReview 15 min peut s'en charger aussi
+- Après déploiement il faudra vérifier : SW v15 servi, bandeau « à programmer » (mardi 17:45 en prod), /api/push/cle répond la clé publique, section Réglages notifications
+- Tokens utilisés ce round (à révoquer au choix) : GitHub ghp_31ky…, Netlify nfp_1RKk… (également utilisé pour créer les 2 variables VAPID et lire/écrire Turso via DATABASE_AUTH_TOKEN)
+
+Stage Summary:
+- ÉTAT : GitHub = local (c7faa7b, tout le round 8 livré) ; prod = 7cac977 (round 7) en attendant les crédits Netlify
+- Rien d'autre en attente côté code : les 3 demandes (push téléphone, message facultatif, bandeau toujours visible) sont complètes et testées
+- Prochaine étape : déployer dès crédits disponibles, puis vérifier la prod (checklist ci-dessus)

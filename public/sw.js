@@ -8,7 +8,7 @@
    Cache versionné — toute nouvelle version purge l'ancienne.
    ⚠ Changer une image (logo, tariqa…) exige de bumper VERSION. */
 
-const VERSION = 'zawiya-v13'
+const VERSION = 'zawiya-v14'
 const SHELL = [
   '/favicon-96.png',
   '/apple-touch-icon.png',

@@ -117,7 +117,7 @@ function LigneInvocation({
   /* 1. La ligne entière est un renvoi — le titre souligné, la page
         en médaillon pointillé : tout est cliquable */
   const seul = renvoi ? ligne.match(RENVOI_SEUL) : null
-  if (seul) {
+  if (seul && renvoi) {
     const livre: 'ph' | 'ar' = seul[3] !== undefined ? 'ph' : 'ar'
     const page = seul[3] !== undefined ? Number(seul[3]) : chiffresLatins(seul[4])
     const i = renvoi.cible(livre, page, seul[1])
@@ -1444,7 +1444,7 @@ export function AdhkarSection() {
   return (
     <SectionShell
       titre="Adhkâr"
-      compteur="10 documents · phonétique & arabe"
+      compteur="11 documents · phonétique & arabe"
       id="adhkar"
       defaultOpen={false}
     >

@@ -7,11 +7,12 @@ import { api, creationsLocales } from '@/lib/api'
 import { useUser } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 import { demanderPermissionNotifications, notifierNavigateur } from '@/lib/notifications'
-import type { Announcement, Meeting } from '@/lib/types'
+import type { Announcement, Poll } from '@/lib/types'
 
 /* ═══════════════════════════════════════════════════════════════════
-   Veille de la communauté — prévient en douceur quand une nouvelle
-   annonce ou un nouvel ijtimâ' est publié pendant qu'on est dans l'app.
+   Veille de la zawiya — prévient en douceur quand une ANNONCE ou un
+   SONDAGE est publié (pour prévenir d'un ijtimâ'). Rien d'autre :
+   ni les votes, ni les réunions, ni les présences ne notifient.
    Interrogation toutes les 60 s ; la première réponse sert de référence
    (aucune notification au chargement).
 
@@ -24,7 +25,7 @@ export function VeilleCommunaute() {
   const setNotifAsked = useUser((s) => s.setNotifAsked)
   const { toast } = useToast()
 
-  const connues = useRef<{ annonces: Set<string>; reunions: Set<string> } | null>(null)
+  const connues = useRef<{ annonces: Set<string>; sondages: Set<string> } | null>(null)
 
   const { data: annonces } = useQuery({
     queryKey: ['announcements'],
@@ -35,9 +36,9 @@ export function VeilleCommunaute() {
     refetchIntervalInBackground: true,
     enabled: !!memberId,
   })
-  const { data: reunions } = useQuery({
-    queryKey: ['meetings'],
-    queryFn: () => api<Meeting[]>('/api/meetings'),
+  const { data: sondages } = useQuery({
+    queryKey: ['polls'],
+    queryFn: () => api<Poll[]>('/api/polls'),
     refetchInterval: 60_000,
     refetchIntervalInBackground: true,
     enabled: !!memberId,
@@ -76,7 +77,7 @@ export function VeilleCommunaute() {
                     : 'Notifications non activées',
                 description:
                   resultat === 'granted'
-                    ? "Tu seras prévenu des nouvelles annonces et ijtimâ'."
+                    ? "Tu seras prévenu des nouvelles annonces et sondages de la zawiya."
                     : 'Pas de souci — les toasts dans l’app restent actifs.',
               })
             }}
@@ -92,13 +93,13 @@ export function VeilleCommunaute() {
   }, [memberId, notifAsked, setNotifAsked, toast])
 
   useEffect(() => {
-    if (!annonces || !reunions) return
+    if (!annonces || !sondages) return
 
     /* Premier chargement : mémoriser l'état actuel, ne rien signaler */
     if (!connues.current) {
       connues.current = {
         annonces: new Set(annonces.map((a) => a.id)),
-        reunions: new Set(reunions.map((m) => m.id)),
+        sondages: new Set(sondages.map((p) => p.id)),
       }
       return
     }
@@ -117,28 +118,24 @@ export function VeilleCommunaute() {
       toast({ title: titre, description: corps })
     }
 
-    /* Nouvelles réunions — toast vert (hors créations locales) */
-    const nouvellesReunions = reunions.filter(
-      (m) => !connues.current!.reunions.has(m.id) && !creationsLocales.reunions.has(m.id)
+    /* Nouveaux sondages — toast doré (celui de cet onglet est ignoré) */
+    const nouveauxSondages = sondages.filter(
+      (p) => !connues.current!.sondages.has(p.id) && !creationsLocales.sondages.has(p.id)
     )
-    if (nouvellesReunions.length > 0) {
-      const m = nouvellesReunions[0]
-      const titre = "🕌 Nouvel ijtimâ' programmé"
-      const corps =
-        nouvellesReunions.length === 1
-          ? `${m.title} — ${new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}${m.startTime ? ` · ${m.startTime}` : ''}`
-          : `${nouvellesReunions.length} nouvelles réunions au calendrier`
-      if (!(enFond && notifierNavigateur(titre, corps))) {
-        toast({ title: titre, description: corps })
-      }
+    for (const p of nouveauxSondages.slice(0, 3)) {
+      const question =
+        p.question.length > 90 ? `${p.question.slice(0, 90)}…` : p.question
+      const titre = '🗳️ Nouveau sondage'
+      if (enFond && notifierNavigateur(titre, question)) continue
+      toast({ title: titre, description: question })
     }
 
     /* Mettre à jour la référence */
     connues.current = {
       annonces: new Set(annonces.map((a) => a.id)),
-      reunions: new Set(reunions.map((m) => m.id)),
+      sondages: new Set(sondages.map((p) => p.id)),
     }
-  }, [annonces, reunions, toast])
+  }, [annonces, sondages, toast])
 
   return null
 }

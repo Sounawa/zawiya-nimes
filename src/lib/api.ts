@@ -191,7 +191,8 @@ export function useCreatePoll() {
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       api<Poll>('/api/polls', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onSuccess: (cree) => {
+      if (cree?.id) creationsLocales.sondages.add(cree.id)
       qc.invalidateQueries({ queryKey: ['polls'] })
       qc.invalidateQueries({ queryKey: ['audit'] })
     },
@@ -357,6 +358,7 @@ export function useAnnouncements() {
 /* IDs créés localement (cet onglet) — la veille ne les annonce pas en toast */
 export const creationsLocales = {
   annonces: new Set<string>(),
+  sondages: new Set<string>(),
   reunions: new Set<string>(),
 }
 

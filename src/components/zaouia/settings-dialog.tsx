@@ -1,12 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   BadgeCheck,
   Ban,
-  BellOff,
-  BellRing,
   CalendarDays,
   Check,
   Hourglass,
@@ -14,9 +12,11 @@ import {
   MapPin,
   Pencil,
   Plus,
+  Share,
   Shield,
   ShieldCheck,
   SlidersHorizontal,
+  Smartphone,
   UserRound,
   UserRoundPlus,
   Wallet,
@@ -62,12 +62,10 @@ import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import {
-  abonnerPush,
-  desabonnerPush,
-  estAbonnePush,
-  iosSansInstallation,
-  pushDisponible,
-} from '@/lib/push-client'
+  estInstallee,
+  estIOS,
+  useInstallation,
+} from '@/lib/installation'
 
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 
@@ -87,7 +85,92 @@ const DROIT_DE_LA_FAMILLE: Record<FamilleDroits, Parameters<typeof peut>[2]> = {
   cotisations: 'cotisations.voir',
 }
 
-/* ═══════════════ Réglages : jours d'ijtima + frères + accès ═══════════════ */
+/* ═══════════════ Section « Installer l'application » ═══════════════
+   Sous-composant monté seulement quand les réglages sont ouverts :
+   l'état réel de l'appareil (installée ? iOS ?) est relu à chaque
+   ouverture, sans effet ni re-rendu superflu. */
+function SectionInstallation() {
+  const { toast } = useToast()
+  const inviteInstallation = useInstallation((s) => s.invite)
+  const oublierInstallation = useInstallation((s) => s.oublier)
+  /* Initialisation paresseuse au montage — le composant se remonte
+     à chaque ouverture des réglages. */
+  const [appInstallee, setAppInstallee] = useState(estInstallee)
+  const [surIOS] = useState(estIOS)
+
+  const installerApp = async () => {
+    if (!inviteInstallation) return
+    try {
+      await inviteInstallation.prompt()
+      const { outcome } = await inviteInstallation.userChoice
+      /* L'invitation est à usage unique — elle est consommée */
+      oublierInstallation()
+      if (outcome === 'accepted') {
+        setAppInstallee(true)
+        toast({
+          title: 'Application installée ✦',
+          description: 'La zawiya vit désormais sur ton écran d’accueil.',
+        })
+      }
+    } catch {
+      /* fermeture de l'invite — rien à signaler */
+    }
+  }
+
+  return (
+    <section aria-label="Installer l'application" className="space-y-3">
+      <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
+        <Smartphone className="h-4 w-4" /> Application hors-ligne
+      </h3>
+      <div className="rounded-2xl border border-primary/20 bg-card p-4 shadow-sm">
+        <p className="text-xs leading-relaxed text-brouillard">
+          La zawiya sur ton écran d'accueil, comme une vraie app : les adhkâr, le Coran,
+          les durûs et le samâ' restent ouverts{' '}
+          <strong className="text-encre">même sans réseau</strong>.
+        </p>
+        {appInstallee ? (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/12 px-3.5 py-2">
+            <BadgeCheck className="h-4 w-4 text-primary" aria-hidden />
+            <span className="text-[11px] font-bold text-primary">
+              Application installée — tu l'utilises déjà
+            </span>
+          </div>
+        ) : inviteInstallation ? (
+          <Button
+            size="sm"
+            onClick={installerApp}
+            className="mt-3 h-9 gap-1.5 rounded-full bg-primary px-5 text-[12px] text-white hover:bg-emerald-deep"
+          >
+            <Smartphone className="h-4 w-4" /> Installer l'application
+          </Button>
+        ) : surIOS ? (
+          <ol className="mt-3 space-y-1.5 rounded-xl bg-or-pale px-3.5 py-3 text-[11px] leading-relaxed text-gold-vif">
+            <li>
+              1. Touche le bouton <strong>Partager</strong>{' '}
+              <Share className="inline h-3.5 w-3.5" aria-hidden /> en bas de Safari
+            </li>
+            <li>
+              2. Fais défiler et choisis <strong>« Sur l'écran d'accueil »</strong>
+            </li>
+            <li>
+              3. Confirme avec <strong>« Ajouter »</strong> — l'icône de la zawiya
+              apparaît parmi tes apps
+            </li>
+          </ol>
+        ) : (
+          <p className="mt-3 rounded-xl bg-sand px-3.5 py-3 text-[11px] leading-relaxed text-brouillard">
+            Dans le menu du navigateur{' '}
+            <strong className="text-encre">(⋮ en haut à droite)</strong>, choisis{' '}
+            <strong className="text-encre">« Installer l'application »</strong>.
+            Sur iPhone : bouton <strong>Partager</strong> ▸{' '}
+            <strong>« Sur l'écran d'accueil »</strong>.
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
 export function SettingsDialog({
   open,
   onOpenChange,
@@ -119,61 +202,6 @@ export function SettingsDialog({
   const [membreRetire, setMembreRetire] = useState<Member | null>(null)
   const monId = useUser((s) => s.memberId)
   const setName = useUser((s) => s.setName)
-
-  /* ─── Notifications téléphone (push) ─── */
-  const [abonne, setAbonne] = useState<boolean | null>(null)
-  const [pushEnCours, setPushEnCours] = useState(false)
-  useEffect(() => {
-    if (!open) return
-    /* L'état réel de CET appareil, relu à chaque ouverture :
-       un frère peut avoir activé ailleurs, ou retiré la permission
-       dans les réglages du navigateur. */
-    let annule = false
-    estAbonnePush().then((etat) => {
-      if (!annule) setAbonne(etat)
-    })
-    return () => {
-      annule = true
-    }
-  }, [open])
-
-  const activerPush = async () => {
-    setPushEnCours(true)
-    const resultat = await abonnerPush(monId)
-    setPushEnCours(false)
-    if (resultat === 'abonne') {
-      setAbonne(true)
-      toast({
-        title: '🔔 Notifications activées',
-        description: "Ce téléphone sera prévenu des annonces et sondages — même la zawiya fermée.",
-      })
-    } else if (resultat === 'ios-non-installe') {
-      toast({
-        title: 'Sur iPhone : installe la zawiya',
-        description: "Partage ▸ « Sur l'écran d'accueil » — puis reviens activer les alertes ici.",
-        duration: 10_000,
-      })
-    } else {
-      toast({
-        title: 'Notifications non activées',
-        description: 'Vérifie la permission dans les réglages du navigateur, puis réessaie.',
-        variant: 'destructive',
-      })
-    }
-  }
-
-  const couperPush = async () => {
-    setPushEnCours(true)
-    const ok = await desabonnerPush()
-    setPushEnCours(false)
-    setAbonne(false)
-    if (ok) {
-      toast({
-        title: 'Notifications coupées',
-        description: "Ce téléphone ne sera plus prévenu. Réactivables ici à tout moment.",
-      })
-    }
-  }
 
   /* ─── Lieu des ijtima' ─── */
   const configDefaut = settings?.app_config ?? { nom: 'Nimes', ville: 'Nîmes', lieu: '' }
@@ -369,64 +397,9 @@ export function SettingsDialog({
           </section>
         )}
 
-        {/* ─── Notifications téléphone ─── */}
-        <section aria-label="Notifications téléphone" className="space-y-3">
-          <h3 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-primary">
-            <BellRing className="h-4 w-4" /> Notifications du téléphone
-          </h3>
-          <div className="rounded-2xl border border-primary/20 bg-card p-4 shadow-sm">
-            <p className="text-xs leading-relaxed text-brouillard">
-              Une alerte sur CE téléphone quand une <strong className="text-encre">annonce</strong> ou
-              un <strong className="text-encre">sondage</strong> paraît — pour prévenir d'un
-              ijtimâ'. Rien d'autre ne sonne, et même l'application fermée.
-            </p>
-            {iosSansInstallation() && (
-              <p className="mt-2 rounded-xl bg-or-pale px-3 py-2 text-[11px] leading-relaxed text-gold-vif">
-                Sur iPhone, installe d'abord la zawiya sur l'écran d'accueil
-                (Partage ▸ « Sur l'écran d'accueil ») — les notifications arrivent ensuite
-                comme pour une app.
-              </p>
-            )}
-            {abonne === null ? (
-              <div className="mt-3 h-9 animate-pulse rounded-full bg-muted" aria-hidden />
-            ) : abonne ? (
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1.5 text-[11px] font-bold text-primary">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                  </span>
-                  Ce téléphone est prévenu
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={couperPush}
-                  disabled={pushEnCours}
-                  className="h-8 gap-1.5 rounded-full border-primary/25 px-3 text-[11px] text-brouillard hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive"
-                >
-                  <BellOff className="h-3.5 w-3.5" /> Ne plus être prévenu
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                onClick={activerPush}
-                disabled={pushEnCours || !pushDisponible()}
-                className="mt-3 h-9 gap-1.5 rounded-full bg-primary px-5 text-[12px] text-white hover:bg-emerald-deep"
-              >
-                <BellRing className="h-4 w-4" />
-                {pushEnCours ? 'Activation…' : 'Prévenir ce téléphone'}
-              </Button>
-            )}
-            {!pushDisponible() && (
-              <p className="mt-2 text-[11px] italic text-brouillard">
-                Ce navigateur ne prend pas encore les alertes application fermée —
-                les annonces restent visibles en ouvrant la zawiya.
-              </p>
-            )}
-          </div>
-        </section>
+        {/* ─── Installer l'application (hors-ligne) — se remonte à
+            chaque ouverture : l'état réel de l'appareil est relu ─── */}
+        <SectionInstallation />
 
         {/* ─── Lieu des ijtima' ─── */}
         <section aria-label="Lieu des ijtima" className="space-y-3">

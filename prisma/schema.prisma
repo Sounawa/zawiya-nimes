@@ -154,21 +154,3 @@ model AuditLog {
 
   @@index([createdAt(sort: Desc)])
 }
-
-// ─── Abonnements aux notifications push ─────────────────────────────
-// Un appareil (téléphone, tablette, navigateur) qui a accepté de
-// recevoir les alertes de la zawiya : annonces et sondages, pour
-// prévenir d'un ijtimâ'. Le service worker du site s'abonne au
-// service push du navigateur (FCM chez Chrome, Apple chez Safari) ;
-// le serveur y envoie les messages signés VAPID. L'appareil peut
-// être associé à un frère (pour ne pas le notifier de sa propre
-// publication) et à une zawiya (annonces ciblées).
-model PushSubscription {
-  id        String   @id @default(cuid())
-  endpoint  String   @unique // URL du service push de CET appareil
-  p256dh    String // clé publique de chiffrement de l'appareil
-  auth      String // secret d'authentification de l'appareil
-  memberId  String? // frère inscrit depuis cet appareil (facultatif)
-  city      String? // NIMES | AVIGNON | MONTPELLIER (annonces ciblées)
-  createdAt DateTime @default(now())
-}

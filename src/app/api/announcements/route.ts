@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { journaliser } from '@/lib/audit'
 import { exiger, membreAppeleur } from '@/lib/auth-serveur'
-import { envoyerPush } from '@/lib/push'
 
 const VILLES = ['NIMES', 'AVIGNON', 'MONTPELLIER']
 
@@ -46,7 +45,7 @@ export async function GET(req: Request) {
 // toutes les zawiya, ou une sélection (ex. Nîmes + Montpellier).
 export async function POST(req: Request) {
   try {
-    const { membre, refus } = await exiger(req, 'annonces.creer')
+    const { refus } = await exiger(req, 'annonces.creer')
     if (refus) return refus
     const body = await req.json()
     /* Le message est FACULTATIF : le titre seul suffit (ex. « ANNONCE »
@@ -68,23 +67,6 @@ export async function POST(req: Request) {
       label: `Annonce publiée — « ${announcement.title || announcement.text.slice(0, 60) || 'sans texte'} »`,
       actor: body.actor || null,
     })
-    /* ——— La notification téléphone : UNIQUEMENT pour une annonce,
-       conformément à la demande — prévenir la communauté d'un
-       ijtimâ'. Les appareils abonnés reçoivent une alerte même la
-       zawiya fermée ; l'auteur n'est pas prévenu de sa propre
-       publication ; les zawiya non ciblées ne reçoivent rien. —— */
-    const villesCibles = lireDestinataires(body.cities)
-      ? (JSON.parse(lireDestinataires(body.cities) as string) as string[])
-      : null
-    const titreNotif = announcement.title || 'Nouvelle annonce'
-    const corpsNotif =
-      announcement.text.length > 120
-        ? `${announcement.text.slice(0, 120)}…`
-        : announcement.text || 'Ouvre la zawiya pour la lire'
-    await envoyerPush(
-      { titre: `📣 ${titreNotif}`, corps: corpsNotif, section: 'annonces' },
-      { villes: villesCibles, membreExclu: membre?.id ?? null }
-    )
     return NextResponse.json(announcement, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

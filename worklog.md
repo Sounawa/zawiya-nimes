@@ -727,3 +727,21 @@ Stage Summary:
 - L'admin peut corriger le prénom de n'importe quel inscrit (casse et fautes de frappe) et retirer un frère du registre (confirmation).
 - Texte du kitāb (arabe + phonétique) : contrôles structurels complets passés ; comptes de versets concordants avec le mushaf/le cahier (fusions de waqf et ۞ d'hémistiche documentés ci-dessus) ; relecture française propre.
 - Restes connus : le warning d'hydratation framer-motion est atténué mais la cause profonde (SSR de motion.button) reste ; k06/k07 (wadhifa Fajr/Subh) restent à vérifier mot à mot contre le kitāb imprimé si la zawiya le demande ; la pagination par chapitre fait foi (le PDF 65 pages mêle des pages de mushaf).
+
+---
+Task ID: 4
+Agent: main (Z.ai Code)
+Task: Répondre à « as-tu mis à jour le site en ligne (GitHub, etc.) ? » — recherche des tokens + préparation du déploiement
+
+Work Log:
+- Recherche exhaustive des tokens envoyés par l'utilisateur « hier » : .env (uniquement DATABASE_URL), .env.*, git config, cred helpers, ~/.config, /upload (vide), worklog (aucune mention de tokens d'auth), motifs ghp_/github_pat_/nfp_/NETLIFY_AUTH_TOKEN dans tout le projet → AUCUN token présent. Cause : la conversation précédente a manqué de contexte et l'environnement a été réinitialisé entre-temps ; seuls le code et le worklog ont survécu.
+- État vérifié du projet : serveur port 3000 → 200, journal de dev propre ; 20+ commits locaux, dernier = f75c8b95 (registre Mehdi, QA Waqi'a). Aucun remote git configuré.
+- AUDIT SÉCURITÉ du dépôt avant tout push : découverts VERSIONNÉS dans git : db/custom.db (registre membres + PIN hachés), download/comptes-test.csv (noms + cotisations réels), .env, download/we/cookies.txt (cookie WeTransfer), 200+ captures QA et sources PDF du kitāb, tool-results/, sauvegarde/, qa-waqia*.png, --5_1.png, -.xml.
+- NETTOYAGE : .gitignore étendu (/db/, *.db, /download/, /tool-results/, /qa/, /qa-*.png, /--*.png, /-*.xml, /sauvegarde/, .env, .env.*, /upload/, /mini-services/) ; git rm --cached de 260 fichiers sensibles (fichiers conservés sur disque, app intacte — vérifié : GET / 200 après nettoyage) ; commit e21b179.
+- CRÉATION du kit de déploiement : DEPLOIEMENT.md (guide français pas à pas : révocation des anciens tokens, création dépôt privé vide, token classic scope repo 30 j, contenu exact à renvoyer dans le chat, choix d'hébergement avec tableau comparatif) ; scripts/publier-github.sh (connexion, commit auto si besoin, push, retrait du token de la config git après usage, messages d'erreur en français).
+
+Stage Summary:
+- Tokens : ILS NE SONT PAS dans l'environnement — l'utilisateur doit en recréer et les renvoyer. Les anciens doivent être révoqués (ils dorment dans une conversation morte).
+- Dépôt git : propre pour publication (plus aucune donnée privée suivie). ATTENTION : l'historique ANCIEN contient encore db/custom.db etc. dans des commits passés → recommandation dépôt PRIVÉ ; si public un jour, réécrire l'historique d'abord (git filter-repo).
+- Mise en ligne : 3 options documentées — A/ VPS (~5 €/mois, tout marche tel quel), B/ migration Supabase gratuite + Netlify/Vercel (recommandée, même stack que le site original St-Denis), C/ rester sur le panneau de prévisualisation. L'option B nécessite que l'utilisateur crée un compte Supabase et m'envoie l'URL projet + clé service_role.
+- Prochaines étapes dès réception des identifiants : exécuter scripts/publier-github.sh, puis (option B) migrer prisma/schema.prisma de SQLite vers PostgreSQL, régénérer, déployer.

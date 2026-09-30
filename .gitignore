@@ -52,3 +52,32 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# ── Données privées / fichiers de travail : JAMAIS sur GitHub ──
+# Base de données des membres (registre, codes hachés)
+/db/
+*.db
+*.db-journal
+
+# Sources téléchargées (PDF du kitāb, OCR, extractions Word, cookies de téléchargement)
+/download/
+
+# Sorties internes d'agents (QA, captures, résultats d'outils)
+/tool-results/
+/qa/
+/qa-*.png
+/--*.png
+/-*.xml
+
+# Sauvegardes de travail internes
+/sauvegarde/
+
+# Fichiers d'environnement (secrets)
+.env
+.env.*
+
+# Zone de dépôt de fichiers (téléversements utilisateurs)
+/upload/
+
+# Mini-services locaux (ports internes, non déployés)
+/mini-services/

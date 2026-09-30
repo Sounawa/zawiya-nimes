@@ -769,3 +769,21 @@ Stage Summary:
 - Base Turso : état propre (Mehdi seul) — les frères entrent par la porte, tout se synchronise en ligne.
 - Tokens : GitHub/Netlify/Turso utilisés puis retirés de la config ; CONSEILLER À L'UTILISATEUR de révoquer le PAT GitHub une fois satisfait.
 - Restes : le warning d'hydratation motion.button (atténué) ; k06/k07 wadhifa à vérifier mot à mot si la zawiya le demande ; rien d'autre bloquant.
+
+---
+Task ID: 6
+Agent: main (Z.ai Code)
+Task: « Sauvegarde cette version, on verra d'autres améliorations » — consolidation et push final de la version stable
+
+Work Log:
+- État vérifié avant sauvegarde : arbre git local PROPRE (rien à commiter), serveur dev GET / 200, journal de dev sans erreur.
+- Découvert un commit local non poussé : 36cca66 (worklog round 5). Le CODE de la version était déjà en ligne (56e03df vérifié en prod au round 5) — il ne restait que le worklog à publier.
+- Push vers GitHub (Sounawa/zawiya-nimes) avec le PAT fourni dans le chat, token passé dans l'URL du push uniquement (jamais stocké dans la config git).
+- Déploiement Netlify auto-déclenché par le push → statut vérifié via l'API Netlify (token nfp_ fourni), site en ligne https://zawiya-nimes.netlify.app/ répondant 200.
+- Cron de revue webDevReview (15 min) recréé : les 3 anciens jobs étaient désactivés (« exec limits exceeded »).
+
+Stage Summary:
+- VERSION SAUVEGARDÉE : GitHub = local = prod Netlify, tout aligné sur cette version stable. À révoquer côté utilisateur : PAT GitHub (ghp_…), token Netlify (nfp_…), token Turso.
+- Contenu de la version figée : Waqi'a Warsh maghrébine complète (96 versets, v26 سَلَٰمٞ سَلَٰمٞ et v51 إِنَّكُمُ confirmées mushaf) ; parenthèses ﴿…﴾ réordonnées (220 paires) ; voyelles finales du kitāb ; queue wadhifa complète (×100 + Salat Jamaliyya + renvois p. 55/59) ; renvois cliquables (41) + pastilles de pages par chapitre ; registre Mehdi seul / admin caché / casse insensible / renommage / retrait ; porte par prénom ; HORS-LIGNE complet (SW v13 : coquille pré-cachée, relais API marqué X-Hors-Ligne, PDF conservés, pastille dorée, manifeste installable + bandeau « Installer la zawiya ») ; prod Netlify + base Turso (Mehdi seul) ; déploiement automatique sur push (deploy key réparée).
+- Améliorations futures envisageables (proposées, rien d'engagé) : vérification mot à mot k06/k07 (wadhifa Fajr/Subh) contre le kitāb imprimé ; section Taha (docx disponible) si la zawiya la demande ; éradication du warning d'hydratation motion.button (SSR de la porte) ; pistes neuves — horaires de prière de Nîmes calculés localement, boussole qibla, mode sombre, export PDF du registre, notifications push pour les réunions.
+- Risques connus acceptés : l'historique git ANCIEN contient des données privées (retraites du round 4) → dépôt GitHub PRIVÉ obligatoire (il l'est : Sounawa/zawiya-nimes privé).

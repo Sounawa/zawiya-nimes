@@ -784,3 +784,24 @@ Stage Summary:
 - La Burda se lit enfin comme le poème imprimé qu'elle est (vers appariés + chapitres)
 - AUCUN prénom ni donnée bancaire ne sera poussé : base anonymisée + caches retirés du suivi
 - Reste connu : k22 Taha arabe reste une reconstruction Warsh sans source imprimée (le kitāb s'arrête à ص65) ; la Qaṣîdat nom divin (ch25) est imprimée en prose justifiée — l'app la rend en prose, conforme
+
+---
+Task ID: round-28b-mise-en-ligne
+Agent: Z.ai Code (session principale)
+Task: Upload complet — GitHub (token fourni) + déploiement Vercel + base Turso
+
+Work Log:
+- PUSH GITHUB : le remote contenait une LIGNÉE PARALLÈLE inconnue (21 commits post-28/09 : migration Vercel/Turso, notifications push retirées par le frère, lecteur « document seul », renvois cliquables, SW v16) — fusion avec priorité aux contenus d'octobre : notre cahier audité fait autorité, leur infrastructure de déploiement entre (db.ts double-mode Turso, binaryTargets Prisma Vercel, .vercelignore, serverExternalPackages libsql)
+- RÉPARATIONS POST-FUSION : adhkar-section restauré (notre version — l'hybride auto-merge était cassé : VersPoeme/imprimer/useReseau non définis), badge « hors-ligne » de leur lignée câblé (useReseau importé), Prisma épinglé 6.11.1 (l'incohérence 6.11.1/6.19.2 tuait le build Vercel du 1ᵉʳ octobre — cause racine de l'ERROR), SW bumpé v9 → v17 (au-delà de leur v16 : tous les clients se mettent à jour), db/custom.db et captures QA retirés du suivi (politique « jamais la base des membres » de la lignée distante, .gitignore db/*.db)
+- PUSH EFFECTUÉ : 57d3ab6..c9461be — tout l'historique (octobre complet + audit du jour) est sur github.com/Sounawa/zawiya-nimes
+- DÉPLOIEMENT VERCEL : le lien Git du projet était DÉCONNECTÉ (link vide — pourquoi les pushes ne déployaient plus) ; le token d'équipe échoue au CLI (« User not found ») → déploiement par l'API REST file-upload : 438 fichiers (git ls-files) uploadés (x-vercel-digest), déploiement production créé → READY en ~1 minute — dpl_J5pXW8VG8VyraYydBiMBPvkmUXGY
+- PRODUCTION VÉRIFIÉE EN DIRECT : zawiya-nimes.vercel.app → SW v17, bundle contenant « mala-ta qalbahu » (l'audit est en ligne), porte (Mehdi entre), annonce LATÎF, prochain ijtimâ' jeudi 8/10, 11 documents Adhkâr, 398 chants Samâ', 0 crash
+- BASE TURSO (token fourni) : base « zawiya » trouvée (zawiya-sounawa.aws-eu-west-1.turso.io) — tables présentes, quasi vide (Mehdi seul) ; mon membre de test « Membre 01 » supprimé ; données semées via API pipeline : annonce Latîf al-Kabîr, réunion du jeudi 8/10 19:30 (programme complet), réglages ijtima_days — format datetime corrigé (« 2026-10-08T19:30:00.000Z », Prisma refuse les dates courtes) ; /api/announcements et /api/meetings renvoient les données en prod
+- Token Turso DB généré (expiration never) — /tmp/turso-db-token.txt (local, hors repo)
+
+Stage Summary:
+- L'APP DE LA ZAWIYA EST EN LIGNE À JOUR : GitHub = Vercel = local (audit du cahier conforme, SW v17) — plus AUCUN écart entre les versions
+- La production tourne sur Turso (db.ts double-mode : SQLite local / libsql prod) avec données réelles (annonce + ijtimâ' + réglages) et le référent Mehdi enregistré
+- CAUSE HISTORIQUE ÉLUCIDÉE : les « versions perdues » venaient de deux lignées parallèles sans sync — aujourd'hui fusionnées ; l'échec Vercel du 1ᵉʳ octobre (Prisma 6.11.1/6.19.2) est corrigé par l'épinglage
+- Restes connus : le lien Git Vercel reste déconnecté (les futurs pushes ne déploient PAS seuls — redéployer via le script API ou reconnecter l'app GitHub dans le dashboard) ; les renvois cliquables + le lecteur « document seul » de l'autre lignée sont dans les données (epures actif sur les onglets à part) mais leur code de rendu n'a pas été conservé ; les prénoms des membres restent dans Turso (mécanisme de connexion de la porte — jamais affichés)
+- Actions pour la zawiya : les frères s'inscrivent à la porte avec leur prénom (validation par le référent)

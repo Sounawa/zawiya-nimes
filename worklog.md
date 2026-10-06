@@ -705,3 +705,21 @@ Stage Summary:
 - TOUT LE CORAN DE L'APPLICATION EST DÉSORMAIS EN RIWĀYAT WARSH : les 22 sourates du kitāb + tous les versets des du‘â/khatms, orthographe du mushaf maghrébin (wasla, فِے, tanwīn warshien, nūn lues)
 - La Wāqi‘a a été corrigée sur trois points de lecture (يُنزَفُونَ · وَطَلْحٍ · فَظَلَلْتُمْ) — l'ancienne version portait des leçons non-Nāfi‘
 - Pistes restantes : la transcription phonétique du cahier imprimé (ch04 Wāqi‘a, ch02 Yā-Sīn) garde quelques reflêts Hafs (yunzafûna y est ; wildânun, ṭalhin y figurent correctement — cohérent Warsh en fait sur ces points-là) ; Taha arabe = orthographe Warsh reconstruite (le document Word original a disparu du disque, les conventions exactes de la zawiya ont été appliquées) — si la zawiya retape Taha dans un prochain cahier, une relecture mot à mot est suggérée
+
+---
+Task ID: round-25-verification-finale
+Agent: Z.ai Code (session principale)
+Task: « tu as tout fini ? » — vérification finale de l'ensemble du travail Warsh + remise en route du cron de revue
+
+Work Log:
+- Vérification de l'état : dernier commit 509923f (round-24), git status propre (rien en attente), serveur 200 sur / avec logs sains
+- QA agent-browser en conditions réelles : porte Zawiya NÎMES → ENTRER → section ADHKÂR « 11 documents · phonétique & arabe » ; pastilles Fath (9), Mulk (10), Tâ Hâ (11) toutes présentes
+- AL-MULK PHONÉTIQUE re-vérifiée dans le DOM : « Tabârakal ladhî biyadihil mulku… » — 31 versets complets, lectures Warsh confirmées (tadda‘ûn 67:28, matê 67:25, kêfirûna, famchû) ; le lecteur s'ouvre bien en PHONÉTIQUE (plus de badge عربي)
+- SURAT TÂ HÂ PHONÉTIQUE re-vérifiée : 135 versets complets rendus — akîdu (20:15), Ṭuwan, suwan, ḍuḥan, hudâ, hâdhêni lasâḥirên (20:63), lan nûmina (20:134), duels en -ê (fatê, ḥayêtid dunyê) — 12 K chars sans coupure
+- Console : 0 erreur pendant toute la vérification
+- CRON : l'ancien job 439319 (revue 15 min) était « Disabled due to exec limits exceeded » → supprimé et recréé sous le job 439466 (fixed_rate 900 s, Europe/Paris, webDevReview)
+
+Stage Summary:
+- OUI, tout est fini et vérifié : Al-Mulk phonétique Warsh, Tâ Hâ onglet 11 (arabe + phonétique), tout le Coran de l'app en riwāyat Warsh (commit 509923f)
+- La revue automatique toutes les 15 min tourne à nouveau (job 439466)
+- Restes connus documentés : Taha arabe = orthographe Warsh reconstruite (relecture mot à mot suggérée si la zawiya retape la sourate dans un prochain cahier) ; logo utilisateur toujours non fourni (placeholder tariqa.png authentique en place)

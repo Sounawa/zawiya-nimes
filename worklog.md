@@ -870,3 +870,18 @@ Stage Summary:
 - LE VERROU DE PAYSAGE ÉTAIT HORS DE NOTRE PORTÉE DEPUIS LE DÉBUT : l'app installée a mémorisé « portrait-primary » du vieux manifest — aucune correction serveur ne peut l'en défaire ; SEULE la suppression + réinstallation de l'icône débloque la rotation (consigne donnée au référent)
 - Toute l'app est désormais AUDITÉE en paysage ET en vertical : date lisible partout, lecteurs phonétique/arabe confortables, livre Samâ' fidèle (page de titre blanche = normale), bannière d'installation discrète
 - Restes connus : le lien Git Vercel reste déconnecté (déployer par scripts-audit/deployer-vercel.py, mis à jour pour la nouvelle API) ; si le téléphone du référent ne tourne TOUJOURS PAS après réinstallation, c'est le verrou d'orientation SYSTÈME (Centre de contrôle iOS / barre Android) — aucune app web ne peut le forcer
+
+---
+Task ID: round-32-gel-version
+Agent: Z.ai Code (session principale)
+Task: « Tu mémorises cette dernière version du projet sans plus la toucher et je reviendrais vers toi si je dois faire des modifications »
+
+Work Log:
+- ORDRE DU RÉFÉRENT : GEL TOTAL DE LA VERSION v20 — aucune modification, aucun déploiement, aucune évol­ution automatique sans demande explicite
+- Suppression du cron job de QA automatique (toutes les 15 min) qui aurait continué de modifier le projet de façon autonome — il contredit l'ordre de gel
+- État figé : GitHub e68246f = production zawiya-v20 = local (data-version « v20 · 6 octobre — paysage et date »)
+
+Stage Summary:
+- VERSION DE RÉFÉRENCE IMMUABLE : v20 · 6 octobre 2026 — audit kitāb complet (sukūn conformes au cahier phonétique), renvois cliquables, date jamais tronquée, audit paysage complet, déconnexion en place, manifest « orientation: any » (l'app installée avant la correction doit être supprimée + réinstallée pour tourner en paysage)
+- LE PROJET N'EST PLUS TOUCHÉ jusqu'au retour du référent avec une demande explicite
+- Si le référent revient : lire ce worklog en premier — tout l'historique des 32 rounds y est consigné (audit Warsh, anonymisation, déploiements, cause racine du paysage)

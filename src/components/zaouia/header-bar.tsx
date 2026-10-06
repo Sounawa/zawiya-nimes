@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useState, useSyncExternalStore } from 'react'
 import Image from 'next/image'
 import { AnimatePresence, motion, useScroll, useSpring } from 'framer-motion'
-import { Settings2, WifiOff } from 'lucide-react'
+import { LogOut, Settings2, WifiOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUser, useReseau } from '@/lib/store'
 import { useMembers } from '@/lib/api'
@@ -11,6 +11,11 @@ import { peut } from '@/lib/permissions'
 import { VILLE_LABEL } from '@/lib/types'
 import { dateLongue } from '@/lib/format'
 import { Button } from '@/components/ui/button'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { ThemeToggle } from '@/components/zaouia/theme-toggle'
 import { RechercheGlobale } from '@/components/zaouia/recherche-globale'
 
@@ -39,6 +44,11 @@ export function HeaderBar({ onOpenSettings }: HeaderBarProps) {
   const ville = useUser((s) => s.ville)
   const role = useUser((s) => s.role)
   const perms = useUser((s) => s.perms)
+  const logout = useUser((s) => s.logout)
+
+  /* Confirmation discrète avant de quitter la maison — un appui
+     maladroit ne doit pas effacer le prénom posé sur l'appareil */
+  const [confirmeSortie, setConfirmeSortie] = useState(false)
 
   /* Hors-ligne : les données affichées viennent du relais du service
      worker (dernières connues) — un mot suffit, pas de panique */
@@ -102,6 +112,49 @@ export function HeaderBar({ onOpenSettings }: HeaderBarProps) {
         <RechercheGlobale />
 
         <ThemeToggle />
+
+        {/* Déconnexion — la porte d'entrée revient demander le prénom */}
+        <Popover open={confirmeSortie} onOpenChange={setConfirmeSortie}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Se déconnecter"
+              title="Se déconnecter"
+              className="h-9 w-9 shrink-0 rounded-full text-primary hover:bg-primary/8 sm:h-10 sm:w-10"
+            >
+              <LogOut className="h-4.5 w-4.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" sideOffset={10} className="w-64 p-4">
+            <p className="text-sm font-medium text-encre">Quitter la zawiya ?</p>
+            <p className="mt-1 text-xs leading-relaxed text-brouillard">
+              La porte d’entrée reviendra — tu retaperas ton prénom pour te
+              reconnecter.
+            </p>
+            <div className="mt-3.5 flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmeSortie(false)}
+                className="h-8 rounded-full px-4 text-xs"
+              >
+                Rester
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setConfirmeSortie(false)
+                  logout()
+                }}
+                className="h-8 rounded-full px-4 text-xs"
+              >
+                Se déconnecter
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* Réglages — réservés au référent de la zaouia */}
         {gereReglages && (

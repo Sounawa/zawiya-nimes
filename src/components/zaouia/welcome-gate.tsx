@@ -240,7 +240,7 @@ export function WelcomeGate() {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex min-h-screen flex-col items-center overflow-y-auto bg-background px-6 py-8"
+      className="porte-conteneur fixed inset-0 z-50 flex min-h-dvh flex-col items-center overflow-y-auto bg-background px-6 py-8"
       exit={{ opacity: 0, scale: 1.04 }}
       transition={{ duration: 0.6, ease: 'easeInOut' }}
     >
@@ -280,13 +280,13 @@ export function WelcomeGate() {
       </svg>
 
       {/* La calligraphie de la tariqa, posée un peu plus bas dans la composition */}
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
+      <div className="porte-colonne relative z-10 flex w-full max-w-md flex-col items-center my-auto pt-6 sm:pt-10">
         {/* ─── L'emblème calligraphié ─── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.6, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mb-7"
+          className="porte-embleme relative mb-7"
         >
           <Particules />
           {/* Rayons de lumière tournants — cercle centré derrière la calligraphie */}
@@ -324,7 +324,7 @@ export function WelcomeGate() {
           <motion.div
             animate={{ y: [0, -8, 0], rotate: [0, 1.5, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative w-72 sm:w-80"
+            className="porte-logo relative w-72 sm:w-80"
           >
             <Image
               src="/tariqa.png"
@@ -391,7 +391,7 @@ export function WelcomeGate() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-8 flex w-full flex-col items-center"
+          className="porte-entree mt-8 flex w-full flex-col items-center"
         >
           {/* Le prénom — la porte demande qui entre */}
           <motion.div

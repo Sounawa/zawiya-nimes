@@ -18,8 +18,12 @@ import {
 import {
   DOCUMENTS_ADHKAR,
   GROUPES_WADHIFA,
+  PRATIQUES_WADHIFA,
   chapitresDuDoc,
+  chiffresArabes,
+  chiffresLatins,
   pdfDuDoc,
+  pratiqueDuRenvoi,
   type ChapitreLecture,
   type DocAdhkar,
   type GroupeWadhifa,
@@ -45,15 +49,16 @@ import { cn } from '@/lib/utils'
    pendant la lecture, avec police, taille et couleurs réglables.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ─── Demande externe (recherche globale ⌘K) ─── */
+/* ─── Demande externe (recherche globale ⌘K, renvois cliquables) ─── */
 interface DemandeLectureState {
-  demande: { docId: string; chapitreId?: string; langue?: LangueAdhkar } | null
+  demande: { docId: string; chapitreId?: string; langue?: LangueAdhkar; horodatage: number } | null
   demander: (docId: string, chapitreId?: string, langue?: LangueAdhkar) => void
   consommer: () => void
 }
 export const useDemandeLecture = create<DemandeLectureState>((set) => ({
   demande: null,
-  demander: (docId, chapitreId, langue) => set({ demande: { docId, chapitreId, langue } }),
+  demander: (docId, chapitreId, langue) =>
+    set({ demande: { docId, chapitreId, langue, horodatage: Date.now() } }),
   consommer: () => set({ demande: null }),
 }))
 
@@ -305,6 +310,51 @@ function sorteLigneArabe(l: string): 'entete' | 'renvoi' | 'texte' {
   return 'texte'
 }
 
+/* ═══ Les renvois de page, LIENS du lecteur ═══════════════════════
+   Le cahier imprimé renvoie ses pratiques les unes aux autres :
+   « Sûrat (36) Yâ si~n → p. 7 » en phonétique, « سُورَةُ يس ← ص ٧ »
+   dans le kitāb arabe. À l’écran, la page est un lien : il mène
+   directement à la pièce visée — dans le document ouvert si elle
+   s’y trouve, sinon dans le cahier de wadhifa complet. */
+
+/** La page visée par une ligne de renvoi — 0 si la ligne n’en porte pas. */
+function pageDuRenvoi(ligne: string): number {
+  const ph = ligne.match(/→\s*p\.\s*(\d+)/u)
+  if (ph) return Number(ph[1])
+  const ar = ligne.match(/←\s*ص\s*([٠-٩\d]+)/u)
+  if (ar) return chiffresLatins(ar[1])
+  return 0
+}
+
+/** Le titre qui précède la flèche — « سُورَةُ الْفَتْح (٤٨) ← ص ٤٩ » :
+    la page 49 est celle du CAHIER, seul le titre arabe désigne la
+    bonne pièce du kitāb (pratiqueDuRenvoi le sait). */
+function titreAvantRenvoi(ligne: string): string | undefined {
+  const i = ligne.search(/→|←/u)
+  return i > 0 ? ligne.slice(0, i).trim() : undefined
+}
+
+/** Le chapitre cible d’un renvoi, tel qu’il vivra dans les entrées
+    du lecteur pour la langue d’affichage demandée. */
+function cibleDuRenvoi(
+  ligne: string,
+  langueChapitre: LangueAdhkar,
+  langueAffichage: LangueAdhkar,
+): { chapitreId: string; dansLeDoc: boolean } | null {
+  const page = pageDuRenvoi(ligne)
+  if (!page) return null
+  const cible = pratiqueDuRenvoi(langueChapitre, page, titreAvantRenvoi(ligne))
+  if (!cible) return null
+  /* La cible est une pratique du cahier — la même dans les deux
+     langues ; on prend le chapitre de la langue AFFICHÉE (repli
+     inclus, comme les entrées du lecteur). */
+  const p = PRATIQUES_WADHIFA.find((x) => x.id === cible)
+  const prefere = p ? p[langueAffichage] : undefined
+  const autre = p ? p[langueAffichage === 'ph' ? 'ar' : 'ph'] : undefined
+  const chapitreId = (prefere ?? autre)?.id ?? cible
+  return { chapitreId, dansLeDoc: Boolean(prefere ?? autre) }
+}
+
 /* Une entrée du lecteur — chapitre dans sa langue EFFECTIVE :
    les pratiques du cahier sans version dans la langue demandée
    se lisent dans l'autre langue, sans jamais disparaître. */
@@ -508,6 +558,38 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
     if (cible) cible.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
+  /* ─── Les renvois de page, LIENS du lecteur ───
+     « Sûrat (36) Yâ si~n → p. 7 » — la page imprimée devient un lien :
+     il mène à la pièce visée dans ce document si elle s'y trouve,
+     sinon le cahier de wadhifa complet s'ouvre à la pratique. La
+     carte visée s'illumine un instant pour guider l'œil. */
+  const [flash, setFlash] = useState<string | null>(null)
+  const surRenvoi = useCallback(
+    (ligne: string, langueChapitre: LangueAdhkar) => {
+      const cible = cibleDuRenvoi(ligne, langueChapitre, langue)
+      if (!cible) return
+      const i = chapitres.findIndex((e) => e.id === cible.chapitreId)
+      if (i >= 0) {
+        /* La carte sommaire du cahier peut être dépliée au-dessus : on
+           la referme avant de sauter (0,32 s d'animation, comme le
+           sommaire des documents plats). */
+        const delai = sommaireCarte ? 400 : 0
+        if (sommaireCarte) setSommaireCarte(false)
+        window.setTimeout(() => {
+          allerAuChapitre(i)
+          setFlash(cible.chapitreId)
+          window.setTimeout(() => setFlash(null), 2000)
+        }, delai)
+        return
+      }
+      /* La pièce visée vit dans un autre document — le Laṭîf arabe
+         renvoie au Yā-Sīn du kitāb : le cahier de wadhifa s'ouvre à
+         la pratique demandée, dans la langue courante. */
+      useDemandeLecture.getState().demander('kitab', cible.chapitreId, langue)
+    },
+    [langue, chapitres, sommaireCarte, allerAuChapitre],
+  )
+
   /* ─── Le chapitre visible suit le défilement ─── */
   useEffect(() => {
     if (chapitres.length < 2) return
@@ -547,8 +629,13 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
       {/* ─── La barre du haut : titre, sommaire, réglages, fermeture ─── */}
       <header className="relative z-10 flex-none border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90">
         <div
-          className="flex items-center gap-1 px-2.5"
-          style={{ paddingTop: 'calc(10px + env(safe-area-inset-top))', paddingBottom: 10 }}
+          className="lecteur-barre flex items-center gap-1 px-2.5"
+          style={{
+            paddingTop: 'calc(10px + env(safe-area-inset-top))',
+            paddingBottom: 10,
+            paddingLeft: 'calc(0.625rem + env(safe-area-inset-left))',
+            paddingRight: 'calc(0.625rem + env(safe-area-inset-right))',
+          }}
         >
           {/* Réglages de lecture — le texte seulement */}
           {!vueDoc && (
@@ -633,7 +720,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
             sur porcelaine), ou le livre imprimé à l'identique — en
             tuiles de zellige */}
         {aLesDeux && (
-          <div className="flex justify-center border-t border-border py-2">
+          <div className="lecteur-bascule flex justify-center border-t border-border py-2">
             <BasculeAndalouse
               libelle="Vue du document"
               taille="sm"
@@ -848,7 +935,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
         >
           <div
             className={cn(
-              'mx-auto flex w-full max-w-[840px] flex-col items-stretch gap-3 px-3 pb-[calc(110px+env(safe-area-inset-bottom))] pt-3 sm:px-5'
+              'lecteur-corps mx-auto flex w-full max-w-[840px] flex-col items-stretch gap-3 px-3 pb-[calc(110px+env(safe-area-inset-bottom))] pt-3 sm:px-5'
             )}
           >
             {estSama && !samaTexte && (
@@ -1017,6 +1104,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 <article
                 key={c.id}
                 data-i={i}
+                data-chapitre={c.id}
                 ref={(el) => {
                   cartesRef.current[i] = el
                 }}
@@ -1026,7 +1114,8 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                   'grain-papier poesie-page relative scroll-mt-3 overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7',
                   theme.fond,
                   theme.texte,
-                  theme.cadre
+                  theme.cadre,
+                  flash === c.id && 'renvoi-flash'
                 )}
               >
                 {/* En-tête du chapitre — un souffle de mihrab */}
@@ -1107,13 +1196,43 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                         )
                       }
                       if (sorte === 'renvoi') {
+                        /* La page imprimée est un LIEN : la ligne peut en
+                           porter plusieurs séparés par ۞ (« Al Fidyya →
+                           p. 46 ۞ Waẓîfat aṣ Ṣubḥ → p. 58 ») — chaque
+                           tronçon mène à sa pièce. */
                         return (
                           <span
                             key={j}
                             className="mt-[0.7em] block text-center text-[0.82em] italic"
                             style={{ color: `${accent.couleur}` }}
                           >
-                            {ligne}
+                            {ligne.split(/(۞)/u).map((segment, k) => {
+                              if (segment === '۞') {
+                                return (
+                                  <span key={k} aria-hidden className="mx-1.5 opacity-60">
+                                    ۞
+                                  </span>
+                                )
+                              }
+                              const s = segment.trim()
+                              if (!s) return null
+                              const page = pageDuRenvoi(s)
+                              if (!page) return <Fragment key={k}>{s}</Fragment>
+                              return (
+                                <button
+                                  key={k}
+                                  type="button"
+                                  onClick={() => surRenvoi(s, c.langue)}
+                                  aria-label={`Aller à la page ${
+                                    c.langue === 'ar' ? chiffresArabes(page) : page
+                                  } du ${c.langue === 'ar' ? 'kitāb' : 'cahier'}`}
+                                  className="cursor-pointer rounded-sm underline decoration-dotted decoration-1 underline-offset-[5px] transition-all hover:decoration-solid hover:[text-shadow:0_0_12px_currentColor] focus-visible:decoration-solid focus-visible:outline-none active:scale-[0.98]"
+                                  style={{ textDecorationColor: accent.couleur }}
+                                >
+                                  {s}
+                                </button>
+                              )
+                            })}
                           </span>
                         )
                       }
@@ -1181,10 +1300,10 @@ export function AdhkarSection() {
      mises à jour des stores externes — langue de lecture consommée,
      demande consommée — se font après coup, dans l'effet. */
   const demande = useDemandeLecture((s) => s.demande)
-  const [traitee, setTraitee] = useState<{ docId?: string; chapitreId?: string } | null>(null)
-  if (demande && (traitee?.docId !== demande.docId || traitee?.chapitreId !== demande.chapitreId)) {
+  const [traitee, setTraitee] = useState<{ horodatage?: number } | null>(null)
+  if (demande && traitee?.horodatage !== demande.horodatage) {
     const doc = DOCUMENTS_ADHKAR.find((d) => d.id === demande.docId)
-    setTraitee({ docId: demande.docId, chapitreId: demande.chapitreId })
+    setTraitee({ horodatage: demande.horodatage })
     if (doc) {
       setLecteur({ doc, chapitre: demande.chapitreId })
     }

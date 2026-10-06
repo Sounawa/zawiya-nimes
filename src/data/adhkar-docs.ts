@@ -271,6 +271,7 @@ export const PRATIQUES_WADHIFA: PratiqueWadhifa[] = [
   /* Pièces du kitāb seul — APRÈS la séquence du cahier,
      pour ne jamais couper la wadhifa */
   { id: 'w-mulk', groupe: 'quotidien', ph: cahier('ch33-sratmulk'), ar: kitab('k04') },
+  { id: 'w-taha', groupe: 'quotidien', ph: cahier('ch34-srattaha'), ar: kitab('k22') },
   { id: 'w-ala-latif', groupe: 'quotidien', ar: kitab('k19') },
   /* ── Les Waẓîfa des moments ── */
   { id: 'w-avant-fajr', groupe: 'moments', ph: cahier('ch13-wafaavantlefajr'), ar: kitab('k06') },
@@ -330,8 +331,8 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     id: 'kitab',
     titreFr: 'Cahier de Wadhifa',
     titreAr: 'كتاب الأذكار',
-    detailFr: '35 pratiques · phonétique & arabe · sommaire',
-    detailAr: '٣٥ فصلًا · صوتي وعربي',
+    detailFr: '36 pratiques · phonétique & arabe · sommaire',
+    detailAr: '٣٦ فصلًا · صوتي وعربي',
     pdfPh: '/adhkar/cahier-wadhifa.pdf',
     pdfAr: '/adhkar/kitab-arabe.pdf',
     ph: depuisCahier([

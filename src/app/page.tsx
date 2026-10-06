@@ -139,17 +139,17 @@ export default function Page() {
       </main>
 
       {/* ─── Pied de page ─── */}
-      <footer className="mt-auto border-t border-primary/10 bg-card/70 backdrop-blur safe-bottom">
+      <footer
+        data-version="v18 · 6 octobre"
+        className="mt-auto border-t border-primary/10 bg-card/70 backdrop-blur safe-bottom"
+      >
         <div className="mx-auto max-w-3xl px-4 py-4 text-center lg:max-w-6xl">
           <div className="bandeau-orne mx-auto mb-3 w-24" aria-hidden />
           <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard-clair">
             Zawiya Nimes — {new Date().getFullYear()}
           </p>
-          {/* Marqueur de fraîcheur — vérifie d'un coup d'œil que l'aperçu
-              porte bien la dernière mouture (v17 = 6 octobre, audit cahier) */}
-          <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-brouillard-clair/70">
-            ✦ v17 · 6 octobre
-          </p>
+          {/* Marqueur de fraîcheur — INVISIBLE, uniquement pour la maintenance :
+              data-version du pied de page (v18 = 6 octobre, renvois cliquables). */}
         </div>
       </footer>
 

@@ -802,3 +802,71 @@ body::after {
     page-break-inside: avoid;
   }
 }
+
+/* ─── Renvoi cliqué — la carte visée s'illumine un instant ───
+   Le lien « → p. 23 » mène à la pièce : quand elle arrive à l'écran,
+   un double halo d'or palpite pour guider l'œil, puis s'éteint. */
+@keyframes renvoi-flash {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(184, 146, 58, 0.55),
+      0 10px 30px -12px rgba(11, 93, 66, 0.25);
+  }
+  60% {
+    box-shadow:
+      0 0 0 7px rgba(184, 146, 58, 0.28),
+      0 10px 30px -12px rgba(11, 93, 66, 0.25);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(184, 146, 58, 0),
+      0 10px 30px -12px rgba(11, 93, 66, 0.25);
+  }
+}
+.renvoi-flash {
+  animation: renvoi-flash 2s ease-out 1;
+  scroll-margin-top: 0.75rem;
+}
+
+/* ─── Paysage téléphone — le lecteur s'amincit pour la lecture ───
+   Tenu en large, chaque pixel de haut compte : la barre du lecteur
+   se resserre, la bascule Texte/Numérisé se tasse, et les encoches
+   (safe areas gauche/droite) respirent autour du contenu. */
+@media (orientation: landscape) and (max-height: 540px) {
+  .lecteur-barre {
+    padding-top: calc(5px + env(safe-area-inset-top)) !important;
+    padding-bottom: 5px !important;
+  }
+  .lecteur-bascule {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+  .lecteur-corps {
+    padding-left: calc(0.75rem + env(safe-area-inset-left)) !important;
+    padding-right: calc(0.75rem + env(safe-area-inset-right)) !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ─── Paysage téléphone — la porte d'entrée se tient en une hauteur ───
+   Tenu en large, l'emblème rapetisse, les souffles entre les blocs
+   se réduisent : prénom et bouton ENTREER tiennent sous le logo. */
+@media (orientation: landscape) and (max-height: 540px) {
+  .porte-conteneur {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .porte-colonne {
+    padding-top: 0;
+  }
+  .porte-embleme {
+    margin-bottom: 0.75rem;
+  }
+  .porte-logo {
+    width: 11rem;
+  }
+  .porte-entree {
+    margin-top: 1rem;
+  }
+}

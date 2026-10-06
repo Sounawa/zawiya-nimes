@@ -140,7 +140,7 @@ export default function Page() {
 
       {/* ─── Pied de page ─── */}
       <footer
-        data-version="v18 · 6 octobre"
+        data-version="v19 · 6 octobre — audit sukūn"
         className="mt-auto border-t border-primary/10 bg-card/70 backdrop-blur safe-bottom"
       >
         <div className="mx-auto max-w-3xl px-4 py-4 text-center lg:max-w-6xl">

@@ -687,8 +687,10 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
-                  {/* Accent */}
-                  <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard">Accent</span>
+                  {/* Couleur des ornements — titres, filets et badges.
+                    « Accent » prêtait à confusion (prononciation ?) :
+                    il s'agit bien de la couleur d'enluminure. */}
+                  <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard">Couleur</span>
                   <div className="flex gap-1.5">
                     {ACCENTS.map((a) => (
                       <button
@@ -696,7 +698,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                         type="button"
                         onClick={() => l.regler({ accent: a.id })}
                         aria-pressed={l.accent === a.id}
-                        aria-label={`Accent ${a.nom}`}
+                        aria-label={`Couleur ${a.nom}`}
                         className={cn(
                           'h-7 w-7 rounded-lg border border-black/10 transition-transform hover:scale-105',
                           l.accent === a.id && 'ring-2 ring-primary ring-offset-1'
@@ -1019,9 +1021,20 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 </div>
 
                 {/* Imprimer ce chapitre — pas pour le diwân, qui
-                    s'imprime depuis sa page numérisée */}
-                {!estSama && (
-                  <footer className="mt-6 flex justify-center border-t pt-4" style={{ borderColor: `${accent.couleur}30` }}>
+                    s'imprime depuis sa page numérisée. Le folio à gauche
+                    numérote TOUTES les pages du lecteur, comme un livre */}
+                <footer
+                  className="mt-6 flex items-center justify-between gap-3 border-t pt-4"
+                  style={{ borderColor: `${accent.couleur}30` }}
+                >
+                  <span
+                    className="select-none text-[10.5px] font-semibold uppercase tracking-[0.22em]"
+                    style={{ color: accent.couleur, opacity: 0.75 }}
+                    aria-label={`Page ${i + 1} sur ${chapitres.length}`}
+                  >
+                    ✦ {i + 1} / {chapitres.length}
+                  </span>
+                  {!estSama && (
                     <button
                       type="button"
                       onClick={() =>
@@ -1032,8 +1045,8 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                     >
                       <Printer className="h-3.5 w-3.5" /> Imprimer ce chapitre
                     </button>
-                  </footer>
-                )}
+                  )}
+                </footer>
               </article>
               )
             })}

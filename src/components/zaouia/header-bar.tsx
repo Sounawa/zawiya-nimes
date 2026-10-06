@@ -9,7 +9,7 @@ import { useUser, useReseau } from '@/lib/store'
 import { useMembers } from '@/lib/api'
 import { peut } from '@/lib/permissions'
 import { VILLE_LABEL } from '@/lib/types'
-import { dateLongue } from '@/lib/format'
+import { dateCompacte, dateLongue } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
@@ -186,20 +186,30 @@ export function HeaderBar({ onOpenSettings }: HeaderBarProps) {
       </div>
 
       {/* Ligne spirituelle : la date du jour, entre filets d'or —
-          repliée en paysage serré pour laisser la place au contenu */}
-      {!compact && (
-      <div className="relative mx-auto max-w-3xl px-4 pb-3 lg:max-w-6xl">
+          en paysage serré elle s'amincit mais reste lisible (jamais coupée :
+          sur écran étroit la date s'abrège « mar. 6 oct. » d'elle-même) */}
+      <div
+        className={cn(
+          'relative mx-auto max-w-3xl px-3 lg:max-w-6xl',
+          compact ? 'pb-1' : 'pb-3'
+        )}
+      >
         <motion.p
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-center gap-2 text-center text-[11px] font-medium uppercase tracking-[0.22em] text-brouillard"
+          className={cn(
+            'flex items-center justify-center gap-1.5 text-center font-medium uppercase text-brouillard',
+            compact ? 'text-[9px] tracking-[0.1em]' : 'text-[11px] tracking-[0.13em] sm:tracking-[0.22em]'
+          )}
         >
-          <span className="ornement-filet shrink-0 text-gold/70" aria-hidden />
+          <span className="ornement-filet hidden shrink-0 text-gold/70 min-[480px]:inline-block" aria-hidden />
           <span className="shrink-0 text-[8px] text-gold" aria-hidden>
             ✦
           </span>
-          <span className="truncate">
-            {dateLongue(new Date())}
+          {/* Date abrégée sur petit écran vertical, entière dès 480px */}
+          <span className="whitespace-nowrap">
+            <span className="min-[480px]:hidden">{dateCompacte(new Date())}</span>
+            <span className="hidden min-[480px]:inline">{dateLongue(new Date())}</span>
             <span className="mx-1.5 text-gold">·</span>
             <span className="text-primary">{VILLE_LABEL[ville] ?? 'Nîmes'}</span>
             <AnimatePresence>
@@ -221,10 +231,9 @@ export function HeaderBar({ onOpenSettings }: HeaderBarProps) {
           <span className="shrink-0 text-[8px] text-gold" aria-hidden>
             ✦
           </span>
-          <span className="ornement-filet shrink-0 text-gold/70" aria-hidden />
+          <span className="ornement-filet hidden shrink-0 text-gold/70 min-[480px]:inline-block" aria-hidden />
         </motion.p>
       </div>
-      )}
 
       {/* Fil d'or — suit la progression de la page, posé sur la corniche */}
       <motion.span

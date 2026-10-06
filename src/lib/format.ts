@@ -9,12 +9,30 @@ export function euros(n: number): string {
 }
 
 export function dateLongue(d: Date | string): string {
-  const date = typeof d === 'string' ? new Date(d) : d
+  const date = typeof d === 'string' ? new Date(dateSecurisee(d)) : d
   return new Intl.DateTimeFormat('fr-FR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   }).format(date)
+}
+
+/** « mar. 6 oct. » — pour les écrans étroits : la date entière
+    ne doit jamais être coupée, on abrège au lieu de tronquer. */
+export function dateCompacte(d: Date | string): string {
+  const date = typeof d === 'string' ? new Date(dateSecurisee(d)) : d
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }).format(date)
+}
+
+/** Les chaînes ISO « 2026-10-06 » sont lues en UTC par certains
+    moteurs — on réinjecte midi en heure locale pour éviter
+    le décalage d'un jour. */
+function dateSecurisee(s: string): Date {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(`${s}T12:00:00`) : new Date(s)
 }
 
 export function dateCourte(d: Date | string): string {

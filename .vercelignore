@@ -38,3 +38,16 @@ server.log
 test
 prompt
 local-*
+
+# journaux, caches et dossiers de travail de la sandbox
+*.log
+dev.out.log
+tool-results
+sauvegarde
+mini-services
+scripts-audit
+examples
+skills
+prompt
+test*
+*.md.bundle

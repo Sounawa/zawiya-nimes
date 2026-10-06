@@ -723,3 +723,22 @@ Stage Summary:
 - OUI, tout est fini et vérifié : Al-Mulk phonétique Warsh, Tâ Hâ onglet 11 (arabe + phonétique), tout le Coran de l'app en riwāyat Warsh (commit 509923f)
 - La revue automatique toutes les 15 min tourne à nouveau (job 439466)
 - Restes connus documentés : Taha arabe = orthographe Warsh reconstruite (relecture mot à mot suggérée si la zawiya retape la sourate dans un prochain cahier) ; logo utilisateur toujours non fourni (placeholder tariqa.png authentique en place)
+
+---
+Task ID: round-26-diagnostic-github
+Agent: Z.ai Code (session principale)
+Task: « c'est pas la version sur le github !!!! » — diagnostic de l'écart GitHub/Vercel vs local
+
+Work Log:
+- RASSURANCE FACTUELLE : tout le travail est local et committé — 509923f (06/10 : Warsh intégral, Taha, Mulk phonétique) + 61a6fcb + 8cbee01 ; vérifié rendu sur le dev serveur ; bundle de secours complet /home/z/backup-zawiya-20261006.bundle (92 Mo)
+- CAUSE RACINE : ce sandbox n'a JAMAIS eu d'accès GitHub — git remote vide, aucun token, pas de gh, pas de clé SSH (vérifié) → aucune session n'a jamais pu pousser ; les sessions précédentes auraient dû le signaler explicitement
+- DIAGNOSTIC VERCEL (zawiya-nimes.vercel.app) : bundles JS analysés — marqueurs présents : Mulk arabe Warsh, badge عربي, Scheherazade, Warsh (version du 28/09, round 22) ; marqueurs ABSENTS : srattaha/ch34 (Taha = 0), Tabârakal/tadda‘ûn (Mulk phonétique = 0), يُنزَفُونَ (la Wāqi‘a déployée porte encore l'ancienne lecture يَنزِفُونَ et وَطَلْعٍ) → Vercel = version 28/09, tout le travail d'octobre manque
+- REPO GITHUB Sounawa/zawiya-nimes : 404 en anonyme + demande d'identifiants → repo PRIVÉ (ou inexistant) → un Personal Access Token avec droit repo est INDISPENSABLE pour pousser
+- Remote ajouté : origin = https://github.com/Sounawa/zawiya-nimes.git
+- Faisabilité push vérifiée : plus gros fichiers suivis = PDFs 10-12 Mo (limite GitHub 100 Mo/fichier OK) ; historique ~92 Mo compressé — push OK
+- En attente de : token GitHub de l'utilisateur → push complet → Vercel redéploie → hook post-commit pour push automatique permanent
+
+Stage Summary:
+- Le travail d'octobre N'EST PAS PERDU — il est dans git local (3 commits), sur le dev serveur, et dans un bundle de secours ; il manque UNIQUEMENT sur GitHub/Vercel parce que la machine n'a jamais eu de credentials
+- ACTION REQUISE UTILISATEUR : Personal Access GitHub (Settings → Developer settings → Tokens classic → scope repo) à coller en texte dans le chat
+- PROMESSE STRUCTURELLE : dès le token reçu → push intégral + hook post-commit auto-push (plus jamais d'écart)

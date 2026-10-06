@@ -2,10 +2,10 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 import Image from 'next/image'
-import { motion, useScroll, useSpring } from 'framer-motion'
-import { Settings2 } from 'lucide-react'
+import { AnimatePresence, motion, useScroll, useSpring } from 'framer-motion'
+import { Settings2, WifiOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useUser } from '@/lib/store'
+import { useUser, useReseau } from '@/lib/store'
 import { useMembers } from '@/lib/api'
 import { peut } from '@/lib/permissions'
 import { VILLE_LABEL } from '@/lib/types'

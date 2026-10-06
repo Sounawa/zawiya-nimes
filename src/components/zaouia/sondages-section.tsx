@@ -61,7 +61,6 @@ function CarteSondage({ poll }: { poll: Poll }) {
   const perms = useUser((s) => s.perms)
   /* Les sondages de la zawiya — seuls les frères de Nîmes les créent */
   const peutGerer = peut(ville, role, 'sondages.creer', perms)
-  const [voirVotants, setVoirVotants] = useState<string | null>(null)
   const [editionOuverte, setEditionOuverte] = useState(false)
 
   const monVote = poll.votes.find((v) => v.memberId === memberId) ?? null
@@ -252,31 +251,6 @@ function CarteSondage({ poll }: { poll: Poll }) {
                 </div>
               )}
 
-              {/* Votants */}
-              <AnimatePresence>
-                {voirVotants !== null && (
-                  <motion.ul
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden pl-4 pt-1"
-                  >
-                    {poll.votes
-                      .filter((v) => normChoix(v.choice) === normChoix(opt))
-                      .map((v) => (
-                        <li key={v.id} className="py-0.5 text-xs text-muted-foreground">
-                          Sidi {v.member.name}
-                          {venue && v.personnes > 1 && (
-                            <span className="ml-1.5 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-gold-vif">
-                              {v.personnes} pers.
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    {n === 0 && <li className="py-0.5 text-xs text-brouillard-clair">Personne…</li>}
-                  </motion.ul>
-                )}
-              </AnimatePresence>
             </div>
           )
         })}
@@ -284,17 +258,13 @@ function CarteSondage({ poll }: { poll: Poll }) {
 
       {/* Pied */}
       <div className="mt-3 flex items-center justify-between gap-2 text-xs">
-        <button
-          onClick={() => setVoirVotants((v) => (v ? null : 'tous'))}
-          className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
-        >
+        <span className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground">
           <Users className="h-3.5 w-3.5" />
           {totalVotes} vote{totalVotes > 1 ? 's' : ''}
           {totalPersonnes > 0 && (
             <span className="font-semibold text-primary">· {totalPersonnes} personnes</span>
           )}
-          <span className="text-brouillard-clair">· voir qui</span>
-        </button>
+        </span>
         <div className="flex items-center gap-1.5">
           {monVote && (
             <span className="hidden rounded-full bg-primary/8 px-2.5 py-1 font-semibold text-primary sm:inline">

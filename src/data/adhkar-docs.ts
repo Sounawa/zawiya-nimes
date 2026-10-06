@@ -68,6 +68,7 @@ function depuisCahier(ids: string[]): ChapitreLecture[] {
       debut: c.debut,
       fin: c.fin,
       texte: c.texte,
+      poesie: c.poesie,
     }))
 }
 
@@ -112,7 +113,7 @@ const JAZR_ARABE: ChapitreLecture[] = [
     sousTitre: 'تبرؤ من الحول والقوة — بالتوسل',
     debut: 1,
     fin: 1,
-    texte: `اللَّهُمَّ إِنِّي تَبَرَّأْتُ مِنْ حَوْلِي وَقُوَّتِي ۞ وَأَيْقَنْتُ بِحَوْلِكَ وَقُوَّتِكَ ۞ فَأَرِنِي عَجَائِبَ لُطْفِكَ ۞ وَغَرَائِبَ حِكْمَتِكَ ۞ بِحَقِّ سَيِّدِنَا وَمَوْلَانَا مُحَمَّدٍ صَلَّى اللهُ وَسَلَّمَ عَلَيْهِ وَعَلَىٰ آلِهِ وَصَحْبِهِ`,
+    texte: `اللَّهُمَّ إِنِّي تَبَرَّأْتُ مِنْ حَوْلِي وَقُوَّتِي ۞ وَأَيْقَنْتُ بِحَوْلِكَ وَقُوَّتِكْ ۞ فَأَرِنِي عَجَائِبَ لُطْفِكْ ۞ وَغَرَائِبَ حِكْمَتِكْ ۞ بِحَقِّ سَيِّدِنَا وَمَوْلَانَا مُحَمَّدٍ صَلَّى اللهُ وَسَلَّمَ عَلَيْهِ وَعَلَىٰ آلِهِ وَصَحْبِهْ`,
   },
 ]
 
@@ -215,7 +216,9 @@ export const PRATIQUES_WADHIFA: PratiqueWadhifa[] = [
 /* Helpers internes — chapitre du cahier / du kitāb par identifiant */
 function cahier(id: string): ChapitreLecture | undefined {
   const c = CHAPITRES_CAHIER.find((x) => x.id === id)
-  return c ? { id: c.id, titre: c.titre, sousTitre: '', debut: c.debut, fin: c.fin, texte: c.texte } : undefined
+  return c
+    ? { id: c.id, titre: c.titre, sousTitre: '', debut: c.debut, fin: c.fin, texte: c.texte, poesie: c.poesie }
+    : undefined
 }
 function kitab(id: string): ChapitreLecture | undefined {
   const c = CHAPITRES_ARABES.find((x) => x.id === id)

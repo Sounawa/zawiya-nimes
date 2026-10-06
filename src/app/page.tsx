@@ -17,7 +17,7 @@ import { NewMeetingDialog } from '@/components/zaouia/new-meeting-dialog'
 import { AdhkarSection, SamaSection } from '@/components/zaouia/adhkar-section'
 import { CotisationSection } from '@/components/zaouia/cotisation-section'
 import { ZiyaraSection } from '@/components/zaouia/ziyara-section'
-import { SettingsDialog, ProfileDialog } from '@/components/zaouia/settings-dialog'
+import { SettingsDialog } from '@/components/zaouia/settings-dialog'
 import { ZoneImpression } from '@/components/zaouia/print-sheet'
 import { VeilleCommunaute } from '@/components/zaouia/veille-communaute'
 import { BandeauProchainIjtima } from '@/components/zaouia/bandeau-prochain-ijtima'
@@ -48,7 +48,6 @@ export default function Page() {
   const redigerReunions = peut(ville, role, 'reunions.rediger', perms)
 
   const [reglagesOuverts, setReglagesOuverts] = useState(false)
-  const [profilOuvert, setProfilOuvert] = useState(false)
   const [nouvelleReunion, setNouvelleReunion] = useState(false)
 
   /* Garde d'hydratation — le serveur ne connaît pas le prénom persisté sur
@@ -110,36 +109,44 @@ export default function Page() {
         cibleImpression && 'print:hidden'
       )}
     >
-      <HeaderBar
-        onOpenSettings={() => setReglagesOuverts(true)}
-        onOpenProfile={() => setProfilOuvert(true)}
-      />
+      <HeaderBar onOpenSettings={() => setReglagesOuverts(true)} />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-9 px-4 pb-40 pt-6">
+      {/* Version horizontale — à partir de lg (tablette en paysage,
+          ordinateur) : la page s'étale en deux colonnes équilibrées,
+          chaque section garde son souffle vertical. */}
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-40 pt-6 lg:max-w-6xl">
         <BandeauProchainIjtima />
-        <Annonces />
-        <IjtimaSection />
-        {/* La trésorerie (cotisations + ziyara) — masquée pour le moment.
-            Réactivable d'un drapeau, déjà branchée sur le trésorier. */}
-        {SECTION_TRESORERIE && voirCotisations && (
-          <>
-            <CotisationSection />
-            <ZiyaraSection />
-          </>
-        )}
-        <AdhkarSection />
-        <SamaSection />
+        <div className="mt-9 space-y-9 lg:grid lg:grid-cols-2 lg:items-start lg:gap-9 lg:space-y-0">
+          <div className="space-y-9">
+            <Annonces />
+            <AdhkarSection />
+          </div>
+          <div className="space-y-9">
+            <IjtimaSection />
+            {/* La trésorerie (cotisations + ziyara) — masquée pour le moment.
+                Réactivable d'un drapeau, déjà branchée sur le trésorier. */}
+            {SECTION_TRESORERIE && voirCotisations && (
+              <>
+                <CotisationSection />
+                <ZiyaraSection />
+              </>
+            )}
+            <SamaSection />
+          </div>
+        </div>
       </main>
 
       {/* ─── Pied de page ─── */}
       <footer className="mt-auto border-t border-primary/10 bg-card/70 backdrop-blur safe-bottom">
-        <div className="mx-auto max-w-3xl px-4 py-4 text-center">
+        <div className="mx-auto max-w-3xl px-4 py-4 text-center lg:max-w-6xl">
           <div className="bandeau-orne mx-auto mb-3 w-24" aria-hidden />
           <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-brouillard-clair">
             Zawiya Nimes — {new Date().getFullYear()}
           </p>
-          <p className="mt-1.5 text-[10px] text-accent/80" aria-hidden>
-            ✦
+          {/* Marqueur de fraîcheur — vérifie d'un coup d'œil que l'aperçu
+              porte bien la dernière mouture (v9 = 6 octobre) */}
+          <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-brouillard-clair/70">
+            ✦ v9 · 6 octobre
           </p>
         </div>
       </footer>
@@ -173,7 +180,6 @@ export default function Page() {
       {/* ─── Dialogues ─── */}
       <NewMeetingDialog open={nouvelleReunion} onOpenChange={setNouvelleReunion} />
       <SettingsDialog open={reglagesOuverts} onOpenChange={setReglagesOuverts} />
-      <ProfileDialog open={profilOuvert} onOpenChange={setProfilOuvert} />
 
       {/* Veille — notifications des nouvelles annonces & réunions */}
       <VeilleCommunaute />

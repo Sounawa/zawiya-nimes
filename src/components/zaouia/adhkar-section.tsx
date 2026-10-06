@@ -199,6 +199,41 @@ function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
   )
 }
 
+/* ─── Un poème du cahier phonétique — hémistiches une ligne sur
+   deux, étalés en deux colonnes comme le kitāb arabe : le Nāṣirî
+   et la Munfarija se lisent ainsi de la même façon dans les deux
+   langues, mêmes tailles, même souffle. ─── */
+function PoemeCahier({ texte, accent }: { texte: string; accent: string }) {
+  const blocs = texte.split(/\n\s*\n/)
+  return (
+    <span className="block space-y-[1.1em]">
+      {blocs.map((bloc, bi) => {
+        const lignes = bloc
+          .split('\n')
+          .map((l) => l.trim())
+          .filter(Boolean)
+        const vers: [string, string][] = []
+        for (let i = 0; i < lignes.length; i += 2) {
+          vers.push([lignes[i], lignes[i + 1] ?? ''])
+        }
+        return (
+          <span key={bi} className="block space-y-[0.34em]">
+            {vers.map(([g, d], vi) => (
+              <span key={vi} className="poesie-vers">
+                <span className="poesie-shatr">{g}</span>
+                <span aria-hidden className="poesie-fasl" style={{ color: accent }}>
+                  ۞
+                </span>
+                <span className="poesie-shatr">{d}</span>
+              </span>
+            ))}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
 /* ─── Le paragraphage du cahier phonétique ───
    Le cahier imprimé est une colonne étroite : l'extraction garde
    des lignes courtes coupées au milieu des phrases. On rejoint
@@ -1008,15 +1043,19 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                     lineHeight: (INTERLIGNES.find((x) => x.id === l.interligne) ?? INTERLIGNES[1]).valeur,
                   }}
                 >
-                  {(c.langue === 'ph' && doc.id !== 'sama'
-                    ? paragrapher(c.texte)
-                    : c.texte.split('\n')
-                  ).map((ligne, j) =>
-                    arabeC && c.poesie ? (
+                  {c.poesie && arabeC ? (
+                    c.texte.split('\n').map((ligne, j) => (
                       <VersPoeme key={j} ligne={ligne} accent={accent.couleur} />
-                    ) : (
+                    ))
+                  ) : c.poesie ? (
+                    <PoemeCahier texte={c.texte} accent={accent.couleur} />
+                  ) : (
+                    (c.langue === 'ph' && doc.id !== 'sama'
+                      ? paragrapher(c.texte)
+                      : c.texte.split('\n')
+                    ).map((ligne, j) => (
                       <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
-                    )
+                    ))
                   )}
                 </div>
 

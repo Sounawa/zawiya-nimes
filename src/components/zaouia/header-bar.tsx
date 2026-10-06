@@ -1,8 +1,10 @@
 'use client'
 
+import { useCallback, useSyncExternalStore } from 'react'
 import Image from 'next/image'
 import { motion, useScroll, useSpring } from 'framer-motion'
-import { LogOut, Settings2, UserRound } from 'lucide-react'
+import { Settings2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useUser } from '@/lib/store'
 import { useMembers } from '@/lib/api'
 import { peut } from '@/lib/permissions'
@@ -14,15 +16,29 @@ import { RechercheGlobale } from '@/components/zaouia/recherche-globale'
 
 interface HeaderBarProps {
   onOpenSettings: () => void
-  onOpenProfile: () => void
 }
 
-export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
-  const name = useUser((s) => s.name)
-  const role = useUser((s) => s.role)
+/** Version horizontale serrée — téléphone tenu en paysage :
+    l'en-tête s'amincit pour laisser la place à la lecture. */
+const MQ_PAYSAGE = '(orientation: landscape) and (max-height: 540px)'
+
+function usePaysageCompact(): boolean {
+  const souscrire = useCallback((avertir: () => void) => {
+    const mq = window.matchMedia(MQ_PAYSAGE)
+    mq.addEventListener('change', avertir)
+    return () => mq.removeEventListener('change', avertir)
+  }, [])
+  return useSyncExternalStore(
+    souscrire,
+    () => window.matchMedia(MQ_PAYSAGE).matches,
+    () => false
+  )
+}
+
+export function HeaderBar({ onOpenSettings }: HeaderBarProps) {
   const ville = useUser((s) => s.ville)
+  const role = useUser((s) => s.role)
   const perms = useUser((s) => s.perms)
-  const logout = useUser((s) => s.logout)
 
   /* Les réglages de la zaouia ne regardent que le référent */
   const gereReglages = peut(ville, role, 'reglages.gerer', perms)
@@ -34,23 +50,28 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
   /* Fil d'or — progression de lecture au-dessus de la corniche */
   const { scrollYProgress } = useScroll()
   const progression = useSpring(scrollYProgress, { stiffness: 120, damping: 26, mass: 0.4 })
+  const compact = usePaysageCompact()
 
   return (
     <header className="sticky top-0 z-40 border-b border-primary/10 bg-background/85 backdrop-blur-lg">
       {/* La sebka — claustras de stuc, née du bord droit, éteinte avant le titre */}
       <div aria-hidden className="sebka pointer-events-none absolute inset-0" />
 
-      <div className="relative mx-auto flex max-w-3xl items-center gap-1.5 px-3 py-3 sm:gap-3 sm:px-4">
+      <div
+        className={cn(
+          'relative mx-auto flex max-w-3xl items-center gap-1.5 px-3 sm:gap-3 sm:px-4 lg:max-w-6xl',
+          compact ? 'py-1.5' : 'py-3'
+        )}
+      >
         {/* Logo — cartouche de zellige allongé, la calligraphie de la tariqa */}
-        <button
-          onClick={onOpenProfile}
-          className="flex items-center gap-3 rounded-2xl p-1 pr-1 transition-colors hover:bg-primary/5 sm:pr-3"
-          aria-label="Profil"
-        >
+        <div className="flex items-center gap-3 rounded-2xl p-1 sm:pr-3">
           <motion.div
-            whileHover={{ scale: 1.06 }}
+            whileHover={{ scale: 1.04 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-            className="cartouche-khatim h-[58px] w-[72px] shrink-0 bg-gradient-to-b from-gold-clair via-gold to-gold-vif p-[1.5px] shadow-sm sm:h-16 sm:w-20"
+            className={cn(
+              'cartouche-khatim shrink-0 bg-gradient-to-b from-gold-clair via-gold to-gold-vif p-[1.5px] shadow-sm',
+              compact ? 'h-11 w-14' : 'h-[58px] w-[72px] sm:h-16 sm:w-20'
+            )}
           >
             <span className="cartouche-khatim relative block h-full w-full bg-white">
               <Image
@@ -70,30 +91,9 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
               {VILLE_LABEL[ville] ?? 'Nîmes'}
             </span>
           </span>
-        </button>
+        </div>
 
         <div className="flex-1" />
-
-        {/* Utilisateur (+ pastille de charge) */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onOpenProfile}
-          className="h-10 max-w-[30vw] gap-2 rounded-full px-2.5 text-sm font-semibold text-encre hover:bg-primary/8 sm:max-w-[46vw] sm:px-3"
-        >
-          <UserRound className="h-4 w-4 shrink-0 text-primary" />
-          <span className="max-w-24 truncate">{name}</span>
-          {role === 'REFERENT' && (
-            <span className="hidden shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary sm:inline-block">
-              Référent
-            </span>
-          )}
-          {role === 'TREASURER' && (
-            <span className="hidden shrink-0 rounded-full bg-accent/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gold-vif sm:inline-block">
-              Trésorier
-            </span>
-          )}
-        </Button>
 
         <RechercheGlobale />
 
@@ -126,20 +126,12 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
             )}
           </Button>
         )}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={logout}
-          aria-label="Changer d'identité"
-          className="hidden h-10 w-10 shrink-0 rounded-full text-muted-foreground hover:bg-primary/8 sm:inline-flex"
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
       </div>
 
-      {/* Ligne spirituelle : la date du jour, entre filets d'or */}
-      <div className="relative mx-auto max-w-3xl px-4 pb-3">
+      {/* Ligne spirituelle : la date du jour, entre filets d'or —
+          repliée en paysage serré pour laisser la place au contenu */}
+      {!compact && (
+      <div className="relative mx-auto max-w-3xl px-4 pb-3 lg:max-w-6xl">
         <motion.p
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
@@ -160,6 +152,7 @@ export function HeaderBar({ onOpenSettings, onOpenProfile }: HeaderBarProps) {
           <span className="ornement-filet shrink-0 text-gold/70" aria-hidden />
         </motion.p>
       </div>
+      )}
 
       {/* Fil d'or — suit la progression de la page, posé sur la corniche */}
       <motion.span

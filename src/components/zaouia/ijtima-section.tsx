@@ -16,8 +16,6 @@ import { NewMeetingDialog } from './new-meeting-dialog'
 
 export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting; compact?: boolean; prochaine?: boolean }) {
   const [ouvert, setOuvert] = useState(false)
-  const [voirListe, setVoirListe] = useState(false)
-  const [voirInvites, setVoirInvites] = useState(false)
   const [editionOuverte, setEditionOuverte] = useState(false)
   const memberId = useUser((s) => s.memberId)
   const ville = useUser((s) => s.ville)
@@ -227,84 +225,18 @@ export function MeetingCard({ meeting, compact, prochaine }: { meeting: Meeting;
                 )}
               </div>
 
-              {/* Listes attendus / invités */}
-              <div className="space-y-2">
-                <button
-                  onClick={() => setVoirListe((v) => !v)}
-                  className="flex w-full items-center justify-between rounded-xl bg-background px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-feuille"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <Users className="h-4 w-4" /> {presents.length} attendus
-                  </span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${voirListe ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence initial={false}>
-                  {voirListe && (
-                    <motion.ul
-                      initial={{ height: 0 }}
-                      animate={{ height: 'auto' }}
-                      exit={{ height: 0 }}
-                      className="overflow-hidden pl-2"
-                    >
-                      <div className="defile-fin max-h-60 overflow-y-auto rounded-xl border border-primary/10 p-2">
-                        {presents.length === 0 && (
-                          <li className="px-3 py-2 text-sm text-brouillard">Personne pour l'instant…</li>
-                        )}
-                        {presents.map((a) => (
-                          <li
-                            key={a.id}
-                            className="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm text-secondary-foreground hover:bg-background"
-                          >
-                            <span>Sidi {a.member.name}</span>
-                            {a.guests > 0 && (
-                              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-gold-vif">
-                                +{a.guests} invité{a.guests > 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </div>
-                    </motion.ul>
-                  )}
-                </AnimatePresence>
-
+              {/* Réponse de la communauté — effectifs, sans prénoms :
+                  la feuille de présence imprimée tient le détail pour le shaykh */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-background px-3 py-2 text-sm font-medium text-primary">
+                  <Users className="h-4 w-4" /> {presents.length} frère{presents.length > 1 ? 's' : ''}
+                </span>
                 {totalInvites > 0 && (
-                  <>
-                    <button
-                      onClick={() => setVoirInvites((v) => !v)}
-                      className="flex w-full items-center justify-between rounded-xl bg-or-pale px-4 py-2.5 text-sm font-medium text-gold-vif transition-colors hover:bg-or-pale/70"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <UserPlus className="h-4 w-4" /> {totalInvites} invités
-                      </span>
-                      <ChevronDown className={`h-4 w-4 transition-transform ${voirInvites ? 'rotate-180' : ''}`} />
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {voirInvites && (
-                        <motion.ul
-                          initial={{ height: 0 }}
-                          animate={{ height: 'auto' }}
-                          exit={{ height: 0 }}
-                          className="overflow-hidden pl-2"
-                        >
-                          <div className="rounded-xl border border-accent/20 p-2">
-                            {presents
-                              .filter((a) => a.guests > 0)
-                              .map((a) => (
-                                <li
-                                  key={a.id}
-                                  className="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm text-gold-vif"
-                                >
-                                  <span>de Sidi {a.member.name}</span>
-                                  <span className="font-semibold">{a.guests}</span>
-                                </li>
-                              ))}
-                          </div>
-                        </motion.ul>
-                      )}
-                    </AnimatePresence>
-                  </>
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-or-pale px-3 py-2 text-sm font-medium text-gold-vif">
+                    <UserPlus className="h-4 w-4" /> {totalInvites} invité{totalInvites > 1 ? 's' : ''}
+                  </span>
                 )}
+                <span className="text-xs text-brouillard">{totalAttendus} personnes attendues</span>
               </div>
             </div>
           </motion.div>

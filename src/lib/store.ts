@@ -158,7 +158,6 @@ export type CibleImpression =
   | { kind: 'presence'; meetingId: string }
   | { kind: 'comptes' }
   | { kind: 'bilan' }
-  | { kind: 'presences' }
   | { kind: 'cahier'; chapitreId: string }
   | { kind: 'kitab'; chapitreId: string }
 

@@ -683,3 +683,25 @@ Stage Summary:
 - Le travail interrompu de la session précédente (tanwīn damma standard + Couleur + folio) est vérifié COMPLET et FONCTIONNEL en rendu réel
 - État global : Al-Fath onglet 9 / Al-Mulk onglet 10, Scheherazade partout, Warsh mot pour mot — aucune régression détectée
 - Piste suivante : transcription phonétique de Mulk si la zawiya la fournit ; Taha (P0 du document Word) disponible si une section est demandée
+
+---
+Task ID: round-24-warsh-integral
+Agent: Z.ai Code (session principale)
+Task: « AL MULK EN PHONETIQUE TANT QUE C'EST EN WARSH · ÉCRIRE TAHA · TOUT LE CORAN DE L'APP EN WARSH »
+
+Work Log:
+- AL-MULK PHONÉTIQUE (ch33) : nouvelle transcription Warsh complète (31 versets + khatm Ṣadaqa + salawât + Subḥâna) écrite sur le modèle du cahier imprimé — lectures Warsh : tadda‘ûn (67:28) · matê (67:25, comme Yā-Sīn ch02) · mûminûna (khatm) · ê warshiens (kêfirûna, ddunyê, khuwêr) ; wired sur la carte 'mulk' (ph) ET la pratique w-mulk du wadhifa quotidien → le badge « عربي » a disparu, la carte s'ouvre désormais en PHONÉTIQUE
+- SURAT TÂ HÂ — NOUVELLE SECTION ONGLET 11 : arabe k22 (kitab-arabe-2.ts, 135 versets Warsh, 12,6 K chars) + phonétique ch34 (cahier.ts, 12,2 K chars) ; carte 'taha' après Mulk — compteur « 11 documents » ; titre « la sourate du commandement — riwāyat Warsh »
+- TAHA ARABE — lectures Warsh appliquées : 20:15 أَكِادُ (Hafs أَكَادُ) · 20:16/127 يُومِنُ · 20:63 إِنَّ هَٰذَيْنِ لَسَاحِرَيْنِ (Hafs إِنْ هَٰذَانِ) · 20:97 ظَلِلْتَ (Hafs ظَلَلْتُمْ-style) · 20:112 مُومِنٌ · 20:134 لَنْ نُّومِنَ · يُوت۪يٰ · tanwīn warshiens طُواٗ (12) سُواٗ (58) ضُحاٗ (59) هُداٗ (10) — orthographe zawiya : اَ۬ wasla · فِے · ٗ ٖ · إِنْ→اِن مخففة · أَنَا→اَنَا
+- TAHA PHONÉTIQUE — mêmes leçons Warsh : -akîdu (20:15) · hâdhêni lasâḥirên (20:63) · lan nûmina (20:134) · lan nûmana (20:16) · Ṭuwan/suwan/ḍuḥan/hudâ · qâlê/fakhâfê/taniyê (duels en -ê) · ḥattê/yadhabê (20:91/63) · matê-style ê des fâ‘lâ (tardê, yakhchê, ṭaghê, tazakkê, nuhê…) · āyât ḥayêtid dunyê · -awzêran (awzēr comme kuffêr)
+- AL-WĀQI‘A (k03) CONVERTIE EN WARSH : orthographe maghrébine intégrale (اَ۬ · فِے ×18 · ٗ ٖ) + CORRECTIONS DE LECTURES : 56:19 يُنزَفُونَ (passif de Nāfi‘ — l'ancien يَنزِفُونَ «actif» était erroné, le cahier imprimé dit yunzafûna) · 56:29 وَطَلْحٍ (ṭalḥ de Nāfi‘ — l'ancien وَطَلْعٍ était la leçon kūfie) · 56:65 فَظَلَلْتُمْ (faẓalaltum, l'ancien فَظَلِلْتُمْ était ḥamza/kūfi) ; khatm Ṣadaqa restauré puis warshifié (مُومِنُونَ، 33:56 Warsh) ; en-tête du fichier documentant tout
+- AUDIT INTÉGRAL « TOUT LE CORAN EN WARSH » : script python ciblant les 227 blocs ﴾…﴿ des 4 fichiers de données — restes Hafs éradiqués : Fātiḥa ×5 · basmala ×21 → Warsh · sceau Subḥâna rabbika ×17 → Warsh · Āyat al-Kursī ×3 (k06 avant-fajr, k07 ṣubḥ, k08 voyage) · 48:29 ×1 (copiée de k02) · 9:128-129 · Ixlāṣ ×2 · 42:19 · 6:103 · 6:63-64 · 47:19 (مُومِنِينَ/مُومِنَات) · Baqara 1-5 ×2 · Baqara 285-286 ×2 (k11 + kitab-2) · Quraych · Mā‘ûn · Kawthar · Kâfirûn · Naṣr · Masad · Falaq ×2 · Nâs ×2 · 33:56 ×3 · 27:62 · 28:85 · 48:1 · 8:30 · 71:10-12 · 17:81 · 47:7 ×2 · 30:47 · 5:67 · 36:58 · 85:20-22 — VÉRIFICATION FINALE : فِى=0, يُؤْمِن/مُؤْمِن=0, basmala-hafs=0 dans TOUS les blocs coraniques
+- SW bumpé zawiya-v7 → v8
+- QA AGENT-BROWSER : compteur « 11 documents » · pastilles 9=Fath 10=Mulk 11=Taha · MULK PHONÉTIQUE : lecteur s'ouvre sur « Tabârakal ladhî… », tadda‘ûn + matê + Ṣadaqa présents, badge عربي DISPARU · MULK ARABE : تَبَٰرَكَ + khatm Warsh · TAHA ARABE : طه · طُوا · أَكِادُ · هَٰذَيْنِ · لَنْ نُّومِنَ · يُومِنُ · سُبْحَانَ رَبِّكَ — 12 656 chars rendus · TAHA PHONÉTIQUE : Ṭâ hâ · -akîdu · Ṭuwan · hâdhêni · lasâḥirên · lan nûmina · suwan · ḍuḥan · hudâ · Ṣadaqa — 12 240 chars · WĀQI‘A ARABE : فِے · يُنزَفُونَ · وَطَلْحٖ · وَلَدَانٌ · فَظَلَلْتُمْ + khatm مُومِنُونَ — 5 334 chars · recherche ⌘K « taha » → carte trouvée · VLM sur capture Taha : « tous les glyphes rendus, aucun tofu, Scheherazade, marques Warsh présentes, aucun problème de mise en page » · console 0 erreur · mobile 390×844 scrollWidth 390/390 · lint 0 erreur · tsc src 0 erreur
+
+Stage Summary:
+- AL-MULK EST LISIBLE EN PHONÉTIQUE : transcription Warsh complète sur le modèle du cahier, carte + pratique wadhifa câblées
+- SURAT TÂ HÂ EST L'ONGLET 11 des Adhkâr — arabe et phonétique, 135 versets, lectures Warsh fidèles
+- TOUT LE CORAN DE L'APPLICATION EST DÉSORMAIS EN RIWĀYAT WARSH : les 22 sourates du kitāb + tous les versets des du‘â/khatms, orthographe du mushaf maghrébin (wasla, فِے, tanwīn warshien, nūn lues)
+- La Wāqi‘a a été corrigée sur trois points de lecture (يُنزَفُونَ · وَطَلْحٍ · فَظَلَلْتُمْ) — l'ancienne version portait des leçons non-Nāfi‘
+- Pistes restantes : la transcription phonétique du cahier imprimé (ch04 Wāqi‘a, ch02 Yā-Sīn) garde quelques reflêts Hafs (yunzafûna y est ; wildânun, ṭalhin y figurent correctement — cohérent Warsh en fait sur ces points-là) ; Taha arabe = orthographe Warsh reconstruite (le document Word original a disparu du disque, les conventions exactes de la zawiya ont été appliquées) — si la zawiya retape Taha dans un prochain cahier, une relecture mot à mot est suggérée

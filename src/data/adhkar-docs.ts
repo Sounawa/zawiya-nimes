@@ -1,11 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════
    ADHKÂR DE LA ZAWIYA — la présentation des invocations du site
-   original : neuf pièces d'origine + Surat al-Fath (onglet 9) et
-   Surat al-Mulk (onglet 10), sections à part. Chaque pièce ouvre en
-   phonétique ou en arabe. Le cahier de wadhifa est organisé en
-   PRATIQUES : chaque pratique garde sa version phonétique (cahier
-   imprimé) et/ou sa version arabe (kitāb imprimé, Coran en riwāyat
-   Warsh) — plus aucun chapitre ne se perd en changeant de langue.
+   original : neuf pièces d'origine + Surat al-Fath (onglet 9),
+   Surat al-Mulk (onglet 10) et Surat Tâ Hâ (onglet 11), sections
+   à part. Chaque pièce ouvre en phonétique ou en arabe. Le cahier
+   de wadhifa est organisé en PRATIQUES : chaque pratique garde sa
+   version phonétique (cahier imprimé — ou transcription Warsh écrite
+   pour la zawiya : Mulk ch33, Tâ Hâ ch34) et/ou sa version arabe
+   (kitāb imprimé, Coran en riwāyat Warsh) — plus aucun chapitre ne
+   se perd en changeant de langue.
    ═══════════════════════════════════════════════════════════════════ */
 
 import { CHAPITRES_CAHIER } from './cahier'
@@ -180,7 +182,7 @@ export const PRATIQUES_WADHIFA: PratiqueWadhifa[] = [
   { id: 'w-fath', groupe: 'quotidien', ph: cahier('ch12-sratalfat'), ar: kitab('k02') },
   /* Pièces du kitāb seul — APRÈS la séquence du cahier,
      pour ne jamais couper la wadhifa */
-  { id: 'w-mulk', groupe: 'quotidien', ar: kitab('k04') },
+  { id: 'w-mulk', groupe: 'quotidien', ph: cahier('ch33-sratmulk'), ar: kitab('k04') },
   { id: 'w-ala-latif', groupe: 'quotidien', ar: kitab('k19') },
   /* ── Les Waẓîfa des moments ── */
   { id: 'w-avant-fajr', groupe: 'moments', ph: cahier('ch13-wafaavantlefajr'), ar: kitab('k06') },
@@ -382,8 +384,8 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     ph: depuisCahier(['ch17-iftitassilkaiftitd', 'ch19-khatmdalilalkhayrt']),
     ar: depuisKitab(['k16']),
   },
-  /* ── Les deux sections à part, demandées par la zawiya —
-     onglets 9 et 10, après les pièces du site original ── */
+  /* ── Les trois sections à part, demandées par la zawiya —
+     onglets 9, 10 et 11, après les pièces du site original ── */
   {
     id: 'fath',
     titreFr: 'Surat al-Fath',
@@ -399,7 +401,17 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     titreAr: 'سُورَةُ المُلْك',
     detailFr: 'la royauté — riwāyat Warsh',
     detailAr: 'سورة الملك',
+    ph: depuisCahier(['ch33-sratmulk']),
     ar: depuisKitab(['k04']),
+  },
+  {
+    id: 'taha',
+    titreFr: 'Surat Tâ Hâ',
+    titreAr: 'سُورَةُ طه',
+    detailFr: "la sourate du commandement — riwāyat Warsh",
+    detailAr: 'سورة طه',
+    ph: depuisCahier(['ch34-srattaha']),
+    ar: depuisKitab(['k22']),
   },
 ]
 

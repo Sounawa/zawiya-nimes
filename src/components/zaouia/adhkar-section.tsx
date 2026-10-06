@@ -1098,7 +1098,7 @@ export function AdhkarSection() {
   return (
     <SectionShell
       titre="Adhkâr"
-      compteur="10 documents · phonétique & arabe"
+      compteur="11 documents · phonétique & arabe"
       id="adhkar"
       defaultOpen={false}
     >
@@ -1116,7 +1116,7 @@ export function AdhkarSection() {
           />
         </div>
 
-        {/* ─── Les dix documents — une pièce, une porte ───
+        {/* ─── Les onze documents — une pièce, une porte ───
             (le cahier de samâ' a sa propre section plus bas) */}
         <div className="space-y-2">
           {DOCUMENTS_ADHKAR.filter((d) => d.id !== 'sama').map((doc, i) => {

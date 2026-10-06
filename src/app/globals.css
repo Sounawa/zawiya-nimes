@@ -870,3 +870,24 @@ body::after {
     margin-top: 1rem;
   }
 }
+
+/* ─── Paysage téléphone — la bannière d'installation se fait discrete ───
+   L'invitation à installer reste posée dans le coin (elle ne gêne
+   jamais la lecture) mais sa carte s'aplatit : une ligne, pas deux. */
+@media (orientation: landscape) and (max-height: 540px) {
+  .paysage-banniere-install {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    left: calc(0.75rem + env(safe-area-inset-left));
+  }
+  .paysage-carte-install {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+  .paysage-carte-install p {
+    display: none;
+  }
+  .paysage-carte-install p:first-child {
+    display: block;
+    font-size: 12px;
+  }
+}

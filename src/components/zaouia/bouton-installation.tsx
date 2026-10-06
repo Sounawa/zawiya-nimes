@@ -93,10 +93,12 @@ export function BoutonInstallation() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-          /* Au-dessus du bouton retour en haut (même coin gauche) */
-          className="fixed bottom-20 left-4 z-40 max-w-[85vw] sm:bottom-22 sm:left-6"
+          /* Au-dessus du bouton retour en haut (même coin gauche) —
+             en paysage téléphone elle se fait toute petite : chaque
+             pixel de haut compte pour la lecture */
+          className="fixed bottom-20 left-4 z-40 max-w-[85vw] sm:bottom-22 sm:left-6 paysage-banniere-install"
         >
-          <div className="relative flex items-center gap-3 rounded-2xl border border-gold/40 bg-card/95 py-2.5 pl-4 pr-10 shadow-lg shadow-primary/10 backdrop-blur">
+          <div className="relative flex items-center gap-3 rounded-2xl border border-gold/40 bg-card/95 py-2.5 pl-4 pr-10 shadow-lg shadow-primary/10 backdrop-blur paysage-carte-install">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-emerald-deep text-white shadow-md shadow-primary/20">
               <Smartphone className="h-4 w-4" />
             </span>

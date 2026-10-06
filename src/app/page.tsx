@@ -146,9 +146,9 @@ export default function Page() {
             Zawiya Nimes — {new Date().getFullYear()}
           </p>
           {/* Marqueur de fraîcheur — vérifie d'un coup d'œil que l'aperçu
-              porte bien la dernière mouture (v9 = 6 octobre) */}
+              porte bien la dernière mouture (v17 = 6 octobre, audit cahier) */}
           <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-brouillard-clair/70">
-            ✦ v9 · 6 octobre
+            ✦ v17 · 6 octobre
           </p>
         </div>
       </footer>

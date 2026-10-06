@@ -666,3 +666,20 @@ Stage Summary:
 - Al-Mulk a maintenant SA carte autonome (elle n'existait que dans la wadhifa et le kitāb) ; n'existant qu'en arabe, un badge عربي l'annonce et son lecteur s'ouvre directement en Warsh quelle que soit la langue de lecture
 - La WADHIFA n'a pas bougé (w-fath ch12 + w-mulk k04 restent dans le groupe quotidien, ordre du cahier imprimé)
 - Restes/pistes : si la zawiya fournit un jour la transcription phonétique de Mulk, l'ajouter à cahier.ts et renseigner ph: sur la carte ; Taha (P0 du document Word) reste disponible si une section est demandée
+
+---
+Task ID: round-23-recup-crash
+Agent: Z.ai Code (session principale — reprise après coupure de contexte)
+Task: Reprise après crash de la session précédente — le commit de récupération 8cbee01 avait laissé kitab-arabe.ts syntaxiquement cassé (page 500)
+
+Work Log:
+- DIAGNOSTIC : le dev.log montrait « Unexpected character '﴾' » ligne 203 de kitab-arabe.ts — la session précédente (round interrompu : remplacement ٞ U+065E → ٌ U+064C demandé par la zawiya) était morte en pleine édition : un backtick fermait la template literal de k07 (Waẓîfa aṣ-Ṣubḥ) ligne 201, laissant le tasbīḥ final de la ligne 203 HORS chaîne
+- FIX : backtick supprimé ligne 201 — le texte ﴾ سُبْحَانَ رَبِّكَ... ﴿ rejoint la fin du texte k07 ; GET / repasse en 200
+- VÉRIFICATION DU TRAVAIL INTERROMPU (commit 8cbee01) : remplacement ٞ→ٌ COMPLET — 13 tanwīn U+064C rendus dans Al-Mulk, 0 artefact U+065E restant dans kitab-arabe.ts / kitab-arabe-2.ts / cahier.ts / adhkar-docs.ts (le seul U+065E restant est dans le commentaire d'en-tête documentant le remplacement — voulu) ; libellé « Accent » → « Couleur » dans les réglages du lecteur ; folio « ✦ N / total » en pied de chaque chapitre
+- QA AGENT-BROWSER : écran d'entrée « Zawiya NÎMES » → entrée OK ; header complet (Abde RÉFÉRENT, ⌘K, mode nuit, réglages, identité) ; barre date « MARDI 6 OCTOBRE · NÎMES » ; Annonces / AL-IJTIMÂ' (1 réunion) / ADHKÂR (10 documents) / SAMÂ' (398 chants) ; pastilles 9 = Surat al-Fath, 10 = Surat al-Mulk (badge عربي) ; lecteur Mulk s'ouvre en arabe Warsh ; police calculée du texte = « Scheherazade New » ; Cahier de Wadhifa = livre défilant 35 chapitres, clic sommaire « 2 Sûrat Yâ-Sîn » → folio « ✦ 2 / 35 » ; mobile 390×844 scrollWidth 390/390 exact ; 0 erreur page ; 0 erreur console ; lint 0 erreur ; tsc 0 erreur (hors dossiers examples/ et skills/ de référence)
+
+Stage Summary:
+- LE SITE REPART : l'erreur de syntaxe du commit de crash est corrigée, tous les GET / sont en 200
+- Le travail interrompu de la session précédente (tanwīn damma standard + Couleur + folio) est vérifié COMPLET et FONCTIONNEL en rendu réel
+- État global : Al-Fath onglet 9 / Al-Mulk onglet 10, Scheherazade partout, Warsh mot pour mot — aucune régression détectée
+- Piste suivante : transcription phonétique de Mulk si la zawiya la fournit ; Taha (P0 du document Word) disponible si une section est demandée

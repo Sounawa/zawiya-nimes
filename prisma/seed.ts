@@ -3,9 +3,9 @@ import { PrismaClient } from '@prisma/client'
 const db = new PrismaClient()
 
 const MEMBRES = [
-  'Abde', 'Adam', 'Ayoub', 'Badr', 'BRAHIM', 'El Hadji', 'Fotana',
-  'Ghafir', 'Moaade', 'Mohamed', 'Monsef', 'Mostafa', 'Mustafa',
-  'Nabil', 'Rahhal', 'Samy', 'Sidi Youssef',
+  'Membre 01', 'Membre 02', 'Membre 03', 'Membre 04', 'Membre 05', 'Membre 06',
+  'Membre 07', 'Membre 08', 'Membre 09', 'Membre 10', 'Membre 11', 'Membre 12',
+  'Membre 13', 'Membre 14', 'Membre 15', 'Membre 16', 'Membre 17',
 ]
 
 function jour(date: Date) {
@@ -35,10 +35,10 @@ async function main() {
   console.log('→ Membres…')
   const members = [] as { id: string; name: string }[]
   for (const name of MEMBRES) {
-    /* Abde porte la conduite de la zaouia (référent) — il peut tout,
+    /* Le premier membre porte la conduite de la zaouia (référent) — il peut tout,
        y compris la trésorerie ; les autres sont membres de Nîmes. */
     const m = await db.member.create({
-      data: { name, city: 'NIMES', role: name === 'Abde' ? 'REFERENT' : 'MEMBER' },
+      data: { name, city: 'NIMES', role: name === MEMBRES[0] ? 'REFERENT' : 'MEMBER' },
     })
     members.push(m)
   }

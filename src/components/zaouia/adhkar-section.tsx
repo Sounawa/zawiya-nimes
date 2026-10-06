@@ -212,6 +212,19 @@ function PoemeCahier({ texte, accent }: { texte: string; accent: string }) {
           .split('\n')
           .map((l) => l.trim())
           .filter(Boolean)
+        /* Un bloc d'une seule ligne — « CHAPITRE », titre français,
+           ۞ isolé — se pose en en-tête centré, hors des vers */
+        if (lignes.length === 1) {
+          return (
+            <span
+              key={bi}
+              className="block text-center text-[0.86em] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: accent }}
+            >
+              {lignes[0]}
+            </span>
+          )
+        }
         const vers: [string, string][] = []
         for (let i = 0; i < lignes.length; i += 2) {
           vers.push([lignes[i], lignes[i + 1] ?? ''])
@@ -240,7 +253,12 @@ function PoemeCahier({ texte, accent }: { texte: string; accent: string }) {
    les lignes d'un même bloc (séparé par une ligne vide) et on
    coupe après les renvois « → p. » et les répétitions « x 100 » —
    le texte coule alors sur toute la largeur, justifié comme un
-   livre, au lieu de rester collé à gauche. */
+   livre, au lieu de rester collé à gauche. Les en-têtes du cahier
+   imprimé (Du‘â’, Ṣalât al Jamâliyya, Zajr…) restent des lignes
+   à part, centrées comme sur la page. */
+const EST_EN_TETE =
+  /^(Du‘â’|Ṣalât al Jamâliyya|Zajr|Ṣalât an-nûriyya|Ṣalât Aṭ Ṭibiyya|Al-Jazr)$/u
+
 function paragrapher(texte: string): string[] {
   const paras: string[] = []
   let courant: string[] = []
@@ -256,12 +274,35 @@ function paragrapher(texte: string): string[] {
       flush()
       continue
     }
+    /* en-tête du cahier : ligne à part, jamais noyée dans un paragraphe */
+    if (EST_EN_TETE.test(t)) {
+      flush()
+      paras.push(t)
+      continue
+    }
     courant.push(t)
     /* Fin logique de paragraphe : renvoi de page, ou répétition badgée */
     if (/→\s*p\.|→\s*ص|[×x]\s*[٠-٩\d][٠-٩\dHh '’]*$/.test(t)) flush()
   }
   flush()
   return paras
+}
+
+/* Un paragraphe du cahier : invocation, en-tête ou renvoi ?
+   Le lecteur habille chaque sorte comme la page imprimée. */
+function sorteParagraphe(p: string): 'entete' | 'renvoi' | 'texte' {
+  if (EST_EN_TETE.test(p.trim())) return 'entete'
+  if (/→\s*p\.\s*\d+$/u.test(p.trim())) return 'renvoi'
+  return 'texte'
+}
+
+/* Côté kitāb arabe : les renvois « ← ص » et l'en-tête du du‘â’
+   se posent au centre, comme sur la page imprimée. */
+function sorteLigneArabe(l: string): 'entete' | 'renvoi' | 'texte' {
+  const t = l.trim()
+  if (/^دُعَاء\s*—\s*الصَّلَاةُ الْجَمَالِيَّة$/u.test(t)) return 'entete'
+  if (/←\s*ص\s*[٠-٩\d]+$/u.test(t)) return 'renvoi'
+  return 'texte'
 }
 
 /* Une entrée du lecteur — chapitre dans sa langue EFFECTIVE :
@@ -1051,11 +1092,33 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                     <PoemeCahier texte={c.texte} accent={accent.couleur} />
                   ) : (
                     (c.langue === 'ph' && doc.id !== 'sama'
-                      ? paragrapher(c.texte)
-                      : c.texte.split('\n')
-                    ).map((ligne, j) => (
-                      <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
-                    ))
+                      ? paragrapher(c.texte).map((ligne) => ({ ligne, sorte: sorteParagraphe(ligne) }))
+                      : c.texte.split('\n').map((ligne) => ({ ligne, sorte: sorteLigneArabe(ligne) }))
+                    ).map(({ ligne, sorte }, j) => {
+                      if (sorte === 'entete') {
+                        return (
+                          <span
+                            key={j}
+                            className="mt-[1.15em] block text-center text-[0.86em] font-semibold uppercase tracking-[0.14em] first:mt-0"
+                            style={{ color: accent.couleur }}
+                          >
+                            {ligne}
+                          </span>
+                        )
+                      }
+                      if (sorte === 'renvoi') {
+                        return (
+                          <span
+                            key={j}
+                            className="mt-[0.7em] block text-center text-[0.82em] italic"
+                            style={{ color: `${accent.couleur}` }}
+                          >
+                            {ligne}
+                          </span>
+                        )
+                      }
+                      return <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
+                    })
                   )}
                 </div>
 

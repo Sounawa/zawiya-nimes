@@ -52,3 +52,10 @@ prompt
 server.log
 # Skills directory
 /skills/
+# caches de session & données locales (jamais poussées)
+tool-results/
+sauvegarde/
+download/comptes-test.csv
+download/vlm-*.json
+db/*.backup*
+download/adhkar-src/*.png

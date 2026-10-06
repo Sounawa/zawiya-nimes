@@ -12,8 +12,12 @@ export async function PATCH(req: Request, { params }: Params) {
     if (refus) return refus
     const { id } = await params
     const body = await req.json()
-    if (!body.text || typeof body.text !== 'string') {
-      return NextResponse.json({ error: 'Texte requis' }, { status: 400 })
+    /* Message facultatif — le titre ou le message suffit, pas les deux vides */
+    if (!body.text && !body.title) {
+      return NextResponse.json({ error: 'Titre ou message requis' }, { status: 400 })
+    }
+    if (body.text !== undefined && typeof body.text !== 'string') {
+      return NextResponse.json({ error: 'Texte invalide' }, { status: 400 })
     }
     const villes = Array.isArray(body.cities)
       ? body.cities.filter((c: unknown) => ['NIMES', 'AVIGNON', 'MONTPELLIER'].includes(c as string))
@@ -22,7 +26,7 @@ export async function PATCH(req: Request, { params }: Params) {
       where: { id },
       data: {
         title: body.title || null,
-        text: body.text,
+        text: body.text ?? '',
         color: body.color === 'CORAIL' ? 'CORAIL' : 'VERT',
         cities: villes && villes.length ? JSON.stringify(villes) : null,
         date: new Date(),
@@ -31,7 +35,7 @@ export async function PATCH(req: Request, { params }: Params) {
     await journaliser({
       kind: 'ANNOUNCEMENT',
       action: 'UPDATE',
-      label: `Annonce modifiée — « ${annonce.title || annonce.text.slice(0, 60)} »`,
+      label: `Annonce modifiée — « ${annonce.title || annonce.text.slice(0, 60) || 'sans texte'} »`,
       actor: body.actor || null,
     })
     return NextResponse.json(annonce)

@@ -2,7 +2,7 @@
    CAHIER D'INVOCATIONS — transcription phonétique intégrale
    Source : « Cahier de Wadhifa » de la zawiya (135 p.) — extrait tel
    quel, conventions incluses (chapitre final « Grille de
-   transcription » : ~ = nasal, - = élision, ﴾ ﴿ = versets)
+   transcription » : ~ = nasal, - = élision, ﴿ ﴾ = versets)
    ═══════════════════════════════════════════════════════════════════ */
 
 export interface ChapitreCahier {

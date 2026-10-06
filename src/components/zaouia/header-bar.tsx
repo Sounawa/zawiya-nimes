@@ -40,7 +40,11 @@ export function HeaderBar({ onOpenSettings }: HeaderBarProps) {
   const role = useUser((s) => s.role)
   const perms = useUser((s) => s.perms)
 
-  /* Les réglages de la zaouia ne regardent que le référent */
+  /* Hors-ligne : les données affichées viennent du relais du service
+     worker (dernières connues) — un mot suffit, pas de panique */
+  const relais = useReseau((s) => s.relais)
+
+  /* Les réglages de la zaouia ne regardent que la maison */
   const gereReglages = peut(ville, role, 'reglages.gerer', perms)
 
   /* Les demandes d'inscription en attente — pastille dorée sur l'engrenage */
@@ -109,7 +113,7 @@ export function HeaderBar({ onOpenSettings }: HeaderBarProps) {
             title={
               demandes
                 ? `${demandes} demande${demandes > 1 ? 's' : ''} d’inscription à valider`
-                : 'Réglages de la zaouia (référent)'
+                : 'Réglages de la zaouia'
             }
             className="relative h-9 w-9 shrink-0 rounded-full text-primary hover:bg-primary/8 sm:h-10 sm:w-10"
           >
@@ -145,6 +149,21 @@ export function HeaderBar({ onOpenSettings }: HeaderBarProps) {
             {dateLongue(new Date())}
             <span className="mx-1.5 text-gold">·</span>
             <span className="text-primary">{VILLE_LABEL[ville] ?? 'Nîmes'}</span>
+            <AnimatePresence>
+              {relais && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="ml-1.5 inline-flex items-center gap-1 overflow-hidden text-[9.5px] font-bold normal-case tracking-[0.08em] text-gold"
+                  title="Sans réseau : les annonces et ijtimâ' affichés sont les dernières données connues."
+                >
+                  <span className="text-gold/80">·</span>
+                  <WifiOff className="h-3 w-3 shrink-0" aria-hidden />
+                  hors-ligne
+                </motion.span>
+              )}
+            </AnimatePresence>
           </span>
           <span className="shrink-0 text-[8px] text-gold" aria-hidden>
             ✦

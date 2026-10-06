@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUser } from '@/lib/store'
-import { useMembers } from '@/lib/api'
+import { api, useMembers } from '@/lib/api'
 import { ThemeToggle } from '@/components/zaouia/theme-toggle'
-import { VILLE_LABEL, type Ville } from '@/lib/types'
+import { VILLE_LABEL, type Member, type Ville } from '@/lib/types'
 
 /** PRNG arithmétique pur (mulberry32) — strictement identique serveur/client,
  *  contrairement à Math.sin dont la précision varie selon le moteur JS. */
@@ -129,14 +129,16 @@ function TitreLettres() {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   LA PORTE OUVERTE — la sécurité est retirée pour le moment :
-   plus de zawiya à choisir, plus de prénom, plus de code.
-   Un seul bouton fait entrer, comme référent de Nîmes (la maison-mère)
-   — tous les droits, pour tout voir et tout régler.
+   LA PORTE DE LA ZAWIYA — celui qui entre écrit son prénom :
+   · prénom déjà inscrit (avec ou sans majuscule : mehdi = Mehdi)
+     → il entre sous ce nom, avec les droits de la maison ;
+   · prénom inconnu → il entre au registre de la maison et entre
+     comme simple membre ;
+   · accès révoqué → la porte reste fermée pour ce prénom.
 
    Les routes /api/auth/* restent en place, intactes : le jour où la
-   porte sécurisée revient, il suffira de réinstaller les champs
-   (l'ancienne version vit dans l'historique git).
+   porte sécurisée revient (code personnel), il suffira de réinstaller
+   les champs (l'ancienne version vit dans l'historique git).
    ═════════════════════════════════════════════════════════════════════ */
 export function WelcomeGate() {
   const setName = useUser((s) => s.setName)
@@ -148,19 +150,25 @@ export function WelcomeGate() {
   /* L'entrée se fait toujours à la maison-mère */
   const ville: Ville = 'NIMES'
 
-  /* Celui qui entre : le référent de Nîmes — ou, à défaut,
-     le premier frère actif de la maison-mère. */
-  const hote = useMemo(
-    () =>
-      (membres ?? []).find(
-        (m) => m.city === 'NIMES' && m.status === 'ACTIVE' && m.role === 'REFERENT'
-      ) ??
-      (membres ?? []).find((m) => m.city === 'NIMES' && m.status === 'ACTIVE'),
-    [membres]
-  )
+  /* Un prénom est reconnu sans égard à la casse — mehdi, Mehdi ou
+     MEHDI désignent le même frère du registre. */
+  const trouverMembre = (brut: string, liste?: Member[]) =>
+    (liste ?? membres ?? []).find(
+      (m) => m.city === ville && m.name.trim().toLowerCase() === brut.toLowerCase()
+    )
 
   const [passage, setPassage] = useState(false)
+  const [erreur, setErreur] = useState<string | null>(null)
   const [heure, setHeure] = useState('')
+  /* Le prénom de celui qui entre — écrit sur la première page,
+     comme à la porte de la zawiya. */
+  const [prenom, setPrenom] = useState('')
+  const champPrenom = useRef<HTMLInputElement | null>(null)
+
+  /* Le curseur attend le prénom dès que la maison est prête */
+  useEffect(() => {
+    if (!isPending) champPrenom.current?.focus()
+  }, [isPending])
 
   useEffect(() => {
     const tick = () =>
@@ -172,14 +180,62 @@ export function WelcomeGate() {
     return () => clearInterval(t)
   }, [])
 
-  /* Entrer — direct, sans formalité : la porte est ouverte */
-  const entrer = () => {
-    if (!hote || passage) return
+  /* Entrer — sous le prénom écrit, reconnu sans égard à la casse.
+     Un prénom inconnu entre au registre de la maison (simple membre). */
+  const entrer = async () => {
+    const v = prenom.trim()
+    if (!v || passage || isPending) return
     setPassage(true)
-    setVille(ville)
-    setName(hote.name)
-    setMember(hote.id, hote.role, hote.city, hote.perms)
-    qc.invalidateQueries({ queryKey: ['members'] })
+    setErreur(null)
+    try {
+      let membre = trouverMembre(v)
+
+      /* Prénom inconnu : il entre au registre de la maison */
+      if (!membre) {
+        const r = await fetch('/api/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: v, ville }),
+        })
+        if (r.ok) {
+          membre = (await r.json()) as Member
+        } else if (r.status === 409) {
+          /* Inscrit entre-temps, peut-être sous une autre casse :
+             on relit le registre et on cherche à nouveau */
+          const relus = await qc.fetchQuery({
+            queryKey: ['members'],
+            queryFn: () => api<Member[]>('/api/members'),
+          })
+          membre = trouverMembre(v, relus)
+        }
+      }
+
+      if (!membre) throw new Error('registre')
+
+      if (membre.status === 'BLOCKED') {
+        setErreur('Ce prénom ne peut plus entrer — demande à la maison de rouvrir l’accès.')
+        setPassage(false)
+        return
+      }
+      if (membre.status === 'PENDING') {
+        setErreur('Ton inscription attend la validation de la maison.')
+        setPassage(false)
+        return
+      }
+
+      /* Le registre est relu AVANT d'ouvrir la session : la garde de
+         la page doit déjà voir le nouveau frère, sinon elle le
+         prendrait pour un intrus et refermerait la porte sur lui. */
+      await qc.invalidateQueries({ queryKey: ['members'] })
+
+      /* Le prénom du registre fait foi — l'orthographe y est la sienne */
+      setVille(membre.city)
+      setName(membre.name)
+      setMember(membre.id, membre.role, membre.city, membre.perms)
+    } catch {
+      setErreur('La porte ne répond pas — vérifie ta connexion.')
+      setPassage(false)
+    }
   }
 
   return (
@@ -330,14 +386,50 @@ export function WelcomeGate() {
           <span className="h-px w-16 bg-gradient-to-l from-transparent to-accent/60" />
         </motion.div>
 
-        {/* ─── LE BOUTON ENTRER — à la place de la citation ─── */}
+        {/* ─── LE PRÉNOM DE CELUI QUI ENTRE, PUIS LE BOUTON ─── */}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mt-8 flex w-full flex-col items-center"
         >
-          <div className="relative">
+          {/* Le prénom — la porte demande qui entre */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.55 }}
+            className="w-full max-w-[280px]"
+          >
+            <label htmlFor="prenom-entree" className="sr-only">
+              Ton prénom
+            </label>
+            <div className="relative">
+              <input
+                id="prenom-entree"
+                ref={champPrenom}
+                type="text"
+                value={prenom}
+                onChange={(e) => setPrenom(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') entrer()
+                }}
+                placeholder="Ton prénom…"
+                autoComplete="given-name"
+                maxLength={30}
+                className="w-full rounded-full border border-gold/35 bg-card/80 py-3 pl-5 pr-11 text-center text-[15px] font-medium text-encre placeholder:text-brouillard/70 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/30"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gold/60"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </span>
+            </div>
+          </motion.div>
+          <div className="relative mt-4">
             {/* Halo qui respire derrière le bouton */}
             <motion.span
               aria-hidden
@@ -347,12 +439,12 @@ export function WelcomeGate() {
             />
             <motion.button
               onClick={entrer}
-              disabled={!hote || passage}
-              autoFocus
-              whileHover={hote ? { scale: 1.045 } : undefined}
-              whileTap={hote ? { scale: 0.955 } : undefined}
+              disabled={!prenom.trim() || isPending || passage}
+              whileHover={prenom.trim() ? { scale: 1.045 } : undefined}
+              whileTap={prenom.trim() ? { scale: 0.955 } : undefined}
               aria-label="Entrer dans la zawiya"
-              className="group relative flex w-[250px] max-w-full items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-br from-primary to-emerald-deep py-4 pl-6 pr-5 text-white shadow-xl shadow-primary/35 ring-1 ring-gold/40 disabled:cursor-wait"
+              suppressHydrationWarning
+              className="group relative flex w-[250px] max-w-full items-center justify-center gap-3 overflow-hidden rounded-full bg-gradient-to-br from-primary to-emerald-deep py-4 pl-6 pr-5 text-white shadow-xl shadow-primary/35 ring-1 ring-gold/40 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {/* Reflet doré qui balaie le bouton */}
               <motion.span
@@ -393,16 +485,14 @@ export function WelcomeGate() {
               )}
             </motion.button>
           </div>
-          {(isError || (!isPending && !hote)) && (
+          {(erreur || isError) && (
             <motion.p
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               role="alert"
               className="mt-3 text-center text-xs font-medium text-gold-vif"
             >
-              {isError
-                ? 'La porte ne répond pas — vérifie ta connexion.'
-                : 'Aucun frère actif à Nîmes — impossible d’entrer.'}
+              {erreur ?? 'La porte ne répond pas — vérifie ta connexion.'}
             </motion.p>
           )}
         </motion.div>

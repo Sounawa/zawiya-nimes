@@ -116,7 +116,7 @@ function CarteAnnonce({
           aria-hidden
         />
         <div className="min-w-0 flex-1">
-          {a.title && (
+          {a.title && a.text && (
             <h2
               className={
                 a.color === 'VERT'
@@ -127,9 +127,22 @@ function CarteAnnonce({
               {a.title}
             </h2>
           )}
-          <p className="mt-1 whitespace-pre-line font-display text-[17px] leading-relaxed text-secondary-foreground">
-            {a.text}
-          </p>
+          {a.text ? (
+            <p className="mt-1 whitespace-pre-line font-display text-[17px] leading-relaxed text-secondary-foreground">
+              {a.text}
+            </p>
+          ) : (
+            /* Annonce au titre seul — le titre devient le message, en grand */
+            <p
+              className={
+                a.color === 'VERT'
+                  ? 'whitespace-pre-line font-display text-[19px] font-medium leading-relaxed text-primary'
+                  : 'whitespace-pre-line font-display text-[19px] font-medium leading-relaxed text-gold-vif'
+              }
+            >
+              {a.title}
+            </p>
+          )}
           <p className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brouillard-clair">
             {dateCourte(a.createdAt)}
             {a.date !== a.createdAt && (
@@ -302,8 +315,13 @@ function AnnonceDialog({
   }
 
   const enregistrer = () => {
-    if (!texte.trim()) {
-      toast({ title: 'Texte requis', description: 'Écris le message de l’annonce.', variant: 'destructive' })
+    /* Le message est facultatif — mais le titre OU le message, au moins */
+    if (!texte.trim() && !titre.trim()) {
+      toast({
+        title: 'Un titre ou un message',
+        description: "Écris au moins l'un des deux — le titre seul suffit.",
+        variant: 'destructive',
+      })
       return
     }
     if (!toutes && !visees.length) {
@@ -384,13 +402,13 @@ function AnnonceDialog({
 
           <div className="space-y-1.5">
             <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Message
+              Message <span className="normal-case text-brouillard-clair">(facultatif)</span>
             </Label>
             <Textarea
               value={texte}
               onChange={(e) => setTexte(e.target.value)}
               rows={4}
-              placeholder="Sadaqa exceptionnelle samedi prochain…"
+              placeholder="Sadaqa exceptionnelle samedi prochain… (le titre seul suffit aussi)"
               className="rounded-xl border-primary/25 bg-card"
             />
           </div>
@@ -514,8 +532,8 @@ function AnnonceDialog({
             )}
           </div>
 
-          {/* Aperçu en direct */}
-          {texte.trim() && (
+          {/* Aperçu en direct — dès qu'il y a un titre OU un message */}
+          {(texte.trim() || titre.trim()) && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -538,7 +556,7 @@ function AnnonceDialog({
               <p className="pl-2 text-[10px] font-bold uppercase tracking-[0.2em] text-brouillard-clair">
                 Aperçu
               </p>
-              {titre.trim() && (
+              {titre.trim() && texte.trim() && (
                 <p
                   className={cn(
                     'pl-2 text-[13px] font-bold uppercase tracking-[0.18em]',
@@ -548,9 +566,21 @@ function AnnonceDialog({
                   {titre}
                 </p>
               )}
-              <p className="pl-2 font-display text-[16px] leading-relaxed text-secondary-foreground">
-                {texte}
-              </p>
+              {texte.trim() ? (
+                <p className="pl-2 font-display text-[16px] leading-relaxed text-secondary-foreground">
+                  {texte}
+                </p>
+              ) : (
+                /* Titre seul — rendu en grand, comme la carte finale */
+                <p
+                  className={cn(
+                    'pl-2 font-display text-[18px] font-medium leading-relaxed',
+                    couleur === 'VERT' ? 'text-primary' : 'text-gold-vif'
+                  )}
+                >
+                  {titre}
+                </p>
+              )}
             </motion.div>
           )}
         </div>

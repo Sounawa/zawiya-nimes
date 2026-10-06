@@ -4,37 +4,40 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Smartphone, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useInstallation, type InviteInstallation } from '@/lib/installation'
 
 /* ═══════════════════════════════════════════════════════════════════
    Invitation discrète à installer l'application (PWA).
    N'apparaît que si le navigateur propose l'installation —
    jamais sur iOS/Safari, qui gère cela via le menu Partager.
-   ═══════════════════════════════════════════════════════════════════ */
 
-/* L'événement non standardisé du navigateur */
-interface InviteAvantInstallation extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
+   L'invitation captée est gardée dans le store partagé : si le
+   frère ferme le bandeau (✕ ou délai), il pourra toujours installer
+   depuis les Réglages — « je change d'avis → paramètres ».
+   ═══════════════════════════════════════════════════════════════════ */
 
 const CLE_REFUS = 'zawiya-install-refusee'
 
 export function BoutonInstallation() {
-  const [invite, setInvite] = useState<InviteAvantInstallation | null>(null)
+  const invite = useInstallation((s) => s.invite)
+  const capturer = useInstallation((s) => s.capturer)
+  const oublier = useInstallation((s) => s.oublier)
   const [visible, setVisible] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
-    /* Déjà refusée une fois : ne pas re-proposer */
-    if (localStorage.getItem(CLE_REFUS) === '1') return
-
     /* Discrétion : si l'invitation est ignorée, elle se retire
        d'elle-même (pas de voile permanent sur le contenu). */
     let minuterie: ReturnType<typeof setTimeout> | null = null
 
     const capter = (e: Event) => {
       e.preventDefault()
-      setInvite(e as InviteAvantInstallation)
+      /* L'invitation est mémorisée POUR TOUTE L'APPLICATION :
+         ce bandeau, mais aussi les Réglages si le frère referme. */
+      capturer(e as InviteInstallation)
+      /* Bandeau déjà refusé une fois : ne pas re-proposer ici —
+         il reste disponible dans les Réglages. */
+      if (localStorage.getItem(CLE_REFUS) === '1') return
       /* Petite pause avant l'apparition — ne pas surprendre */
       setTimeout(() => {
         setVisible(true)
@@ -43,7 +46,7 @@ export function BoutonInstallation() {
     }
     const installee = () => {
       setVisible(false)
-      setInvite(null)
+      oublier()
       toast({
         title: 'Application installée ✦',
         description: 'La zawiya vit désormais sur ton écran d’accueil.',
@@ -56,7 +59,7 @@ export function BoutonInstallation() {
       window.removeEventListener('appinstalled', installee)
       if (minuterie) clearTimeout(minuterie)
     }
-  }, [toast])
+  }, [toast, capturer, oublier])
 
   if (!invite || !visible) return null
 
@@ -69,6 +72,9 @@ export function BoutonInstallation() {
       } else {
         refuser()
       }
+      /* L'invitation est consommée (usage unique) — les Réglages
+         retomberont sur les instructions du navigateur. */
+      oublier()
     } catch {
       refuser()
     }

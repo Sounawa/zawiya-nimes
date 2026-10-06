@@ -58,4 +58,6 @@ sauvegarde/
 download/comptes-test.csv
 download/vlm-*.json
 db/*.backup*
+db/*.db
+db/*.db-journal
 download/adhkar-src/*.png

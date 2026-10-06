@@ -59,10 +59,16 @@ export async function POST(req: Request) {
       role = body.role
     }
 
-    const exists = await db.member.findUnique({ where: { name_city: { name, city } } })
-    if (exists)
+    /* Le prénom doit être unique dans sa zawiya — sans égard à la casse :
+       mehdi et Mehdi désignent le même frère. */
+    const deLaVille = await db.member.findMany({
+      where: { city },
+      select: { name: true },
+    })
+    const existe = deLaVille.find((m) => m.name.trim().toLowerCase() === name.toLowerCase())
+    if (existe)
       return NextResponse.json(
-        { error: `Sidi ${name} est déjà inscrit à la zawiya choisie` },
+        { error: `Sidi ${existe.name} est déjà inscrit dans cette zawiya` },
         { status: 409 }
       )
 

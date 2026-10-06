@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useUser } from './store'
+import { useUser, useReseau } from './store'
 import type {
   AppSettings,
   Announcement,
@@ -41,6 +41,11 @@ export function api<T>(url: string, init?: RequestInit): Promise<T> {
     },
     body,
   }).then((r) => {
+    /* Hors-ligne, le service worker sert les dernières données
+       connues (réponses minuscules, mises en cache au passage) —
+       l'écran le dit discrètement plutôt que de laisser croire
+       que tout a disparu. */
+    useReseau.getState().basculer(r.headers.get('X-Hors-Ligne') === '1')
     if (!r.ok) throw new Error('Erreur réseau')
     return r.json()
   })
@@ -186,7 +191,8 @@ export function useCreatePoll() {
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       api<Poll>('/api/polls', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onSuccess: (cree) => {
+      if (cree?.id) creationsLocales.sondages.add(cree.id)
       qc.invalidateQueries({ queryKey: ['polls'] })
       qc.invalidateQueries({ queryKey: ['audit'] })
     },
@@ -352,6 +358,7 @@ export function useAnnouncements() {
 /* IDs créés localement (cet onglet) — la veille ne les annonce pas en toast */
 export const creationsLocales = {
   annonces: new Set<string>(),
+  sondages: new Set<string>(),
   reunions: new Set<string>(),
 }
 

@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     "L'application de la zawiya de Nîmes — ijtima', cotisations, ziyara et vie de la communauté.",
   applicationName: "Zawiya Nimes",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/logo.png", apple: "/logo.png" },
+  icons: { icon: "/favicon-96.png", apple: "/apple-touch-icon.png" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -90,6 +90,9 @@ export default function RootLayout({
           <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
         <Toaster />
+        {/* Le badge Netlify ne s'affichera pas : son script s'abstient
+            dès qu'il trouve #nl-hud-frame déjà posé dans la page. */}
+        <div id="nl-hud-frame" hidden aria-hidden="true" />
       </body>
     </html>
   );

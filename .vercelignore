@@ -1,0 +1,40 @@
+# ─── Déploiement Vercel — ne JAMAIS envoyer : ──────────────────────────
+# secrets, base des membres, sources privées, infra sandbox
+node_modules
+.next
+.git
+.vercel
+
+# secrets / env
+.env
+.env.*
+.z-ai-config
+
+# base de données locale (registre des frères — privé)
+db
+*.db
+*.db-journal
+
+# sources téléchargées et fichiers de travail (privés)
+download
+upload
+tool-results
+qa
+qa-*.png
+sauvegarde
+skills
+analyse-pdf.mjs
+--5_1.png
+-.xml
+
+# infra sandbox (aucun rapport avec le site)
+.zscripts
+mini-services
+examples
+Caddyfile
+dev.log
+server.log
+*.log
+test
+prompt
+local-*

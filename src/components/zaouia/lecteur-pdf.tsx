@@ -112,8 +112,15 @@ function assortirAuFond(toile: HTMLCanvasElement, g: Gamme) {
      marge comme référence, et la boîte ressort en rectangle plus sombre
      derrière le texte. En prenant le ton de la boîte, tout ce qui est
      plus clair (boîte ET marges) glisse vers le fond exact du site :
-     une seule teinte de papier, celle de la maison. */
-  const seuilPic = masse * 0.25
+     une seule teinte de papier, celle de la maison.
+     Le seuil descend à 8 % du pic dominant : sur une page au texte
+     court (fin de sourate, page 18 du kitāb…), la boîte beige ne
+     couvre qu'une petite part de la page — le pic dominant reste la
+     marge claire, et un seuil trop haut laissait la boîte visible en
+     rectangle sombre. À 8 %, la boîte est reconnue dès qu'elle couvre
+     un quinzième de la page : vérifié sur les 1 468 pages des quatorze
+     documents de la zawiya, aucune ne s'y trompe. */
+  const seuilPic = masse * 0.08
   let reference = pic
   for (let l = 90; l <= 252; l++) {
     /* maximum local (plus massif que ses voisins immédiats) */
@@ -301,6 +308,11 @@ export function LecteurPdf({
         const pdfjs = await chargerPdfjs()
         const tache = pdfjs.getDocument({
           url: src,
+          /* Une SEULE requête complète, pas de plages partielles :
+             le service worker peut ainsi garder le livre ENTIER en
+             mémoire du téléphone — ouvert une fois en ligne, le scan
+             reste disponible hors-ligne pour toujours. */
+          disableRange: true,
           cMapUrl: '/pdfjs-cmaps/',
           cMapPacked: true,
           standardFontDataUrl: '/pdfjs-standard-fonts/',
@@ -321,7 +333,21 @@ export function LecteurPdf({
           setPret(true)
         }
       } catch {
-        if (!annule) setErreur('Le document n’a pas pu être ouvert.')
+        if (annule) return
+        /* Distinguer : le réseau (ou le serveur) manque → le livre
+           n'est pas encore en mémoire du téléphone ; le fichier
+           répond mais reste illisible → message générique. */
+        let reseau = false
+        try {
+          await fetch(src, { method: 'HEAD' })
+        } catch {
+          reseau = true
+        }
+        setErreur(
+          reseau
+            ? 'Hors-ligne — ce livre numérisé n\u2019est pas encore en mémoire. Ouvre-le une fois en ligne : il restera ensuite disponible hors-ligne.'
+            : 'Le document n\u2019a pas pu être ouvert.'
+        )
       }
     })()
     return () => {
@@ -550,10 +576,12 @@ export function LecteurPdf({
           className="absolute inset-0 h-full w-full"
           style={{ imageRendering: 'auto' }}
         />
-        {/* Squelette tant que la page n'est pas rendue */}
+        {/* Squelette tant que la page n'est pas rendue — la MÊME couleur
+            que le site : une page en cours de rendu est déjà le papier de
+            la maison, jamais une autre teinte */}
         <div
           data-squelette={n}
-          className="pointer-events-none absolute inset-0 grid place-items-center bg-muted/70"
+          className="pointer-events-none absolute inset-0 grid place-items-center bg-background"
         >
           <Loader2 className="h-6 w-6 animate-spin text-brouillard/50" aria-hidden />
         </div>
@@ -628,7 +656,7 @@ export function LecteurPdf({
             /* Le temps d'ouvrir le livre */
             <div className="w-full" style={{ maxWidth: 'min(100%, 900px)' }}>
               <div
-                className="relative w-full overflow-hidden rounded-lg border border-border bg-muted/70 shadow-sm"
+                className="relative w-full overflow-hidden rounded-lg border border-border bg-background shadow-sm"
                 style={{ aspectRatio: String(aspect) }}
               >
                 <div className="absolute inset-0 grid place-items-center">

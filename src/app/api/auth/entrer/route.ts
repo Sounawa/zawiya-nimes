@@ -46,9 +46,12 @@ export async function POST(req: Request) {
     }
 
     const hache = hacherCode(pin, name, ville)
-    const existe = await db.member.findUnique({
-      where: { name_city: { name, city: ville } },
-    })
+    /* Le prénom est cherché sans égard à la casse : mehdi, Mehdi ou
+       MEHDI désignent le même frère du registre. */
+    const deLaVille = await db.member.findMany({ where: { city: ville } })
+    const existe = deLaVille.find(
+      (m) => m.name.trim().toLowerCase() === name.toLowerCase()
+    )
 
     /* ─── Prénom inconnu : inscription, en attente du référent ─── */
     if (!existe) {

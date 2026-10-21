@@ -6,7 +6,8 @@ import { useLecture, usePrint } from '@/lib/store'
 import { dateLongue, euros } from '@/lib/format'
 import { parseProgram } from '@/lib/types'
 import { CHAPITRES_CAHIER } from '@/data/cahier'
-import { CHAPITRES_ARABES } from '@/data/adhkar-docs'
+import { CHAPITRES_ARABES, chiffresArabes } from '@/data/adhkar-docs'
+import { regleDuBloc } from '@/data/versets'
 
 /* ═══════════════════════════════════════════════════════════════════
    Zone d'impression — cachée à l'écran, seule visible à l'impression.
@@ -149,22 +150,57 @@ function FeuilleKitab({ chapitreId }: { chapitreId: string }) {
           lineHeight: l.interligne === 'compact' ? 1.7 : l.interligne === 'aere' ? 2.4 : 2.1,
         }}
       >
-        {chapitre.texte.split('\n').map((ligne, i) => {
-          const m = ligne.match(/^(.*?)(\s*[×x]\s*[٠-٩\dHh '’]+)$/u)
-          if (m && m[2].trim()) {
-            return (
+        {(() => {
+          /* Les blocs coraniques portent leur numérotation — comme
+             le lecteur, l'imprimé suit la division warshienne. */
+          let bloc = 0
+          return chapitre.texte.split('\n').map((ligne, i) => {
+            const m = ligne.match(/^(.*?)(\s*[×x]\s*[٠-٩\dHh '’]+)$/u)
+            const regle = ligne.trimStart().startsWith('﴿')
+              ? regleDuBloc(chapitre.id, bloc++)
+              : undefined
+            const corps = m ? m[1] : ligne
+            const r = (interieur: React.ReactNode) => (
               <p key={i} className="whitespace-pre-wrap">
-                {m[1]}
-                <span className="font-bold">{m[2].trim()}</span>
+                {interieur}
+                {m && m[2].trim() ? (
+                  <span className="font-bold">{m[2].trim()}</span>
+                ) : null}
               </p>
             )
-          }
-          return (
-            <p key={i} className="whitespace-pre-wrap">
-              {ligne || '\u00A0'}
-            </p>
-          )
-        })}
+            if (typeof regle === 'number') {
+              const versets = corps.split('۞')
+              return r(
+                versets.map((v, k) => (
+                  <span key={k}>
+                    {v.trim() ? v.trim() : null}{' '}
+                    <span
+                      className="numero-ayah"
+                      style={{ color: '#8a5a2e', borderColor: '#8a5a2e' }}
+                    >
+                      {chiffresArabes(regle + k)}
+                    </span>
+                    {k < versets.length - 1 ? ' ۞ ' : null}
+                  </span>
+                )),
+              )
+            }
+            if (typeof regle === 'string') {
+              return r(
+                <>
+                  {corps}{' '}
+                  <span
+                    className="reference-ayah"
+                    style={{ color: '#8a5a2e' }}
+                  >
+                    {regle}
+                  </span>
+                </>,
+              )
+            }
+            return r(ligne || '\u00A0')
+          })
+        })()}
       </div>
       <PiedFeuille />
     </div>

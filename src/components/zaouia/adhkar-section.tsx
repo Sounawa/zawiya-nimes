@@ -38,6 +38,7 @@ import {
   type ThemeLecture,
   type AccentLecture,
 } from '@/lib/store'
+import { regleDuBloc, type RegleVersets } from '@/data/versets'
 import { SectionShell } from './ijtima-section'
 import { LecteurPdf } from './lecteur-pdf'
 import { cn } from '@/lib/utils'
@@ -51,14 +52,22 @@ import { cn } from '@/lib/utils'
 
 /* ─── Demande externe (recherche globale ⌘K, renvois cliquables) ─── */
 interface DemandeLectureState {
-  demande: { docId: string; chapitreId?: string; langue?: LangueAdhkar; horodatage: number } | null
-  demander: (docId: string, chapitreId?: string, langue?: LangueAdhkar) => void
+  demande: {
+    docId: string
+    chapitreId?: string
+    langue?: LangueAdhkar
+    /** ancre textuelle : la ligne du chapitre où poser la lecture
+        (renvoi « الوَظِيفَة (صَدَقَ اللهُ…) ← ص ٢١ ») */
+    ancre?: string
+    horodatage: number
+  } | null
+  demander: (docId: string, chapitreId?: string, langue?: LangueAdhkar, ancre?: string) => void
   consommer: () => void
 }
 export const useDemandeLecture = create<DemandeLectureState>((set) => ({
   demande: null,
-  demander: (docId, chapitreId, langue) =>
-    set({ demande: { docId, chapitreId, langue, horodatage: Date.now() } }),
+  demander: (docId, chapitreId, langue, ancre) =>
+    set({ demande: { docId, chapitreId, langue, ancre, horodatage: Date.now() } }),
   consommer: () => set({ demande: null }),
 }))
 
@@ -89,23 +98,136 @@ const ACCENTS: { id: AccentLecture; nom: string; couleur: string }[] = [
   { id: 'brun', nom: 'Brun', couleur: '#8a5a2e' },
 ]
 
-/* ─── Une ligne du texte, répétitions « x 100 » / « × ١٠٠ » en badge ─── */
-function LigneInvocation({ ligne, accent }: { ligne: string; accent: string }) {
-  const m = ligne.match(/^(.*?)(\s*[×x]\s*[٠-٩\dHh '’]+)$/u)
-  if (m && m[2].trim()) {
-    return (
-      <span className="block">
-        {m[1]}
+/* ─── Une ligne du texte, répétitions « x 100 » / « × ١٠٠ » en badge ───
+   Le kitāb imprime parfois le séparateur ۞ APRÈS la répétition
+   (« حَسْبُنَا الله وَنِعْمَ الْوَكِيل × ١٠٠ ۞ ») : le badge garde
+   sa couleur, le ۞ reste visible à sa suite — fidèle à la page.
+   NUMÉROS DE VERSETS — quand la ligne est un bloc coranique à
+   numéroté (regleDuBloc), chaque verset se ferme sur son numéro
+   en médaillon, comme le kitāb imprimé ; une citation courte
+   porte plutôt sa référence (sourate : versets) en badge. */
+function LigneInvocation({
+  ligne,
+  accent,
+  depuis,
+  reference,
+}: {
+  ligne: string
+  accent: string
+  /** premier verset du bloc : numérotation ۞ après ۞ */
+  depuis?: number
+  /** référence « sourate : versets » des citations courtes */
+  reference?: string
+}) {
+  const m = ligne.match(/^(.*?)(\s*[×x]\s*[٠-٩\dHh '’]+)([\s۞٭]*)$/u)
+  const corps = m ? m[1] : ligne
+  const r = (parts: React.ReactNode) => (
+    <span className="block">
+      {parts}
+      {m && m[2].trim() ? (
         <span
           className="mx-1 inline-block rounded-md px-2 py-0.5 align-middle text-[0.72em] font-bold tracking-wide"
           style={{ color: accent, backgroundColor: `${accent}18` }}
         >
           {m[2].trim()}
         </span>
-      </span>
+      ) : null}
+      {m && m[3].trim() ? <span aria-hidden> {m[3].trim()}</span> : null}
+    </span>
+  )
+  if (depuis !== undefined) {
+    /* le bloc coranique : verset ۞ numéro, verset ۞ numéro… */
+    const versets = corps.split('۞')
+    return r(
+      versets.map((v, k) => (
+        <Fragment key={k}>
+          {v.trim() ? v.trim() : null}
+          <NumeroAyah n={depuis + k} accent={accent} />
+          {k < versets.length - 1 ? ' ۞ ' : null}
+        </Fragment>
+      )),
     )
   }
-  return <span className="block">{ligne || '\u00A0'}</span>
+  return r(
+    <>
+      {corps}
+      {reference ? <RefAyah texte={reference} accent={accent} /> : null}
+    </>,
+  )
+}
+
+/* Le numéro du verset — médaillon du muṣḥaf, chiffres du kitāb */
+function NumeroAyah({ n, accent }: { n: number; accent: string }) {
+  return (
+    <span
+      className="numero-ayah"
+      style={{ color: accent, borderColor: accent }}
+      aria-label={`آية ${n}`}
+    >
+      {chiffresArabes(n)}
+    </span>
+  )
+}
+
+/* La référence d'une citation courte — sourate : versets */
+function RefAyah({ texte, accent }: { texte: string; accent: string }) {
+  return (
+    <span className="reference-ayah" style={{ color: accent }} dir="rtl">
+      {texte}
+    </span>
+  )
+}
+
+/* ─── Une ligne de renvoi de page, LIEN du lecteur ───
+   La ligne peut porter plusieurs renvois séparés par ۞
+   (« Al Fidyya → p. 46 ۞ Waẓîfat aṣ Ṣubḥ → p. 58 ») : chaque
+   tronçon mène à sa pièce. Servie par le texte ordinaire ET par
+   les qaṣīda (le renvoi de la Munfarija clôt le poème). */
+function LigneRenvoi({
+  ligne,
+  langue,
+  accent,
+  surRenvoi,
+}: {
+  ligne: string
+  langue: LangueAdhkar
+  accent: string
+  surRenvoi: (ligne: string, langue: LangueAdhkar) => void
+}) {
+  return (
+    <span
+      className="mt-[0.7em] block text-center text-[0.82em] italic"
+      style={{ color: accent }}
+    >
+      {ligne.split(/(۞)/u).map((segment, k) => {
+        if (segment === '۞') {
+          return (
+            <span key={k} aria-hidden className="mx-1.5 opacity-60">
+              ۞
+            </span>
+          )
+        }
+        const s = segment.trim()
+        if (!s) return null
+        const page = pageDuRenvoi(s)
+        if (!page) return <Fragment key={k}>{s}</Fragment>
+        return (
+          <button
+            key={k}
+            type="button"
+            onClick={() => surRenvoi(s, langue)}
+            aria-label={`Aller à la page ${
+              langue === 'ar' ? chiffresArabes(page) : page
+            } du ${langue === 'ar' ? 'kitāb' : 'cahier'}`}
+            className="cursor-pointer rounded-sm underline decoration-dotted decoration-1 underline-offset-[5px] transition-all hover:decoration-solid hover:[text-shadow:0_0_12px_currentColor] focus-visible:decoration-solid focus-visible:outline-none active:scale-[0.98]"
+            style={{ textDecorationColor: accent }}
+          >
+            {s}
+          </button>
+        )
+      })}
+    </span>
+  )
 }
 
 /* ─── La bascule andalouse — deux tuiles de zellige ───
@@ -184,10 +306,75 @@ function BasculeAndalouse<T extends string>({
   )
 }
 
+/* ─── L'échelle d'un POÈME — le téléphone en portrait ───
+   Une seule taille pour tous les vers : celle du vers le plus
+   long, comme la planche du diwân imprimé — l'harmonie avant
+   tout. On mesure le débordement réel de chaque hémistiche et
+   l'on resserre le poème entier d'autant ; la mesure se refait
+   quand la police, la taille de lecture ou la largeur changent. */
+function useEchellePoesie(ref: React.RefObject<HTMLElement | null>, cle: string) {
+  const [echelle, setEchelle] = useState(1)
+  const courante = useRef(1)
+  useEffect(() => {
+    const poeme = ref.current
+    if (!poeme) return
+    let largeurPrecedente = -1
+    const ajuster = () => {
+      let ratio = 1
+      poeme.querySelectorAll<HTMLElement>('.poesie-shatr').forEach((s) => {
+        if (s.clientWidth > 0 && s.scrollWidth > s.clientWidth) {
+          ratio = Math.min(ratio, (s.clientWidth / s.scrollWidth) * 0.94)
+        }
+      })
+      if (ratio < 1) {
+        const cible = Math.max(0.52, courante.current * ratio)
+        if (cible < courante.current - 0.001) {
+          courante.current = cible
+          setEchelle(cible)
+          requestAnimationFrame(ajuster)
+        }
+      }
+    }
+    /* repartir de la taille naturelle PUIS mesurer — tout dans la
+       frame suivante : le setState vit dans une callback, jamais
+       dans le corps direct de l'effet. */
+    const repartir = () => {
+      courante.current = 1
+      setEchelle(1)
+      requestAnimationFrame(ajuster)
+    }
+    const r = requestAnimationFrame(repartir)
+    /* La police du kitāb (Scheherazade, Cormorant…) charge APRÈS le
+       montage : le texte s'élargit alors sans que la largeur change —
+       on re-mesure quand les fontes sont prêtes, et une passe de
+       rattrapage couvre les éditions tardives. */
+    document.fonts?.ready.then(() => requestAnimationFrame(repartir)).catch(() => {})
+    const rattraper = window.setTimeout(() => requestAnimationFrame(repartir), 600)
+    const parent = poeme.parentElement
+    const ro = new ResizeObserver((entrees) => {
+      const w = entrees[0]?.contentRect.width ?? 0
+      if (largeurPrecedente < 0) largeurPrecedente = w
+      if (Math.abs(w - largeurPrecedente) > 0.5) {
+        largeurPrecedente = w
+        requestAnimationFrame(repartir)
+      }
+    })
+    if (parent) ro.observe(parent)
+    return () => {
+      cancelAnimationFrame(r)
+      window.clearTimeout(rattraper)
+      ro.disconnect()
+    }
+  }, [ref, cle])
+  return echelle
+}
+
 /* ─── Un vers de qaṣīda — deux hémistiches pleine largeur ───
    Le Nasiri ou la Munfarija n'est plus une colonne étroite
    alignée à droite : chaque distique s'étale en deux colonnes
-   comme dans le kitāb imprimé, le séparateur ۞ au centre. */
+   comme dans le kitāb imprimé, le séparateur ۞ au centre. La
+   taille du POÈME entier (voir useEchellePoesie) se resserre
+   sur son vers le plus long. */
 function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
   const coupe = ligne.split('۞')
   if (coupe.length !== 2) {
@@ -207,16 +394,49 @@ function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
 /* ─── Un poème du cahier phonétique — hémistiches une ligne sur
    deux, étalés en deux colonnes comme le kitāb arabe : le Nāṣirî
    et la Munfarija se lisent ainsi de la même façon dans les deux
-   langues, mêmes tailles, même souffle. ─── */
-function PoemeCahier({ texte, accent }: { texte: string; accent: string }) {
+   langues, mêmes tailles, même souffle. Le poème ENTIER partage
+   une seule échelle : celle de son vers le plus long. Le renvoi
+   qui clôt une qaṣīda reste un LIEN, jamais un vers. ─── */
+function PoemeCahier({
+  texte,
+  accent,
+  cle,
+  langue,
+  surRenvoi,
+}: {
+  texte: string
+  accent: string
+  cle?: string
+  langue: LangueAdhkar
+  surRenvoi: (ligne: string, langue: LangueAdhkar) => void
+}) {
+  const ref = useRef<HTMLSpanElement | null>(null)
+  const echelle = useEchellePoesie(ref, cle ?? texte.slice(0, 40))
   const blocs = texte.split(/\n\s*\n/)
   return (
-    <span className="block space-y-[1.1em]">
+    <span
+      ref={ref}
+      className="block"
+      style={echelle < 1 ? { fontSize: `${echelle}em` } : undefined}
+    >
       {blocs.map((bloc, bi) => {
         const lignes = bloc
           .split('\n')
           .map((l) => l.trim())
           .filter(Boolean)
+        /* Le renvoi de page qui clôt la qaṣīda — un LIEN, pas un
+           vers ni un en-tête (le kitāb arabe fait de même) */
+        if (lignes.length === 1 && /→\s*p\.\s*\d+/u.test(lignes[0])) {
+          return (
+            <LigneRenvoi
+              key={bi}
+              ligne={lignes[0]}
+              langue={langue}
+              accent={accent}
+              surRenvoi={surRenvoi}
+            />
+          )
+        }
         /* Un bloc d'une seule ligne — « CHAPITRE », titre français,
            ۞ isolé — se pose en en-tête centré, hors des vers */
         if (lignes.length === 1) {
@@ -230,6 +450,8 @@ function PoemeCahier({ texte, accent }: { texte: string; accent: string }) {
             </span>
           )
         }
+        /* hémistiches une ligne sur deux : (l0,l1) = un vers,
+           (l2,l3) = le suivant — la qaṣîda du cahier imprimé */
         const vers: [string, string][] = []
         for (let i = 0; i < lignes.length; i += 2) {
           vers.push([lignes[i], lignes[i + 1] ?? ''])
@@ -237,17 +459,53 @@ function PoemeCahier({ texte, accent }: { texte: string; accent: string }) {
         return (
           <span key={bi} className="block space-y-[0.34em]">
             {vers.map(([g, d], vi) => (
-              <span key={vi} className="poesie-vers">
-                <span className="poesie-shatr">{g}</span>
-                <span aria-hidden className="poesie-fasl" style={{ color: accent }}>
-                  ۞
-                </span>
-                <span className="poesie-shatr">{d}</span>
-              </span>
+              <VersPoeme key={vi} ligne={d ? `${g}۞${d}` : g} accent={accent} />
             ))}
           </span>
         )
       })}
+    </span>
+  )
+}
+
+/* ─── Un poème du kitāb arabe — vers deux colonnes, une échelle
+   unique pour tout le poème (celle du vers le plus long), et le
+   renvoi qui clôt la qaṣīda reste un LIEN, jamais un vers ─── */
+function PoesieArabe({
+  texte,
+  accent,
+  cle,
+  langue,
+  surRenvoi,
+}: {
+  texte: string
+  accent: string
+  cle?: string
+  langue: LangueAdhkar
+  surRenvoi: (ligne: string, langue: LangueAdhkar) => void
+}) {
+  const ref = useRef<HTMLSpanElement | null>(null)
+  const echelle = useEchellePoesie(ref, cle ?? texte.slice(0, 40))
+  return (
+    <span
+      ref={ref}
+      className="block"
+      style={echelle < 1 ? { fontSize: `${echelle}em` } : undefined}
+    >
+      {texte.split('\n').map((ligne, j) =>
+        /* « الوَظِيفَة (…) ← ص ٢٢ » clôt la Munfarija : un lien */
+        sorteLigneArabe(ligne) === 'renvoi' ? (
+          <LigneRenvoi
+            key={j}
+            ligne={ligne}
+            langue={langue}
+            accent={accent}
+            surRenvoi={surRenvoi}
+          />
+        ) : (
+          <VersPoeme key={j} ligne={ligne} accent={accent} />
+        ),
+      )}
     </span>
   )
 }
@@ -286,8 +544,9 @@ function paragrapher(texte: string): string[] {
       continue
     }
     courant.push(t)
-    /* Fin logique de paragraphe : renvoi de page, ou répétition badgée */
-    if (/→\s*p\.|→\s*ص|[×x]\s*[٠-٩\d][٠-٩\dHh '’]*$/.test(t)) flush()
+    /* Fin logique de paragraphe : renvoi de page, ou répétition badgée
+       (un ۞/٭ peut suivre la répétition sur la page imprimée) */
+    if (/→\s*p\.|→\s*ص|[×x]\s*[٠-٩\d][٠-٩\dHh '’]*[\s۞٭]*$/.test(t)) flush()
   }
   flush()
   return paras
@@ -334,6 +593,29 @@ function titreAvantRenvoi(ligne: string): string | undefined {
   return i > 0 ? ligne.slice(0, i).trim() : undefined
 }
 
+/** La sous-cible d'un renvoi, entre parenthèses avant la flèche :
+    « الوَظِيفَة (صَدَقَ اللهُ الْعَظِيمُ) ← ص ٢١ » mène à la Waẓîfa,
+    posé SUR la section Ṣadaqa llâhu — la parenthèse des numéros de
+    sourate (« سُورَةُ الْفَتْح (٤٨) ← … ») n'est pas une sous-cible. */
+function sousCibleDuRenvoi(ligne: string): string | undefined {
+  const m = ligne.match(/\(([^)]+)\)\s*(?:→|←)/u)
+  const c = m?.[1].trim()
+  if (!c || /^[\d٠-٩\s]+$/.test(c)) return undefined
+  return c
+}
+
+/** Retire voyelles et signes coraniques pour reconnaître une ancre
+    dans une ligne écrite : « صَدَقَ اللهُ » ≡ « صدق الله ». */
+function sansSignesArabes(s: string): string {
+  return s
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
+    .replace(/[\u0622\u0623\u0625]/g, '\u0627')
+    .replace(/\u06CC/g, '\u064A')
+    .replace(/\u0649/g, '\u0627')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /** Le chapitre cible d’un renvoi, tel qu’il vivra dans les entrées
     du lecteur pour la langue d’affichage demandée. */
 function cibleDuRenvoi(
@@ -371,10 +653,12 @@ interface LecteurProps {
   doc: DocAdhkar
   langue: LangueAdhkar
   chapitreInitial?: string
+  /** ancre textuelle : la ligne du chapitre où poser la lecture */
+  ancreInitiale?: string
   onFermer: () => void
 }
 
-function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps) {
+function LecteurAdhkar({ doc, langue, chapitreInitial, ancreInitiale, onFermer }: LecteurProps) {
   const l = useLecture()
   const imprimer = usePrint((s) => s.imprimer)
 
@@ -531,25 +815,6 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
     return () => el.removeEventListener('scroll', surScroll)
   }, [vueDoc])
 
-  /* ─── Positionner au chapitre demandé à l'ouverture ───
-     (le diwân arrive un instant après : on replace alors)
-     « langue » n'est PAS une dépendance : basculer phonétique ⇄ عربي
-     ne doit jamais replacer la lecture — les pratiques unifiées
-     gardent leur place, seul le texte affiché change. */
-  useEffect(() => {
-    const el = conteneurRef.current
-    if (!el) return
-    if (chapitreInitial) {
-      const i = chapitres.findIndex((c) => c.id === chapitreInitial)
-      const cible = i >= 0 ? cartesRef.current[i] : null
-      if (cible) {
-        cible.scrollIntoView({ block: 'start' })
-        return
-      }
-    }
-    el.scrollTo({ top: 0 })
-  }, [chapitreInitial, doc.id, chapitres.length])
-
   /* Ancre robuste : scrollIntoView + marge de défilement — le
      navigateur mesure lui-même la position réelle, quel que soit
      l'état de l'en-tête ou des panneaux déroulés au-dessus. */
@@ -558,16 +823,78 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
     if (cible) cible.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
+/* Une ancre tolérante — l'arabe dépouillé de ses signes coraniques,
+   la phonétique en minuscules sans diacritiques ni guillemets
+   (le cahier mêle ‘ et ’ selon la ligne) : le renvoi phonétique
+   « (fa-inna ma‘al ‘usri yusrân) » trouve la ligne « ﴿Fa-inna
+   ma‘al 'usri yusrân…﴾ x 100 ». */
+function normaliserAncre(s: string): string {
+  return sansSignesArabes(s)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2018\u2019`´]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+  /* La ligne visée par une ancre textuelle, dans la carte du chapitre :
+     le renvoi « الوَظِيفَة (صَدَقَ اللهُ الْعَظِيمُ) ← ص ٢١ » pose la
+     lecture sur la ligne Ṣadaqa llâhu de la Waẓîfa — halo doré 2 s. */
+  const allerALigne = useCallback((i: number, ancre: string) => {
+    const carte = cartesRef.current[i]
+    if (!carte) return
+    const cherche = normaliserAncre(ancre)
+    if (!cherche) return
+    const lignes = carte.querySelectorAll<HTMLElement>('[data-chapitre-texte] > span')
+    for (const l of lignes) {
+      if (normaliserAncre(l.textContent ?? '').includes(cherche)) {
+        l.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        l.classList.add('renvoi-flash')
+        window.setTimeout(() => l.classList.remove('renvoi-flash'), 2000)
+        return
+      }
+    }
+  }, [])
+
+  /* ─── Positionner au chapitre demandé à l'ouverture ───
+     (le diwân arrive un instant après : on replace alors)
+     « langue » n'est PAS une dépendance : basculer phonétique ⇄ عربي
+     ne doit jamais replacer la lecture — les pratiques unifiées
+     gardent leur place, seul le texte affiché change.
+     Une ancre textuelle (renvoi « الوَظِيفَة (صَدَقَ اللهُ…) ← »)
+     descend en plus jusqu'à la LIGNE visée dans la carte. */
+  useEffect(() => {
+    const el = conteneurRef.current
+    if (!el) return
+    if (chapitreInitial) {
+      const i = chapitres.findIndex((c) => c.id === chapitreInitial)
+      const cible = i >= 0 ? cartesRef.current[i] : null
+      if (cible) {
+        cible.scrollIntoView({ block: 'start' })
+        if (ancreInitiale) {
+          window.setTimeout(() => allerALigne(i, ancreInitiale), 120)
+        }
+        return
+      }
+    }
+    el.scrollTo({ top: 0 })
+  }, [chapitreInitial, ancreInitiale, doc.id, chapitres.length, allerALigne])
+
   /* ─── Les renvois de page, LIENS du lecteur ───
      « Sûrat (36) Yâ si~n → p. 7 » — la page imprimée devient un lien :
      il mène à la pièce visée dans ce document si elle s'y trouve,
      sinon le cahier de wadhifa complet s'ouvre à la pratique. La
-     carte visée s'illumine un instant pour guider l'œil. */
+     carte visée s'illumine un instant pour guider l'œil. Un renvoi
+     PARENTHÉSÉ pose en outre la lecture sur la ligne visée :
+     « الوَظِيفَة (صَدَقَ اللهُ الْعَظِيمُ) ← ص ٢١ ». */
   const [flash, setFlash] = useState<string | null>(null)
   const surRenvoi = useCallback(
     (ligne: string, langueChapitre: LangueAdhkar) => {
       const cible = cibleDuRenvoi(ligne, langueChapitre, langue)
       if (!cible) return
+      const ancre = sousCibleDuRenvoi(ligne)
       const i = chapitres.findIndex((e) => e.id === cible.chapitreId)
       if (i >= 0) {
         /* La carte sommaire du cahier peut être dépliée au-dessus : on
@@ -577,6 +904,7 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
         if (sommaireCarte) setSommaireCarte(false)
         window.setTimeout(() => {
           allerAuChapitre(i)
+          if (ancre) window.setTimeout(() => allerALigne(i, ancre), 350)
           setFlash(cible.chapitreId)
           window.setTimeout(() => setFlash(null), 2000)
         }, delai)
@@ -585,9 +913,9 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
       /* La pièce visée vit dans un autre document — le Laṭîf arabe
          renvoie au Yā-Sīn du kitāb : le cahier de wadhifa s'ouvre à
          la pratique demandée, dans la langue courante. */
-      useDemandeLecture.getState().demander('kitab', cible.chapitreId, langue)
+      useDemandeLecture.getState().demander('kitab', cible.chapitreId, langue, ancre)
     },
-    [langue, chapitres, sommaireCarte, allerAuChapitre],
+    [langue, chapitres, sommaireCarte, allerAuChapitre, allerALigne],
   )
 
   /* ─── Le chapitre visible suit le défilement ─── */
@@ -1100,6 +1428,26 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                 ? POLICES_AR.find((p) => p.id === l.policeArabe) ?? POLICES_AR[0]
                 : POLICES_PH.find((p) => p.id === l.police) ?? POLICES_PH[0]
               const tailleC = arabeC ? l.tailleArabe : l.taille
+              /* Les blocs coraniques du kitāb (lignes ﴿…﴾) portent
+                 leur règle de numérotation — verset par verset pour
+                 les récitations, référence pour les citations. */
+              const lignesRendues = (() => {
+                if (c.langue === 'ph' && doc.id !== 'sama') {
+                  return paragrapher(c.texte).map((ligne) => ({
+                    ligne,
+                    sorte: sorteParagraphe(ligne),
+                    regle: undefined as RegleVersets | undefined,
+                  }))
+                }
+                let bloc = 0
+                return c.texte.split('\n').map((ligne) => ({
+                  ligne,
+                  sorte: sorteLigneArabe(ligne),
+                  regle: ligne.trimStart().startsWith('﴿')
+                    ? regleDuBloc(c.id, bloc++)
+                    : undefined,
+                }))
+              })()
               return (
                 <article
                 key={c.id}
@@ -1161,8 +1509,10 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
 
                 {/* Le texte sacré — phonétique rejointe en paragraphes
                     coulant sur toute la largeur ; arabe verset à verset ;
-                    qaṣīda en distiques deux colonnes pleine largeur */}
+                    qaṣīda en distiques deux colonnes pleine largeur.
+                    data-chapitre-texte : la cible des ancres de renvoi. */}
                 <div
+                  data-chapitre-texte
                   className={cn(
                     'text-justify',
                     arabeC ? 'kitab-texte' : 'cahier-texte'
@@ -1174,16 +1524,23 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                   }}
                 >
                   {c.poesie && arabeC ? (
-                    c.texte.split('\n').map((ligne, j) => (
-                      <VersPoeme key={j} ligne={ligne} accent={accent.couleur} />
-                    ))
+                    <PoesieArabe
+                      texte={c.texte}
+                      accent={accent.couleur}
+                      cle={`${c.id}-${policeC.id}-${tailleC}`}
+                      langue={c.langue}
+                      surRenvoi={surRenvoi}
+                    />
                   ) : c.poesie ? (
-                    <PoemeCahier texte={c.texte} accent={accent.couleur} />
+                    <PoemeCahier
+                      texte={c.texte}
+                      accent={accent.couleur}
+                      cle={`${c.id}-${policeC.id}-${tailleC}`}
+                      langue={c.langue}
+                      surRenvoi={surRenvoi}
+                    />
                   ) : (
-                    (c.langue === 'ph' && doc.id !== 'sama'
-                      ? paragrapher(c.texte).map((ligne) => ({ ligne, sorte: sorteParagraphe(ligne) }))
-                      : c.texte.split('\n').map((ligne) => ({ ligne, sorte: sorteLigneArabe(ligne) }))
-                    ).map(({ ligne, sorte }, j) => {
+                    lignesRendues.map(({ ligne, sorte, regle }, j) => {
                       if (sorte === 'entete') {
                         return (
                           <span
@@ -1196,47 +1553,25 @@ function LecteurAdhkar({ doc, langue, chapitreInitial, onFermer }: LecteurProps)
                         )
                       }
                       if (sorte === 'renvoi') {
-                        /* La page imprimée est un LIEN : la ligne peut en
-                           porter plusieurs séparés par ۞ (« Al Fidyya →
-                           p. 46 ۞ Waẓîfat aṣ Ṣubḥ → p. 58 ») — chaque
-                           tronçon mène à sa pièce. */
                         return (
-                          <span
+                          <LigneRenvoi
                             key={j}
-                            className="mt-[0.7em] block text-center text-[0.82em] italic"
-                            style={{ color: `${accent.couleur}` }}
-                          >
-                            {ligne.split(/(۞)/u).map((segment, k) => {
-                              if (segment === '۞') {
-                                return (
-                                  <span key={k} aria-hidden className="mx-1.5 opacity-60">
-                                    ۞
-                                  </span>
-                                )
-                              }
-                              const s = segment.trim()
-                              if (!s) return null
-                              const page = pageDuRenvoi(s)
-                              if (!page) return <Fragment key={k}>{s}</Fragment>
-                              return (
-                                <button
-                                  key={k}
-                                  type="button"
-                                  onClick={() => surRenvoi(s, c.langue)}
-                                  aria-label={`Aller à la page ${
-                                    c.langue === 'ar' ? chiffresArabes(page) : page
-                                  } du ${c.langue === 'ar' ? 'kitāb' : 'cahier'}`}
-                                  className="cursor-pointer rounded-sm underline decoration-dotted decoration-1 underline-offset-[5px] transition-all hover:decoration-solid hover:[text-shadow:0_0_12px_currentColor] focus-visible:decoration-solid focus-visible:outline-none active:scale-[0.98]"
-                                  style={{ textDecorationColor: accent.couleur }}
-                                >
-                                  {s}
-                                </button>
-                              )
-                            })}
-                          </span>
+                            ligne={ligne}
+                            langue={c.langue}
+                            accent={accent.couleur}
+                            surRenvoi={surRenvoi}
+                          />
                         )
                       }
-                      return <LigneInvocation key={j} ligne={ligne} accent={accent.couleur} />
+                      return (
+                        <LigneInvocation
+                          key={j}
+                          ligne={ligne}
+                          accent={accent.couleur}
+                          depuis={typeof regle === 'number' ? regle : undefined}
+                          reference={typeof regle === 'string' ? regle : undefined}
+                        />
+                      )
                     })
                   )}
                 </div>
@@ -1292,7 +1627,7 @@ export function AdhkarSection() {
   const langue = l.langueAdhkar
   const arabe = langue === 'ar'
 
-  const [lecteur, setLecteur] = useState<{ doc: DocAdhkar; chapitre?: string } | null>(null)
+  const [lecteur, setLecteur] = useState<{ doc: DocAdhkar; chapitre?: string; ancre?: string } | null>(null)
 
   /* La recherche globale (⌘K) demande un document précis :
      le lecteur s'ouvre par l'état dérivé pendant le rendu (motif
@@ -1305,7 +1640,7 @@ export function AdhkarSection() {
     const doc = DOCUMENTS_ADHKAR.find((d) => d.id === demande.docId)
     setTraitee({ horodatage: demande.horodatage })
     if (doc) {
-      setLecteur({ doc, chapitre: demande.chapitreId })
+      setLecteur({ doc, chapitre: demande.chapitreId, ancre: demande.ancre })
     }
   }
   useEffect(() => {
@@ -1454,6 +1789,7 @@ export function AdhkarSection() {
                   : langue
             }
             chapitreInitial={lecteur.chapitre}
+            ancreInitiale={lecteur.ancre}
             onFermer={() => setLecteur(null)}
           />
         )}

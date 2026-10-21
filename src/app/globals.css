@@ -525,19 +525,59 @@ body::after {
   transform: translateY(-0.4em);
 }
 
-/* Le téléphone en portrait : les MÊMES deux colonnes que la
-   planche du diwân, en plus étroit — l'hémistiche revient à la
-   ligne dans sa demi-colonne au lieu de déborder sur le ۞ ou
-   hors du cadre ; les colonnes minmax(0, 1fr) restent
-   parfaitement égales, le ۞ demeure au même milieu, vers après
-   vers. En paysage et sur tablette, rien ne change. */
+/* Paysage et tablette : seule la rosette CENTRALE existe — la
+   marque de fin d'hémistiche reste invisible, la planche à deux
+   colonnes du kitāb imprimé ne bouge pas. */
+.poesie-fasl-fin {
+  display: none;
+}
+
+/* Le téléphone en portrait : la planche du kitāb imprimé, où
+   chaque hémistiche occupe SA ligne pleine largeur, calée au bord
+   de lecture — plus jamais de demi-colonne qui replie le vers sur
+   deux lignes. Le ۞ se pose en fin de premier hémistiche, comme
+   la rosette du diwân ; un vers = exactement deux lignes, vers
+   après vers, homogène du premier au dernier. */
 @media (max-width: 639px) {
   .poesie-vers {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: baseline;
-    column-gap: 0.5em;
+    grid-template-columns: 1fr;
+    row-gap: 0.06em;
+    margin-bottom: 0.62em;
   }
+  .poesie-shatr {
+    display: block;
+    text-align: start;
+  }
+  .poesie-fasl-fin {
+    display: inline;
+    margin-inline-start: 0.3em;
+    transform: none;
+  }
+  .poesie-fasl-centre {
+    display: none;
+  }
+}
+
+/* ─── Le numéro du verset — médaillon du muṣḥaf ───
+   Un cercle fin aux chiffres du kitāb : DISCRET et
+   PROPORTIONNEL à la taille de lecture (tout en em) — le
+   médaillon garde le même rapport au verset, du 17 au 25 px,
+   jamais un chiffre nu plus gros que le texte. La couleur et
+   le filet prennent l'accent du lecteur. */
+.numero-ayah {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45em;
+  height: 1.45em;
+  margin-inline-start: 0.3em;
+  border: 1px solid;
+  border-radius: 9999px;
+  font-size: 0.55em;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
 }
 
   /* Le grain de papier — un seul, partout le même */

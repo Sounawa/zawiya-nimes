@@ -309,7 +309,12 @@ function BasculeAndalouse<T extends string>({
 /* ─── Un vers de qaṣīda — deux hémistiches pleine largeur ───
    Le Nasiri ou la Munfarija n'est plus une colonne étroite
    alignée à droite : chaque distique s'étale en deux colonnes
-   comme dans le kitāb imprimé, le séparateur ۞ au centre. */
+   comme dans le kitāb imprimé, le séparateur ۞ au centre.
+   En portrait, la planche du kitāb reprend ses droits : chaque
+   hémistiche occupe sa ligne pleine largeur, le ۞ se pose en fin
+   de premier hémistiche comme la rosette du diwân — le CSS
+   choisit (poesie-fasl-centre en paysage, poesie-fasl-fin en
+   portrait), le vers reste un seul arbre DOM. */
 function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
   const coupe = ligne.split('۞')
   if (coupe.length !== 2) {
@@ -317,8 +322,13 @@ function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
   }
   return (
     <span className="poesie-vers">
-      <span className="poesie-shatr">{coupe[0].trim()}</span>
-      <span aria-hidden className="poesie-fasl" style={{ color: accent }}>
+      <span className="poesie-shatr">
+        {coupe[0].trim()}
+        <span aria-hidden className="poesie-fasl poesie-fasl-fin" style={{ color: accent }}>
+          ۞
+        </span>
+      </span>
+      <span aria-hidden className="poesie-fasl poesie-fasl-centre" style={{ color: accent }}>
         ۞
       </span>
       <span className="poesie-shatr">{coupe[1].trim()}</span>

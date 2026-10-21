@@ -525,23 +525,18 @@ body::after {
   transform: translateY(-0.4em);
 }
 
-/* Le téléphone en portrait : le vers ENTIER tient sur UNE ligne —
-   شطر ۞ شطر côte à côte, comme le doigt suit le vers sur la
-   planche du diwân. Les deux hémistiches occupent chacun une
-   demi-ligne : le ۞ reste TOUJOURS au même milieu, vers après
-   vers — plus de danse du séparateur. La taille se resserre au
-   vers le plus long, mesurée au pixel près par le composant,
-   quelle que soit la police choisie. En paysage et sur tablette,
-   les deux colonnes du kitāb imprimé restent en place. */
+/* Le téléphone en portrait : les MÊMES deux colonnes que la
+   planche du diwân, en plus étroit — l'hémistiche revient à la
+   ligne dans sa demi-colonne au lieu de déborder sur le ۞ ou
+   hors du cadre ; les colonnes minmax(0, 1fr) restent
+   parfaitement égales, le ۞ demeure au même milieu, vers après
+   vers. En paysage et sur tablette, rien ne change. */
 @media (max-width: 639px) {
   .poesie-vers {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: baseline;
     column-gap: 0.5em;
-  }
-  .poesie-shatr {
-    white-space: nowrap;
   }
 }
 

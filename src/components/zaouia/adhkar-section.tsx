@@ -341,11 +341,13 @@ function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
    téléphone tenu droit, l'écran est plus étroit que la page du
    kitāb — la planche prend donc la taille qu'exige le vers le
    plus long (jamais plus grande que la taille choisie) et TOUS
-   les vers tiennent sur leur ligne, ۞ au milieu. Si cette taille
-   tombait sous le seuil de lecture (SEUIL_PLANCHE), les vers sont
-   trop longs pour l'écran : le poème s'empile alors comme le
-   cahier imprimé — un hémistiche par ligne, à la taille choisie,
-   jamais un texte microscopique.
+   les vers tiennent sur leur ligne, ۞ au milieu. En arabe,
+   l'hémistiche en face de l'autre est la règle du diwân, SANS
+   EXCEPTION : la planche arabe ne s'empile jamais. Seul le cahier
+   phonétique, dont les vers sont trop longs pour l'écran droit,
+   tombe sous le seuil de lecture (SEUIL_PLANCHE) et s'empile
+   alors comme le cahier imprimé — un hémistiche par ligne, à la
+   taille choisie, jamais un texte microscopique.
    La mesure se fait par SONDE INVISIBLE (position absolute,
    white-space nowrap, détachée après usage) : la largeur réelle
    de chaque hémistiche est mesurée SANS TOUCHER AU RENDU — le
@@ -361,6 +363,8 @@ function usePlancheQasida(
   taille: number,
   /** la police choisie — re-mesure quand elle change */
   police: string,
+  /** le poème du kitāb arabe : les hémistiches se font face, sans repli */
+  arabe: boolean,
 ) {
   const [etat, setEtat] = useState<{ taillePlanche: number; empilee: boolean }>({
     taillePlanche: taille,
@@ -390,20 +394,37 @@ function usePlancheQasida(
       }
       const fCourante = parseFloat(getComputedStyle(bloc).fontSize) || taille
       const faslF = largeur('۞') * 0.62
+      /* le texte de l'hémistiche SANS la rosette de fin (fasl-fin,
+         invisible en parallèle) — mesurer textContent la compterait */
+      const texteSeul = (s: HTMLElement) => s.firstChild?.textContent ?? ''
       let plusLarge = 0
+      let plusLargeSeul = 0
       let dispos = 0
       for (const v of vers) {
         const sh = [...v.querySelectorAll<HTMLElement>('.poesie-shatr')]
         if (sh.length < 2) continue
         const gap = (parseFloat(getComputedStyle(v).columnGap) || 0) * 2
-        const w = largeur(sh[0].textContent ?? '') + largeur(sh[1].textContent ?? '') + faslF + gap
+        const w0 = largeur(texteSeul(sh[0]))
+        const w1 = largeur(texteSeul(sh[1]))
+        const w = w0 + w1 + faslF + gap
         if (w > plusLarge) plusLarge = w
+        /* un vers déséquilibré — hémistiche long en face d'un court :
+           le plus long doit tenir dans SA moitié de planche, les
+           colonnes étant égales, sinon il déborde sur le ۞ */
+        const seul = Math.max(w0, w1) * 2 + faslF + gap
+        if (seul > plusLargeSeul) plusLargeSeul = seul
         if (!dispos) dispos = v.clientWidth
       }
       sonde.remove()
       if (!plusLarge || !dispos) return
-      const fCible = Math.min(taille, (fCourante * dispos * 0.96) / plusLarge)
-      const empilee = fCible < SEUIL_PLANCHE
+      /* la planche obéit au vers le plus large ET à l'hémistiche
+         le plus long — aucun des deux ne peut déborder */
+      const encombrement = Math.max(plusLarge, plusLargeSeul)
+      const fCible = Math.min(taille, (fCourante * dispos * 0.96) / encombrement)
+      /* le kitāb arabe ne s'empile jamais — l'un en face de
+         l'autre, ۞ au milieu ; seul le cahier phonétique replie
+         sous le seuil de lecture */
+      const empilee = !arabe && fCible < SEUIL_PLANCHE
       setEtat((e) => {
         const cible = empilee ? taille : fCible
         return Math.abs(cible - e.taillePlanche) < 0.1 && e.empilee === empilee
@@ -412,40 +433,48 @@ function usePlancheQasida(
       })
     }
     regler()
-    /* la police du kitāb charge après le montage : re-mesurer une
-       fois les fontes prêtes ; une passe de rattrapage couvre les
-       ouvertures tardives ; l'écoute du média et du conteneur
-       suit rotations et repliements du lecteur */
-    document.fonts?.ready.then(regler).catch(() => {})
-    const rattraper = window.setTimeout(regler, 600)
+    /* la police du kitāb charge APRÈS le montage : Scheherazade
+       arrive quand le poème est déjà à l'écran — une mesure prise
+       avec la police de repli (plus large) donnerait une planche
+       trop serrée. On re-mesure donc à CHAQUE fonte déclarée
+       chargée (loadingdone, idempotent) ; une passe de rattrapage
+       couvre les ouvertures tardives ; l'écoute du média et du
+       conteneur suit rotations et repliements du lecteur */
     const surTaille = () => regler()
+    document.fonts?.ready.then(regler).catch(() => {})
+    document.fonts?.addEventListener('loadingdone', surTaille)
+    const rattraper = window.setTimeout(regler, 600)
     portrait.addEventListener('change', surTaille)
     const ro = new ResizeObserver(surTaille)
     if (bloc.parentElement) ro.observe(bloc.parentElement)
     return () => {
       window.clearTimeout(rattraper)
       portrait.removeEventListener('change', surTaille)
+      document.fonts?.removeEventListener('loadingdone', surTaille)
       ro.disconnect()
     }
-  }, [ref, taille, police])
+  }, [ref, taille, police, arabe])
   return etat
 }
 
 /* La planche de qaṣīda — enveloppe le poème : en portrait elle
    resserre la planche au vers le plus long (un vers, une ligne,
-   ۞ au milieu) ou l'empile comme le cahier si les vers sont trop
-   longs pour l'écran ; en paysage, la taille choisie. */
+   ۞ au milieu) ; en arabe jamais de repli — l'un en face de
+   l'autre — seul le cahier phonétique s'empile si ses vers sont
+   trop longs pour l'écran ; en paysage, la taille choisie. */
 function PlancheQasida({
   taille,
   police,
+  arabe,
   children,
 }: {
   taille: number
   police: string
+  arabe: boolean
   children: ReactNode
 }) {
   const ref = useRef<HTMLSpanElement>(null)
-  const { taillePlanche, empilee } = usePlancheQasida(ref, taille, police)
+  const { taillePlanche, empilee } = usePlancheQasida(ref, taille, police, arabe)
   return (
     <span
       ref={ref}
@@ -1575,8 +1604,9 @@ function normaliserAncre(s: string): string {
                   {c.poesie ? (
                     /* la planche : en portrait elle resserre le poème
                        au vers le plus long — un vers, une ligne,
-                       ۞ au milieu, comme la planche du diwân */
-                    <PlancheQasida taille={tailleC} police={policeC.css}>
+                       ۞ au milieu, comme la planche du diwân ; en
+                       arabe les hémistiches se font face, sans repli */
+                    <PlancheQasida taille={tailleC} police={policeC.css} arabe={arabeC}>
                       {arabeC ? (
                         <PoesieArabe
                           texte={c.texte}

@@ -306,75 +306,10 @@ function BasculeAndalouse<T extends string>({
   )
 }
 
-/* ─── L'échelle d'un POÈME — le téléphone en portrait ───
-   Une seule taille pour tous les vers : celle du vers le plus
-   long, comme la planche du diwân imprimé — l'harmonie avant
-   tout. On mesure le débordement réel de chaque hémistiche et
-   l'on resserre le poème entier d'autant ; la mesure se refait
-   quand la police, la taille de lecture ou la largeur changent. */
-function useEchellePoesie(ref: React.RefObject<HTMLElement | null>, cle: string) {
-  const [echelle, setEchelle] = useState(1)
-  const courante = useRef(1)
-  useEffect(() => {
-    const poeme = ref.current
-    if (!poeme) return
-    let largeurPrecedente = -1
-    const ajuster = () => {
-      let ratio = 1
-      poeme.querySelectorAll<HTMLElement>('.poesie-shatr').forEach((s) => {
-        if (s.clientWidth > 0 && s.scrollWidth > s.clientWidth) {
-          ratio = Math.min(ratio, (s.clientWidth / s.scrollWidth) * 0.94)
-        }
-      })
-      if (ratio < 1) {
-        const cible = Math.max(0.52, courante.current * ratio)
-        if (cible < courante.current - 0.001) {
-          courante.current = cible
-          setEchelle(cible)
-          requestAnimationFrame(ajuster)
-        }
-      }
-    }
-    /* repartir de la taille naturelle PUIS mesurer — tout dans la
-       frame suivante : le setState vit dans une callback, jamais
-       dans le corps direct de l'effet. */
-    const repartir = () => {
-      courante.current = 1
-      setEchelle(1)
-      requestAnimationFrame(ajuster)
-    }
-    const r = requestAnimationFrame(repartir)
-    /* La police du kitāb (Scheherazade, Cormorant…) charge APRÈS le
-       montage : le texte s'élargit alors sans que la largeur change —
-       on re-mesure quand les fontes sont prêtes, et une passe de
-       rattrapage couvre les éditions tardives. */
-    document.fonts?.ready.then(() => requestAnimationFrame(repartir)).catch(() => {})
-    const rattraper = window.setTimeout(() => requestAnimationFrame(repartir), 600)
-    const parent = poeme.parentElement
-    const ro = new ResizeObserver((entrees) => {
-      const w = entrees[0]?.contentRect.width ?? 0
-      if (largeurPrecedente < 0) largeurPrecedente = w
-      if (Math.abs(w - largeurPrecedente) > 0.5) {
-        largeurPrecedente = w
-        requestAnimationFrame(repartir)
-      }
-    })
-    if (parent) ro.observe(parent)
-    return () => {
-      cancelAnimationFrame(r)
-      window.clearTimeout(rattraper)
-      ro.disconnect()
-    }
-  }, [ref, cle])
-  return echelle
-}
-
 /* ─── Un vers de qaṣīda — deux hémistiches pleine largeur ───
    Le Nasiri ou la Munfarija n'est plus une colonne étroite
    alignée à droite : chaque distique s'étale en deux colonnes
-   comme dans le kitāb imprimé, le séparateur ۞ au centre. La
-   taille du POÈME entier (voir useEchellePoesie) se resserre
-   sur son vers le plus long. */
+   comme dans le kitāb imprimé, le séparateur ۞ au centre. */
 function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
   const coupe = ligne.split('۞')
   if (coupe.length !== 2) {
@@ -394,31 +329,22 @@ function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
 /* ─── Un poème du cahier phonétique — hémistiches une ligne sur
    deux, étalés en deux colonnes comme le kitāb arabe : le Nāṣirî
    et la Munfarija se lisent ainsi de la même façon dans les deux
-   langues, mêmes tailles, même souffle. Le poème ENTIER partage
-   une seule échelle : celle de son vers le plus long. Le renvoi
+   langues, mêmes tailles, même souffle. Le renvoi
    qui clôt une qaṣīda reste un LIEN, jamais un vers. ─── */
 function PoemeCahier({
   texte,
   accent,
-  cle,
   langue,
   surRenvoi,
 }: {
   texte: string
   accent: string
-  cle?: string
   langue: LangueAdhkar
   surRenvoi: (ligne: string, langue: LangueAdhkar) => void
 }) {
-  const ref = useRef<HTMLSpanElement | null>(null)
-  const echelle = useEchellePoesie(ref, cle ?? texte.slice(0, 40))
   const blocs = texte.split(/\n\s*\n/)
   return (
-    <span
-      ref={ref}
-      className="block"
-      style={echelle < 1 ? { fontSize: `${echelle}em` } : undefined}
-    >
+    <span className="block">
       {blocs.map((bloc, bi) => {
         const lignes = bloc
           .split('\n')
@@ -468,30 +394,22 @@ function PoemeCahier({
   )
 }
 
-/* ─── Un poème du kitāb arabe — vers deux colonnes, une échelle
-   unique pour tout le poème (celle du vers le plus long), et le
-   renvoi qui clôt la qaṣīda reste un LIEN, jamais un vers ─── */
+/* ─── Un poème du kitāb arabe — vers deux colonnes, taille
+   naturelle — et le renvoi qui clôt la qaṣīda reste un LIEN,
+   jamais un vers ─── */
 function PoesieArabe({
   texte,
   accent,
-  cle,
   langue,
   surRenvoi,
 }: {
   texte: string
   accent: string
-  cle?: string
   langue: LangueAdhkar
   surRenvoi: (ligne: string, langue: LangueAdhkar) => void
 }) {
-  const ref = useRef<HTMLSpanElement | null>(null)
-  const echelle = useEchellePoesie(ref, cle ?? texte.slice(0, 40))
   return (
-    <span
-      ref={ref}
-      className="block"
-      style={echelle < 1 ? { fontSize: `${echelle}em` } : undefined}
-    >
+    <span className="block">
       {texte.split('\n').map((ligne, j) =>
         /* « الوَظِيفَة (…) ← ص ٢٢ » clôt la Munfarija : un lien */
         sorteLigneArabe(ligne) === 'renvoi' ? (
@@ -1527,7 +1445,6 @@ function normaliserAncre(s: string): string {
                     <PoesieArabe
                       texte={c.texte}
                       accent={accent.couleur}
-                      cle={`${c.id}-${policeC.id}-${tailleC}`}
                       langue={c.langue}
                       surRenvoi={surRenvoi}
                     />
@@ -1535,7 +1452,6 @@ function normaliserAncre(s: string): string {
                     <PoemeCahier
                       texte={c.texte}
                       accent={accent.couleur}
-                      cle={`${c.id}-${policeC.id}-${tailleC}`}
                       langue={c.langue}
                       surRenvoi={surRenvoi}
                     />

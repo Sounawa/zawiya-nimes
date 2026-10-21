@@ -524,39 +524,55 @@ body::after {
   opacity: 0.8;
   transform: translateY(-0.4em);
 }
-
-/* Paysage et tablette : seule la rosette CENTRALE existe — la
-   marque de fin d'hémistiche reste invisible, la planche à deux
-   colonnes du kitāb imprimé ne bouge pas. */
+/* Paysage, tablette et portrait déployé : seule la rosette
+   CENTRALE existe — la marque de fin d'hémistiche reste
+   invisible, la planche à deux colonnes ne bouge pas. */
 .poesie-fasl-fin {
   display: none;
 }
 
-/* Le téléphone en portrait : la planche du kitāb imprimé, où
-   chaque hémistiche occupe SA ligne pleine largeur, calée au bord
-   de lecture — plus jamais de demi-colonne qui replie le vers sur
-   deux lignes. Le ۞ se pose en fin de premier hémistiche, comme
-   la rosette du diwân ; un vers = exactement deux lignes, vers
-   après vers, homogène du premier au dernier. */
+/* Le téléphone en portrait : la MÊME planche que le paysage —
+   deux hémistiches EN PARALLÈLE sur la ligne, ۞ au milieu, un
+   vers = une ligne. L'écran est plus étroit que la page du kitāb :
+   le composant (usePlancheQasida) resserre alors la planche à la
+   taille du vers le plus long, une seule taille pour tout le
+   poème, comme le diwân imprimé — les hémistiches ne replient
+   JAMAIS : ils tiennent, par construction. */
 @media (max-width: 639px) {
   .poesie-vers {
     display: grid;
-    grid-template-columns: 1fr;
-    row-gap: 0.06em;
-    margin-bottom: 0.62em;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: 0.5em;
   }
   .poesie-shatr {
-    display: block;
-    text-align: start;
+    white-space: nowrap;
   }
-  .poesie-fasl-fin {
-    display: inline;
-    margin-inline-start: 0.3em;
-    transform: none;
-  }
-  .poesie-fasl-centre {
-    display: none;
-  }
+}
+
+/* Le repli du cahier — quand les vers sont trop longs pour
+   l'écran droit (la planche tomberait sous le seuil de lecture),
+   le poème s'empile comme le cahier imprimé : un hémistiche par
+   ligne pleine largeur, à la taille choisie, le ۞ en fin de
+   premier hémistiche. La planche reste lisible, jamais
+   microscopique. */
+.poesie-empilee .poesie-vers {
+  grid-template-columns: 1fr;
+  row-gap: 0.06em;
+  margin-bottom: 0.62em;
+}
+.poesie-empilee .poesie-shatr {
+  display: block;
+  text-align: start;
+  white-space: normal;
+}
+.poesie-empilee .poesie-fasl-fin {
+  display: inline;
+  margin-inline-start: 0.3em;
+  transform: none;
+}
+.poesie-empilee .poesie-fasl-centre {
+  display: none;
 }
 
 /* ─── Le numéro du verset — médaillon du muṣḥaf ───

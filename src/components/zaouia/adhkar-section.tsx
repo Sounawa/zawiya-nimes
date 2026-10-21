@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { create } from 'zustand'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -306,15 +306,15 @@ function BasculeAndalouse<T extends string>({
   )
 }
 
-/* ─── Un vers de qaṣīda — deux hémistiches pleine largeur ───
-   Le Nasiri ou la Munfarija n'est plus une colonne étroite
-   alignée à droite : chaque distique s'étale en deux colonnes
-   comme dans le kitāb imprimé, le séparateur ۞ au centre.
-   En portrait, la planche du kitāb reprend ses droits : chaque
-   hémistiche occupe sa ligne pleine largeur, le ۞ se pose en fin
-   de premier hémistiche comme la rosette du diwân — le CSS
-   choisit (poesie-fasl-centre en paysage, poesie-fasl-fin en
-   portrait), le vers reste un seul arbre DOM. */
+/* ─── Un vers de qaṣīda — deux hémistiches EN PARALLÈLE sur une
+   seule ligne ───
+   Le Nasiri ou la Munfarija s'étale comme dans le kitāb imprimé :
+   hémistiche à droite, hémistiche à gauche, ۞ au centre. En
+   portrait, la planche resserre le poème pour que CHAQUE vers
+   tienne sur SA ligne ; si les vers sont trop longs pour l'écran
+   (phonétique du cahier), elle s'empile comme le cahier imprimé :
+   le ۞ se pose alors en fin de premier hémistiche — le CSS
+   choisit (fasl-centre / fasl-fin), un seul arbre DOM. */
 function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
   const coupe = ligne.split('۞')
   if (coupe.length !== 2) {
@@ -332,6 +332,127 @@ function VersPoeme({ ligne, accent }: { ligne: string; accent: string }) {
         ۞
       </span>
       <span className="poesie-shatr">{coupe[1].trim()}</span>
+    </span>
+  )
+}
+
+/* ─── La planche de qaṣīda — un vers, une ligne, en portrait ───
+   « Deux vers par ligne, en parallèle, le ۞ au milieu » : sur un
+   téléphone tenu droit, l'écran est plus étroit que la page du
+   kitāb — la planche prend donc la taille qu'exige le vers le
+   plus long (jamais plus grande que la taille choisie) et TOUS
+   les vers tiennent sur leur ligne, ۞ au milieu. Si cette taille
+   tombait sous le seuil de lecture (SEUIL_PLANCHE), les vers sont
+   trop longs pour l'écran : le poème s'empile alors comme le
+   cahier imprimé — un hémistiche par ligne, à la taille choisie,
+   jamais un texte microscopique.
+   La mesure se fait par SONDE INVISIBLE (position absolute,
+   white-space nowrap, détachée après usage) : la largeur réelle
+   de chaque hémistiche est mesurée SANS TOUCHER AU RENDU — le
+   résultat ne dépend ni de l'état de la planche ni de ses
+   repliements, il est idempotent : re-mesurer ne change rien, ni
+   spirale ni oscillation. En paysage et sur tablette, la taille
+   choisie règne : la vue approuvée ne bouge pas d'un pixel. */
+const SEUIL_PLANCHE = 12
+
+function usePlancheQasida(
+  ref: React.RefObject<HTMLElement | null>,
+  /** la taille de lecture choisie — plafond que la planche ne dépasse jamais */
+  taille: number,
+  /** la police choisie — re-mesure quand elle change */
+  police: string,
+) {
+  const [etat, setEtat] = useState<{ taillePlanche: number; empilee: boolean }>({
+    taillePlanche: taille,
+    empilee: false,
+  })
+  useLayoutEffect(() => {
+    const bloc = ref.current
+    if (!bloc) return
+    const portrait = window.matchMedia('(max-width: 639px)')
+    const regler = () => {
+      /* paysage / tablette : la taille choisie, planche déployée */
+      if (!portrait.matches) {
+        setEtat((e) => (e.taillePlanche === taille && !e.empilee ? e : { taillePlanche: taille, empilee: false }))
+        return
+      }
+      const vers = [...bloc.querySelectorAll<HTMLElement>('.poesie-vers')]
+      if (!vers.length) return
+      /* la sonde : invisible, hors flux, jamais repliée — elle
+         hérite de la police et de la taille courantes du bloc */
+      const sonde = document.createElement('span')
+      sonde.style.cssText =
+        'position:absolute;visibility:hidden;white-space:nowrap;pointer-events:none;top:-9999px;right:auto'
+      bloc.appendChild(sonde)
+      const largeur = (t: string) => {
+        sonde.textContent = t
+        return sonde.getBoundingClientRect().width
+      }
+      const fCourante = parseFloat(getComputedStyle(bloc).fontSize) || taille
+      const faslF = largeur('۞') * 0.62
+      let plusLarge = 0
+      let dispos = 0
+      for (const v of vers) {
+        const sh = [...v.querySelectorAll<HTMLElement>('.poesie-shatr')]
+        if (sh.length < 2) continue
+        const gap = (parseFloat(getComputedStyle(v).columnGap) || 0) * 2
+        const w = largeur(sh[0].textContent ?? '') + largeur(sh[1].textContent ?? '') + faslF + gap
+        if (w > plusLarge) plusLarge = w
+        if (!dispos) dispos = v.clientWidth
+      }
+      sonde.remove()
+      if (!plusLarge || !dispos) return
+      const fCible = Math.min(taille, (fCourante * dispos * 0.96) / plusLarge)
+      const empilee = fCible < SEUIL_PLANCHE
+      setEtat((e) => {
+        const cible = empilee ? taille : fCible
+        return Math.abs(cible - e.taillePlanche) < 0.1 && e.empilee === empilee
+          ? e
+          : { taillePlanche: cible, empilee }
+      })
+    }
+    regler()
+    /* la police du kitāb charge après le montage : re-mesurer une
+       fois les fontes prêtes ; une passe de rattrapage couvre les
+       ouvertures tardives ; l'écoute du média et du conteneur
+       suit rotations et repliements du lecteur */
+    document.fonts?.ready.then(regler).catch(() => {})
+    const rattraper = window.setTimeout(regler, 600)
+    const surTaille = () => regler()
+    portrait.addEventListener('change', surTaille)
+    const ro = new ResizeObserver(surTaille)
+    if (bloc.parentElement) ro.observe(bloc.parentElement)
+    return () => {
+      window.clearTimeout(rattraper)
+      portrait.removeEventListener('change', surTaille)
+      ro.disconnect()
+    }
+  }, [ref, taille, police])
+  return etat
+}
+
+/* La planche de qaṣīda — enveloppe le poème : en portrait elle
+   resserre la planche au vers le plus long (un vers, une ligne,
+   ۞ au milieu) ou l'empile comme le cahier si les vers sont trop
+   longs pour l'écran ; en paysage, la taille choisie. */
+function PlancheQasida({
+  taille,
+  police,
+  children,
+}: {
+  taille: number
+  police: string
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const { taillePlanche, empilee } = usePlancheQasida(ref, taille, police)
+  return (
+    <span
+      ref={ref}
+      className={cn('block', empilee && 'poesie-empilee')}
+      style={{ fontSize: `${taillePlanche}px` }}
+    >
+      {children}
     </span>
   )
 }
@@ -1451,20 +1572,27 @@ function normaliserAncre(s: string): string {
                     lineHeight: (INTERLIGNES.find((x) => x.id === l.interligne) ?? INTERLIGNES[1]).valeur,
                   }}
                 >
-                  {c.poesie && arabeC ? (
-                    <PoesieArabe
-                      texte={c.texte}
-                      accent={accent.couleur}
-                      langue={c.langue}
-                      surRenvoi={surRenvoi}
-                    />
-                  ) : c.poesie ? (
-                    <PoemeCahier
-                      texte={c.texte}
-                      accent={accent.couleur}
-                      langue={c.langue}
-                      surRenvoi={surRenvoi}
-                    />
+                  {c.poesie ? (
+                    /* la planche : en portrait elle resserre le poème
+                       au vers le plus long — un vers, une ligne,
+                       ۞ au milieu, comme la planche du diwân */
+                    <PlancheQasida taille={tailleC} police={policeC.css}>
+                      {arabeC ? (
+                        <PoesieArabe
+                          texte={c.texte}
+                          accent={accent.couleur}
+                          langue={c.langue}
+                          surRenvoi={surRenvoi}
+                        />
+                      ) : (
+                        <PoemeCahier
+                          texte={c.texte}
+                          accent={accent.couleur}
+                          langue={c.langue}
+                          surRenvoi={surRenvoi}
+                        />
+                      )}
+                    </PlancheQasida>
                   ) : (
                     lignesRendues.map(({ ligne, sorte, regle }, j) => {
                       if (sorte === 'entete') {

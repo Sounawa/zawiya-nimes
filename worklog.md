@@ -1094,3 +1094,40 @@ Stage Summary:
 - L'ONGLET AUTONOME « Surat al-Waqi'a » (section Adhkâr) montrait un renvoi TRONQUÉ par l'epure héritée — corrigé et déployé ; c'était le dernier défaut invisible du Task 39
 - MÉTHODE : l'epure epures(texte, borne) coupe à la PREMIÈRE occurrence de la borne — interdite si la borne peut figurer dans un renvoi ; audit de tous les appels avant suppression
 - GitHub + Vercel synchronisés ; le lien Git ne déclenche pas l'auto-déploiement → passage par l'API /v13/deployments avec le token du référent
+
+---
+
+## 24 nov. 2026 — Le modèle arabe appliqué au cahier phonétique (SW v27)
+
+**Demande du frère** : « le modèle arabe est le modèle de référence — il faut l'appliquer
+au modèle phonétique, qui n'a pas la même mise en page et avait beaucoup de défauts. »
+
+**Diagnostic** : le cahier phonétique était une extraction PDF brute (lignes coupées en
+pleine phrase, séparateurs parasites ‫ ٭ ★ ⊛, blocs coraniques noyés dans des
+paragraphes) rendue par un moteur distinct de l'arabe (paragrapher) — sans médaillons
+de versets ni références.
+
+**Travail** :
+1. Les 34 chapitres du cahier (`src/data/cahier.ts`) sont réécrits selon la mise en page
+   du kitāb arabe : une invocation = une ligne ; blocs coraniques ﴿…﴾ sur une ligne avec
+   ۞ entre les versets ; artefacts d'extraction retirés (U+202B, ٭, backtick) ; titres
+   (Sûrat…, Zajr, Ṣalât…, Âyat al-Kursî) et renvois sur leurs propres lignes ; la Waqi'a
+   enveloppée ﴿…﴾ ; Yâ-Sîn / al-Fatḥ / Ṭā-Hā coupés aux mêmes plans que le kitāb ;
+   Burda et Nâṣirî/Munfarija en poésie préservée (strophes). CONSERVATION VÉRIFIÉE :
+   comparaison mot à mot original ⇄ réécrit — 100 % préservé (seule la respatialisation
+   « x10 » → « x 10 » et le backtick parasite retiré).
+2. `src/data/versets.ts` : règles de versets ajoutées pour 24 chapitres phonétiques,
+   vérifiées bloc à bloc contre le kitāb (ch02 [1,13,33,51,71], ch12 [1,11], ch34
+   [1,17,42,56,78,99], ch13= k06, ch14 = k07, ch15 = k05, ch16 = k08, ch17 = k10,
+   ch18 = k11, ch03 = k05, ch26 [33:56, 28:85, 18:10], ch20 [57:1-6, 5:67, 85:20-22],
+   ch24, ch30, ch23, ch25, ch31…) — en chiffres du muṣḥaf, riwāyat Warsh.
+3. `adhkar-section.tsx` : UN SEUL moteur de rendu pour les deux langues (une ligne =
+   un bloc, en-têtes centrés, renvois LIENS, médaillons + références) — `paragrapher`
+   supprimé ; l'arabe reste inchangé (vérifié à l'écran).
+4. QA navigateur complet : Waẓîfa, Waqi'a (96 versets numérotés + renvoi الوَظِيفَة
+   ← ص ٤٢ cliquable qui pose la lecture sur la Waẓîfa), Ṭā-Hā, al-Fatḥ, At-Taqwiyya,
+   Dhikr al-Mukhliṣîn, Burda (planche + chapitres centrés), Nâṣirî phonétique ET arabe
+   (aucune régression).
+5. Commit `8fccb63` poussé sur GitHub (Sounawa/zawiya-nimes), déployé en production
+   Vercel (dpl_D5LtZSQiHgEPwWRrxvYHAe6hHviu, READY) — **zawiya-nimes.vercel.app**
+   sert SW v27, Waẓîfa phonétique vérifiée EN LIGNE (médaillons + références présents).

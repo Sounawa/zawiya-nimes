@@ -560,6 +560,20 @@ function normaliserTitreAr(s: string): string {
     .trim()
 }
 
+/* Les renvois de la nouvelle édition du kitāb ne portent plus de page
+   imprimée : le titre de la pièce suivi de sa répétition (سُورَةُ يَس × ١ ·
+   « Sûrat Yâ-Sîn x 1 ») désigne la cible. On rend la page d'ouverture du
+   chapitre nommé — 0 si le titre ne désigne aucune pièce. */
+export function pageDuTitreRenvoi(ligne: string): number {
+  const m = ligne.match(/^(.*?)\s*[×x]\s*[٠-٩\d]+[\s۞٭]*$/u)
+  const t = m?.[1]?.trim()
+  if (!t) return 0
+  const ka = CHAPITRES_ARABES.find((c) => normaliserTitreAr(c.titreAr) === normaliserTitreAr(t))
+  if (ka) return ka.debut
+  const kc = CHAPITRES_CAHIER.find((c) => c.titre.trim() === t)
+  return kc ? kc.debut : 0
+}
+
 /** Les chiffres arabes du kitāb (٧) redevenus latins (7). */
 export function chiffresLatins(s: string): number {
   return Number(s.replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))))

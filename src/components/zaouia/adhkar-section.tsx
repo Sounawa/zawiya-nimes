@@ -11,7 +11,6 @@ import {
   Minus,
   Music,
   Plus,
-  Printer,
   Type,
   X,
 } from 'lucide-react'
@@ -24,6 +23,7 @@ import {
   chiffresLatins,
   pdfDuDoc,
   pratiqueDuRenvoi,
+  pageDuTitreRenvoi,
   type ChapitreLecture,
   type DocAdhkar,
   type GroupeWadhifa,
@@ -31,7 +31,6 @@ import {
 } from '@/data/adhkar-docs'
 import {
   useLecture,
-  usePrint,
   type PoliceArabe,
   type PoliceLecture,
   type Interligne,
@@ -635,6 +634,9 @@ function paragrapher(texte: string): string[] {
 function sorteParagraphe(p: string): 'entete' | 'renvoi' | 'texte' {
   if (EST_EN_TETE.test(p.trim())) return 'entete'
   if (/→\s*p\.\s*\d+$/u.test(p.trim())) return 'renvoi'
+  /* « Sûrat Yâ-Sîn x 1 » : le titre d'une pièce suivi de sa répétition —
+     la nouvelle édition renvoie la pièce, pas la page */
+  if (/[×x]\s*[٠-٩\d]+[\s۞٭]*$/u.test(p.trim()) && pageDuTitreRenvoi(p.trim())) return 'renvoi'
   return 'texte'
 }
 
@@ -644,6 +646,9 @@ function sorteLigneArabe(l: string): 'entete' | 'renvoi' | 'texte' {
   const t = l.trim()
   if (/^دُعَاء\s*—\s*الصَّلَاةُ الْجَمَالِيَّة$/u.test(t)) return 'entete'
   if (/←\s*ص\s*[٠-٩\d]+$/u.test(t)) return 'renvoi'
+  /* la nouvelle édition : « سُورَةُ يَس × ١ » — le titre d'une pièce suivi
+     de sa répétition reste un renvoi, la pièce désigne la cible */
+  if (/[×x]\s*[٠-٩\d]+[\s۞٭]*$/u.test(t) && pageDuTitreRenvoi(t)) return 'renvoi'
   return 'texte'
 }
 
@@ -654,13 +659,15 @@ function sorteLigneArabe(l: string): 'entete' | 'renvoi' | 'texte' {
    directement à la pièce visée — dans le document ouvert si elle
    s’y trouve, sinon dans le cahier de wadhifa complet. */
 
-/** La page visée par une ligne de renvoi — 0 si la ligne n’en porte pas. */
+/** La page visée par une ligne de renvoi — 0 si la ligne n’en porte pas.
+    La nouvelle édition du kitāb renvoie sans page imprimée : le titre
+    de la pièce suivi de « × N » désigne la cible. */
 function pageDuRenvoi(ligne: string): number {
   const ph = ligne.match(/→\s*p\.\s*(\d+)/u)
   if (ph) return Number(ph[1])
   const ar = ligne.match(/←\s*ص\s*([٠-٩\d]+)/u)
   if (ar) return chiffresLatins(ar[1])
-  return 0
+  return pageDuTitreRenvoi(ligne)
 }
 
 /** Le titre qui précède la flèche — « سُورَةُ الْفَتْح (٤٨) ← ص ٤٩ » :
@@ -738,7 +745,6 @@ interface LecteurProps {
 
 function LecteurAdhkar({ doc, langue, chapitreInitial, ancreInitiale, onFermer }: LecteurProps) {
   const l = useLecture()
-  const imprimer = usePrint((s) => s.imprimer)
 
   /* Le diwân de samâ‘ (398 chants) n'entre pas dans le fil principal :
      il se charge paresseusement à l'ouverture du document. */
@@ -1660,11 +1666,10 @@ function normaliserAncre(s: string): string {
                   )}
                 </div>
 
-                {/* Imprimer ce chapitre — pas pour le diwân, qui
-                    s'imprime depuis sa page numérisée. Le folio à gauche
-                    numérote TOUTES les pages du lecteur, comme un livre */}
+                {/* Le folio numérote toutes les pages du lecteur, comme
+                    un livre — le bouton d'impression de chapitre est retiré */}
                 <footer
-                  className="mt-6 flex items-center justify-between gap-3 border-t pt-4"
+                  className="mt-6 flex items-center justify-center gap-3 border-t pt-4"
                   style={{ borderColor: `${accent.couleur}30` }}
                 >
                   <span
@@ -1674,18 +1679,6 @@ function normaliserAncre(s: string): string {
                   >
                     ✦ {i + 1} / {chapitres.length}
                   </span>
-                  {!estSama && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        imprimer({ kind: arabeC ? 'kitab' : 'cahier', chapitreId: c.id })
-                      }
-                      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] transition-all active:scale-95"
-                      style={{ color: accent.couleur }}
-                    >
-                      <Printer className="h-3.5 w-3.5" /> Imprimer ce chapitre
-                    </button>
-                  )}
                 </footer>
               </article>
               )

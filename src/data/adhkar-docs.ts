@@ -413,8 +413,12 @@ export const DOCUMENTS_ADHKAR: DocAdhkar[] = [
     detailAr: 'الواقعة الكبرى',
     pdfPh: '/adhkar/waqia-ph.pdf',
     pdfAr: '/adhkar/waqia-ar.pdf',
-    ph: epures(depuisCahier(['ch04-sratalwqia']), 'Ṣadaqa llâhul'),
-    ar: epures(depuisKitab(['k03']), 'صَدَقَ اللهُ'),
+    /* la nouvelle édition : l'imprimé clôt la Wâqi'a sur le renvoi
+       « الوَظِيفَةُ مَا بَيْنَ الْعِشَاءَيْنِ (صَدَقَ اللهُ الْعَظِيمُ) ← ص ٤٢ » —
+       le texte du kitāb se termine DÉJÀ là (plus de séquence wadhifa
+       dupliquée), donc pas d'epure : le renvoi reste entier et LIEN. */
+    ph: depuisCahier(['ch04-sratalwqia']),
+    ar: depuisKitab(['k03']),
   },
   {
     id: 'nasiri',

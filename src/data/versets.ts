@@ -61,8 +61,8 @@ export const NUMEROS_VERSETS: Record<string, RegleVersets[]> = {
     null, // قل الله
     '٤٠ : ٦٥', // لا إله إلا هو فادعوه
     '٣٧ : ١٨٠-١٨٢', // سبحان ربك (après la ṣalāt nūriyya)
-    '٩٤ : ٥-٦', // فإن مع العسر يسرا × ١٠٠
-    '٣٧ : ١٨٠-١٨٢', // سبحان ربك
+    '٩٤ : ٥-٦', // فإن مع العسر يسرا × ٥٠ — dernier bloc : la Waẓîfa
+    // s'achève ici sur l'imprimé (p. 44), sans taslīyāt finale
   ],
 
   /* k06 — Waẓîfa avant le Fajr */

@@ -1131,3 +1131,36 @@ de versets ni références.
 5. Commit `8fccb63` poussé sur GitHub (Sounawa/zawiya-nimes), déployé en production
    Vercel (dpl_D5LtZSQiHgEPwWRrxvYHAe6hHviu, READY) — **zawiya-nimes.vercel.app**
    sert SW v27, Waẓîfa phonétique vérifiée EN LIGNE (médaillons + références présents).
+
+---
+
+## 24 nov. 2026 (soir) — Étape 1 : parenthèses du cahier phonétique (SW v28)
+
+**Demande du frère** : « il y a encore des )( mal placé / tu dois vraiment faire attention
+dans la phonétique / priorité ça ! » — puis validation de l'étape 1 seule (« uniquement
+l'étape 1 »), avec écrans avant/après pour contrôle avant tout déploiement.
+
+**Diagnostic** : 24 parenthèses mal espacées dans le cahier phonétique — espaces internes
+(« ( 3 foisà voix basse ) », « ( à voix haute ) »), collages (« x 70( », « (20)Taha »),
+et la coquille « versts » → « versets » (Sûrat al Ḥadid).
+
+**Corrections (24 au total)** :
+1. cahier.ts — 22 corrections : ch01 (×1), ch08 (×1), ch10 (×1), ch11 (×6), ch13 (×1),
+   ch15 (×1), ch16 (×1), ch17 (×2), ch18 (×2), ch20 (×2), ch21 (×1), ch22 (×3) :
+   9× « Sûrat ( 1 ) /( 2 ) » → « Sûrat (1)/(2) », les « ( N foisà voix … ) » recollés en
+   « (N fois à voix …) », « x 70( », « (20)Taha », « ( dix minutes) », « ( Coran entier…) »,
+   « ( versts 1 à 6 ) » → « (versets 1 à 6) ».
+2. sama-chants.ts — chant n°147 : « ( jamâluhul 'ajîb ) x2 » et « ( nuzhatul 'uchchâq ) x2 »
+   resserrés.
+3. Les 3 en-têtes internes « ( Waẓifa du Rayonnement ) », « ( invocations de voyage ) »,
+   « ( invocations pour les ateliers ) » resserrés — EST_EN_TETE (adhkar-section.tsx) mis à
+   jour EN MÊME TEMPS : vérifié au navigateur, ils s'affichent toujours en en-têtes centrés.
+4. Nettoyage : doublon `poesie: true` (ch29) supprimé ; notations musicales samâ'
+   « ( DA R I J A ) », « ( S WS ) » volontairement intactes (marqueurs rythmiques).
+
+**Vérification** : 10 écrans avant/après (5 chapitres : At-Taqwiyya, Al-Fidya, Ijtimâ'
+des jeunes, Dhikr al-Mukhliṣîn, Laṭîf al-Muwaḥḥad) + page de comparaison
+public/screens/comparaison.html — validés par le frère.
+
+**Déploiement** : commit poussé sur GitHub (Sounawa/zawiya-nimes) + production Vercel
+mise à jour — SW v28 pour forcer le rafraîchissement du cache des frères.

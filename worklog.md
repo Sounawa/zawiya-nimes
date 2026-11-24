@@ -1164,3 +1164,31 @@ public/screens/comparaison.html — validés par le frère.
 
 **Déploiement** : commit poussé sur GitHub (Sounawa/zawiya-nimes) + production Vercel
 mise à jour — SW v28 pour forcer le rafraîchissement du cache des frères.
+
+---
+
+## 24 nov. 2026 (nuit) — Le × ٣ de la clôture : badge à sa ligne (SW v29)
+
+**Demande du frère** : « × ٣ un chiffre pas en couleur comme les autres, et il ne doit
+rien y avoir après — donc عَدَدَ خَلْقِكَ وَرِضَا tu le mets à la ligne en dessous. »
+
+**Diagnostic** : dans la clôture (Ṣadaqa llâh + salawât), le « × ٣ » suivait directement
+« …وَسَلِّمْ تَسْلِيمًا × ٣ عَدَدَ خَلْقِكَ… » sur la même ligne de données — le × N n'étant
+pas en fin de ligne, il ne pouvait pas se rendre en badge coloré (règle : le badge × N
+termine sa ligne), et le texte suivant restait collé.
+
+**Corrections (6 occurrences du même bloc de clôture)** :
+1. kitab-arabe.ts — k05 Waẓîfa (p. 42-44) et k11 Khatm as-Silka : « تَسْلِيمًا × ٣ »
+   termine sa ligne ; « عَدَدَ خَلْقِكَ وَرِضَا نَفْسِكَ وَزِينَةَ عَرْشِكَ وَمِدَادَ كَلِمَاتِكْ ۞ وَرَضِيَ اللهُ… »
+   passe à la ligne en dessous.
+2. cahier.ts — ch03 Al-Waẓîfa, ch18 Khatm as-Silka, ch33 Sûrat al-Mulk, ch34 Sûrat Tâ-Hâ :
+   « …taslîmâ x 3 » termine sa ligne ; « ‘Adada khalqika wa riḍâ nafsika… » à la ligne
+   en dessous.
+
+**Vérification (navigateur, DOM)** : le badge « × ٣ » / « x 3 » se rend bien en badge
+coloré (or, pilule translucide) en fin de ligne salawat, et la ligne « nombre de Ta
+création… » démarre en dessous — en arabe (k05) et en phonétique (ch03). Captures
+avant/après pour les deux langues (public/screens/avant-ar-wazifa.png, apres-ar-wazifa.png,
+avant-ph-wazifa.png, apres-ph-wazifa.png) présentées au frère dans le chat.
+
+**Déploiement** : SW v29 — cache forcé pour les frères.

@@ -596,7 +596,7 @@ function PoesieArabe({
    les renvois « → p. » / « ← ص » et les titres répétés
    (« Sûrat Yâ-Sîn x 1 » / « سُورَةُ يَس × ١ ») restent des LIENS. */
 const EST_EN_TETE =
-  /^(Du‘â’|Du‘â|Zajr|Zajr 1|Zajr 2|Ṣalât al Jamâliyya|Ṣalât an-nûriyya|Ṣalât an-Nûriyya|Ṣalat an nûriyya|Ṣalât Aṭ Ṭibiyya|Ṣalât al Machîchiyya|Al-Jazr|Ṣalât an-Nâṣiriyya|-?Ayat Al.?Kursi(y|î)yy?|Âyat al-Kursî|Ouverture du Coran|Ouverture de Dalâ[-î ]?al.?Khayrât|Distribution de la Silka\b.*|iftitaḥ dalâ-il Al khayrât|Iftitâḥ as-Silka|Ḥizbu An Naṣr|Qaṣîdat al Hamziya|At Taqwiya|Samaa|\( Waẓifa du Rayonnement \)|\( invocations de voyage \)|\( invocations pour les ateliers \)|\(des Jeunes\)|Â~mîn|Khatm silka|Khatm as-Silka)$/u
+  /^(Du‘â’|Du‘â|Zajr|Zajr 1|Zajr 2|Ṣalât al Jamâliyya|Ṣalât an-nûriyya|Ṣalât an-Nûriyya|Ṣalat an nûriyya|Ṣalât Aṭ Ṭibiyya|Ṣalât al Machîchiyya|Al-Jazr|Ṣalât an-Nâṣiriyya|-?Ayat Al.?Kursi(y|î)yy?|Âyat al-Kursî|Ouverture du Coran|Ouverture de Dalâ[-î ]?al.?Khayrât|Distribution de la Silka\b.*|iftitaḥ dalâ-il Al khayrât|Iftitâḥ as-Silka|Ḥizbu An Naṣr|Qaṣîdat al Hamziya|At Taqwiya|Samaa|\(Waẓifa du Rayonnement\)|\(invocations de voyage\)|\(invocations pour les ateliers\)|\(des Jeunes\)|Â~mîn|Khatm silka|Khatm as-Silka)$/u
 
 function sorteLigne(l: string): 'entete' | 'renvoi' | 'texte' {
   const t = l.trim()

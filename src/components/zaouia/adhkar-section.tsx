@@ -571,7 +571,7 @@ function PoesieArabe({
     <span className="block">
       {texte.split('\n').map((ligne, j) =>
         /* « الوَظِيفَة (…) ← ص ٢٢ » clôt la Munfarija : un lien */
-        sorteLigneArabe(ligne) === 'renvoi' ? (
+        sorteLigne(ligne) === 'renvoi' ? (
           <LigneRenvoi
             key={j}
             ligne={ligne}
@@ -587,66 +587,24 @@ function PoesieArabe({
   )
 }
 
-/* ─── Le paragraphage du cahier phonétique ───
-   Le cahier imprimé est une colonne étroite : l'extraction garde
-   des lignes courtes coupées au milieu des phrases. On rejoint
-   les lignes d'un même bloc (séparé par une ligne vide) et on
-   coupe après les renvois « → p. » et les répétitions « x 100 » —
-   le texte coule alors sur toute la largeur, justifié comme un
-   livre, au lieu de rester collé à gauche. Les en-têtes du cahier
-   imprimé (Du‘â’, Ṣalât al Jamâliyya, Zajr…) restent des lignes
-   à part, centrées comme sur la page. */
+/* ─── La ligne de lecture, arabe ET phonétique — le même modèle ───
+   Le kitāb arabe et le cahier phonétique se lisent ligne à ligne :
+   une invocation, une ligne ; les blocs coraniques ﴿…﴾ portent
+   leurs médaillons de versets ; les en-têtes du cahier imprimé
+   (Du‘â’, Ṣalât al Jamâliyya, Zajr…) et ceux du kitāb
+   (دُعَاء — الصَّلَاةُ الْجَمَالِيَّة) se posent au centre, comme sur la page ;
+   les renvois « → p. » / « ← ص » et les titres répétés
+   (« Sûrat Yâ-Sîn x 1 » / « سُورَةُ يَس × ١ ») restent des LIENS. */
 const EST_EN_TETE =
-  /^(Du‘â’|Ṣalât al Jamâliyya|Zajr|Ṣalât an-nûriyya|Ṣalât Aṭ Ṭibiyya|Al-Jazr)$/u
+  /^(Du‘â’|Du‘â|Zajr|Zajr 1|Zajr 2|Ṣalât al Jamâliyya|Ṣalât an-nûriyya|Ṣalât an-Nûriyya|Ṣalat an nûriyya|Ṣalât Aṭ Ṭibiyya|Ṣalât al Machîchiyya|Al-Jazr|Ṣalât an-Nâṣiriyya|-?Ayat Al.?Kursi(y|î)yy?|Âyat al-Kursî|Ouverture du Coran|Ouverture de Dalâ[-î ]?al.?Khayrât|Distribution de la Silka\b.*|iftitaḥ dalâ-il Al khayrât|Iftitâḥ as-Silka|Ḥizbu An Naṣr|Qaṣîdat al Hamziya|At Taqwiya|Samaa|\( Waẓifa du Rayonnement \)|\( invocations de voyage \)|\( invocations pour les ateliers \)|\(des Jeunes\)|Â~mîn|Khatm silka|Khatm as-Silka)$/u
 
-function paragrapher(texte: string): string[] {
-  const paras: string[] = []
-  let courant: string[] = []
-  const flush = () => {
-    if (courant.length) {
-      paras.push(courant.join(' ').replace(/\s+/g, ' ').trim())
-      courant = []
-    }
-  }
-  for (const brute of texte.split('\n')) {
-    const t = brute.trim()
-    if (!t) {
-      flush()
-      continue
-    }
-    /* en-tête du cahier : ligne à part, jamais noyée dans un paragraphe */
-    if (EST_EN_TETE.test(t)) {
-      flush()
-      paras.push(t)
-      continue
-    }
-    courant.push(t)
-    /* Fin logique de paragraphe : renvoi de page, ou répétition badgée
-       (un ۞/٭ peut suivre la répétition sur la page imprimée) */
-    if (/→\s*p\.|→\s*ص|[×x]\s*[٠-٩\d][٠-٩\dHh '’]*[\s۞٭]*$/.test(t)) flush()
-  }
-  flush()
-  return paras
-}
-
-/* Un paragraphe du cahier : invocation, en-tête ou renvoi ?
-   Le lecteur habille chaque sorte comme la page imprimée. */
-function sorteParagraphe(p: string): 'entete' | 'renvoi' | 'texte' {
-  if (EST_EN_TETE.test(p.trim())) return 'entete'
-  if (/→\s*p\.\s*\d+$/u.test(p.trim())) return 'renvoi'
-  /* « Sûrat Yâ-Sîn x 1 » : le titre d'une pièce suivi de sa répétition —
-     la nouvelle édition renvoie la pièce, pas la page */
-  if (/[×x]\s*[٠-٩\d]+[\s۞٭]*$/u.test(p.trim()) && pageDuTitreRenvoi(p.trim())) return 'renvoi'
-  return 'texte'
-}
-
-/* Côté kitāb arabe : les renvois « ← ص » et l'en-tête du du‘â’
-   se posent au centre, comme sur la page imprimée. */
-function sorteLigneArabe(l: string): 'entete' | 'renvoi' | 'texte' {
+function sorteLigne(l: string): 'entete' | 'renvoi' | 'texte' {
   const t = l.trim()
+  if (EST_EN_TETE.test(t)) return 'entete'
   if (/^دُعَاء\s*—\s*الصَّلَاةُ الْجَمَالِيَّة$/u.test(t)) return 'entete'
+  if (/→\s*p\.\s*\d+$/u.test(t)) return 'renvoi'
   if (/←\s*ص\s*[٠-٩\d]+$/u.test(t)) return 'renvoi'
-  /* la nouvelle édition : « سُورَةُ يَس × ١ » — le titre d'une pièce suivi
+  /* « Sûrat Yâ-Sîn x 1 » / « سُورَةُ يَس × ١ » : le titre d'une pièce suivi
      de sa répétition reste un renvoi, la pièce désigne la cible */
   if (/[×x]\s*[٠-٩\d]+[\s۞٭]*$/u.test(t) && pageDuTitreRenvoi(t)) return 'renvoi'
   return 'texte'
@@ -1512,21 +1470,15 @@ function normaliserAncre(s: string): string {
                 ? POLICES_AR.find((p) => p.id === l.policeArabe) ?? POLICES_AR[0]
                 : POLICES_PH.find((p) => p.id === l.police) ?? POLICES_PH[0]
               const tailleC = arabeC ? l.tailleArabe : l.taille
-              /* Les blocs coraniques du kitāb (lignes ﴿…﴾) portent
-                 leur règle de numérotation — verset par verset pour
-                 les récitations, référence pour les citations. */
+              /* Les blocs coraniques (lignes ﴿…﴾) portent leur règle de
+                 numérotation — verset par verset pour les récitations,
+                 référence pour les citations — en arabe COMME en
+                 phonétique : le modèle du kitāb, partout. */
               const lignesRendues = (() => {
-                if (c.langue === 'ph' && doc.id !== 'sama') {
-                  return paragrapher(c.texte).map((ligne) => ({
-                    ligne,
-                    sorte: sorteParagraphe(ligne),
-                    regle: undefined as RegleVersets | undefined,
-                  }))
-                }
                 let bloc = 0
                 return c.texte.split('\n').map((ligne) => ({
                   ligne,
-                  sorte: sorteLigneArabe(ligne),
+                  sorte: sorteLigne(ligne),
                   regle: ligne.trimStart().startsWith('﴿')
                     ? regleDuBloc(c.id, bloc++)
                     : undefined,

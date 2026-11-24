@@ -168,7 +168,101 @@ export const NUMEROS_VERSETS: Record<string, RegleVersets[]> = {
 
   /* k22 — Ṭā-Hā : 6 plans de la sourate + les taslīyāt */
   k22: [1, 17, 42, 56, 78, 99, '٣٧ : ١٨٠-١٨٢'],
+
+  /* ─── Chapitres du cahier phonétique — le modèle du kitāb appliqué :
+     mêmes médaillons de versets, mêmes références (riwāyat Warsh) ─── */
+
+  /* ch01 — At-Taqwiyya */
+  'ch01-attaqwiyya': ['٧٣ : ٢٠', '٤٧ : ١٩', null, '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch02 — Yâ-Sîn : 5 plans + les taslīyāt */
+  'ch02-sratysn': [1, 13, 33, 51, 71, '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch03 — Waẓîfa mâ bayna l-‘Ishâ’ayn (miroir du k05) */
+  'ch03-alwafa': [1, '٣٧ : ١٨٠-١٨٢', '٤٢ : ١٩', '٦ : ١٠٣', '٦ : ٦٣-٦٤', '٣٧ : ١٨٠-١٨٢',
+    '٤٧ : ١٩', '٨ : ٤٠', null, '٤٠ : ٦٥', '٣٧ : ١٨٠-١٨٢', '٩٤ : ٥-٦'],
+
+  /* ch04 — Wâqi‘a : 96 versets d'un trait */
+  'ch04-sratalwqia': [1],
+
+  /* ch07 — Laṭîf Ibn Ḥajar */
+  'ch07-lafibnajar': ['٧٣ : ٢٠', '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch08 — Laṭîf al-Muwaḥḥad */
+  'ch08-lafalmuwaad': ['٧٣ : ٢٠', '٣٧ : ١٨٠-١٨٢', '٢ : ٢٨٥-٢٨٦', '٣٧ : ١٨٠-١٨٢', '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch09 — Laṭîf al-Mujarrad : citation du Zajr en ligne, taslīyāt seule */
+  'ch09-lafalmujarrad': ['٣٧ : ١٨٠-١٨٢'],
+
+  /* ch10 — Laṭîf al-Kabîr : citations en ligne */
+  'ch10-lafalkabr': [],
+
+  /* ch11 — Al-Fidya */
+  'ch11-alfidya': ['٤٨ : ٢٩', '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch12 — al-Fatḥ : 2 plans + taslīyāt */
+  'ch12-sratalfat': [1, 11, '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch13 — Waẓîfa avant le Fajr (miroir du k06) */
+  'ch13-wafaavantlefajr': [1, '٣٧ : ١٨٠-١٨٢', '٤٢ : ١٩', '٦ : ١٠٣', '٦ : ٦٣-٦٤', '٣٧ : ١٨٠-١٨٢',
+    null, null, '٣٦ : ٥٨', '٢ : ٢٥٥', '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch14 — Waẓîfa aṣ-Ṣubḥ (miroir du k07) */
+  'ch14-wafaaub': ['٥٨ : ٢١', '٢ : ٢٥٥', '٤٨ : ٢٩', '٣٧ : ١٨٠-١٨٢', '٣٧ : ١٨٠-١٨٢', '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch15 — Waẓîfat an-Nachr (miroir du k05) */
+  'ch15-wafatannachr': [1, '٣٧ : ١٨٠-١٨٢', '٤٢ : ١٩', '٦ : ١٠٣', '٦ : ٦٣-٦٤', '٣٧ : ١٨٠-١٨٢',
+    '٤٧ : ١٩', '٨ : ٤٠', null, '٤٠ : ٦٥', '٣٧ : ١٨٠-١٨٢', '٩٤ : ٥-٦'],
+
+  /* ch16 — Waẓîfa de voyage (miroir du k08) */
+  'ch16-wafadevoyage': [1, '٢ : ٢٥٥', '٩ : ١٢٨-١٢٩', 1, 1, 1, '٤٢ : ١٩'],
+
+  /* ch17 — Iftitâḥ as-Silka + Dalâ'il */
+  'ch17-iftitassilkaiftitd': [1, 1, '٣٣ : ٥٦'],
+
+  /* ch18 — Khatm as-Silka (miroir du k11) */
+  'ch18-khatmassilka': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, '٢ : ٢٨٥-٢٨٦', '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch20 — Dhikr al-Mukhliṣîn : Ḥadîd 57:1-6, Mâ-ida 5:67, Burûj 85:20-22 */
+  'ch20-dhikralmukhlin': ['٥٧ : ١-٦', '٥ : ٦٧', '٨٥ : ٢٠-٢٢', '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch21 — Dhikr an-Nachr */
+  'ch21-dhikrannachr': [1, '٣٧ : ١٨٠-١٨٢', '٤٧ : ١٩'],
+
+  /* ch22 — Ijtimâ‘ des jeunes */
+  'ch22-ijtimdesjeunes': [1, '٣٧ : ١٨٠-١٨٢', '٤٧ : ١٩'],
+
+  /* ch23 — Dhikr al-Ghayth : Muzzammil 73:20, Nûḥ 71:10-12 */
+  'ch23-dhikralghayth': ['٧٣ : ٢٠', '٧١ : ١٠-١٢'],
+
+  /* ch24 — Dhikr al-Faraj : Baqara 2:155-157, Anbiyâ 21:83-84, Luqmân 31:16-17,
+     Taghâbun 64:11, Âl ‘Imrân 3:54, Muḥammad 47:7, Rûm 30:47 */
+  'ch24-dhikralfaraj': ['٢ : ١٥٥-١٥٧', '٢١ : ٨٣-٨٤', '٣١ : ١٦-١٧', '٦٤ : ١١', '٣ : ٥٤', '٤٧ : ٧', '٣٠ : ٤٧'],
+
+  /* ch25 — Qaṣîdat nom divin : A‘râf 7:180 */
+  'ch25-qadatnomdivin': ['٧ : ١٨٠'],
+
+  /* ch26 — Ṣalât al-Mashîshiyya : Aḥzâb 33:56, Ḥashr 28:85, Kahf 18:10 */
+  'ch26-aaltalmashshiyya': ['٣٣ : ٥٦', '٢٨ : ٨٥', '١٨ : ١٠', '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch28 — Ḥizbu an-Naṣr : citations mêlées au du'â', Burûj 85:20-22 repéré */
+  'ch28-izbannar': [null, '٨٥ : ٢٠-٢٢', null],
+
+  /* ch30 — Adhkâr khâṣṣa : Fatḥ 48:1, Âl ‘Imrân 3:54, Nûḥ 71:10-12, Shu‘arâ 26:80,
+     Isrâ 17:81, Muḥammad 47:7 ×3, Rûm 30:47, Mâ-ida 5:67, Yâ-Sîn 36:58, Burûj 85:20-22 */
+  'ch30-adhkrkha': ['٤٨ : ١', '٣ : ٥٤', '٧١ : ١٠-١٢', '٢٦ : ٨٠', '١٧ : ٨١', '٤٧ : ٧', '٤٧ : ٧',
+    '٤٧ : ٧', '٣٠ : ٤٧', '٥ : ٦٧', '٣٦ : ٥٨', '٨٥ : ٢٠-٢٢'],
+
+  /* ch31 — Programme de l'argina : Ibrâhîm 14:7 */
+  'ch31-programmedelargina': ['١٤ : ٧'],
+
+  /* ch33 — al-Mulk (miroir du k04) */
+  'ch33-sratmulk': [1, '٣٧ : ١٨٠-١٨٢'],
+
+  /* ch34 — Ṭâ-Hâ : 6 plans + les taslīyāt (miroir du k22) */
+  'ch34-srattaha': [1, 17, 42, 56, 78, 99, '٣٧ : ١٨٠-١٨٢'],
 }
+
 
 /** La règle du n-ième bloc coranique (ligne ﴿…﴾) d'un chapitre. */
 export function regleDuBloc(chapitreId: string, indexBloc: number): RegleVersets | undefined {

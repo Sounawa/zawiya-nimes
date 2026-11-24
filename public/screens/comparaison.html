@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparaison avant / après — parenthèses du cahier</title>
+<style>
+  :root {
+    --encre: #2a2620;
+    --encre-2: #6b6257;
+    --papier: #faf8f4;
+    --carte: #ffffff;
+    --bord: #e8e2d8;
+    --avant: #b3402a;
+    --avant-fond: #fdf1ee;
+    --apres: #3d7a4e;
+    --apres-fond: #eef6f0;
+    --or: #a0762b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--papier);
+    color: var(--encre);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .conteneur { width: min(1460px, 96%); margin: 0 auto; flex: 1; padding-bottom: 40px; }
+
+  /* ---- bandeau ---- */
+  header.intro {
+    border-bottom: 1px solid var(--bord);
+    padding: 34px 0 22px;
+    margin-bottom: 34px;
+  }
+  header.intro h1 {
+    font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+    font-weight: 600;
+    margin: 0 0 10px;
+    letter-spacing: .01em;
+  }
+  header.intro p { margin: 6px 0; color: var(--encre-2); font-size: .98rem; }
+  .resume { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 16px; }
+  .resume div { font-size: .92rem; color: var(--encre-2); }
+  .resume b { color: var(--encre); font-variant-numeric: tabular-nums; }
+
+  /* ---- section paire ---- */
+  section.paire { margin: 0 0 46px; }
+  .titre-paire {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .titre-paire h2 { font-size: 1.22rem; font-weight: 600; margin: 0; }
+  .titre-paire .pages { font-size: .85rem; color: var(--encre-2); font-style: italic; }
+  .corrige-liste {
+    margin: 6px 0 18px;
+    padding: 0;
+    list-style: none;
+    border-left: 3px solid var(--or);
+    padding-left: 16px;
+  }
+  .corrige-liste li { font-size: .93rem; margin: 3px 0; }
+  .avant-forme { color: var(--avant); text-decoration: line-through; text-decoration-thickness: 1px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: .85em; }
+  .apres-forme { color: var(--apres); font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: .85em; font-weight: 600; }
+  .detail { color: var(--encre-2); font-style: italic; }
+
+  /* ---- grille images ---- */
+  .grille { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 940px) { .grille { grid-template-columns: 1fr; } }
+  figure.cap { margin: 0; }
+  figure.cap > a {
+    display: block;
+    border: 1px solid var(--bord);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--carte);
+    box-shadow: 0 1px 3px rgba(42, 38, 32, .06);
+    transition: box-shadow .18s ease;
+  }
+  figure.cap > a:hover { box-shadow: 0 4px 14px rgba(42, 38, 32, .14); }
+  figure.cap img { display: block; width: 100%; height: auto; }
+  figure.cap figcaption {
+    margin-bottom: 8px;
+    font-size: .8rem;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+  }
+  figure.avant figcaption { color: var(--avant); }
+  figure.apres figcaption { color: var(--apres); }
+  figure.avant > a { border-top: 3px solid var(--avant); background: var(--avant-fond); }
+  figure.apres > a { border-top: 3px solid var(--apres); background: var(--apres-fond); }
+  .note-capture {
+    font-size: .84rem;
+    color: var(--encre-2);
+    margin: 14px 0 0;
+    font-style: italic;
+  }
+
+  /* ---- tableau récapitulatif ---- */
+  .recap h2 { font-size: 1.2rem; font-weight: 600; border-bottom: 1px solid var(--bord); padding-bottom: 10px; }
+  .recap .encart {
+    background: var(--carte);
+    border: 1px solid var(--bord);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 18px 0 0;
+  }
+  .encart p { margin: 4px 0; font-size: .94rem; }
+  table.reel { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: .9rem; }
+  table.reel th, table.reel td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--bord); vertical-align: top; }
+  table.reel th { font-family: -apple-system, 'Segoe UI', sans-serif; font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: var(--encre-2); }
+  table.rele td.chapitre { font-style: italic; white-space: nowrap; }
+  @media (max-width: 700px) { table.reel .col-pages { display: none; } }
+
+  /* ---- pied ---- */
+  footer.pied {
+    margin-top: auto;
+    border-top: 1px solid var(--bord);
+    background: var(--carte);
+    padding: 16px 0;
+    text-align: center;
+    font-size: .84rem;
+    color: var(--encre-2);
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+  }
+</style>
+</head>
+<body>
+<div class="conteneur">
+
+  <header class="intro">
+    <h1>Cahier de Wadhifa — phonétique · corrections des parenthèses</h1>
+    <p>Étape&nbsp;1 validée : resserrage des parenthèses collées ou mal espacées. Captures réalisées <b>avant</b> puis <b>après</b> l&rsquo;application des corrections, directement dans le lecteur du site.</p>
+    <p class="detail">Cliquez sur une image pour l&rsquo;ouvrir en pleine résolution. La ligne corrigée est cadrée au centre de chaque capture.</p>
+    <div class="resume">
+      <div><b>24</b>&nbsp;corrections au total</div>
+      <div><b>22</b>&nbsp;dans le cahier (wadhifa phonétique)</div>
+      <div><b>2</b>&nbsp;dans le samâ&lsquo; (chant n°147)</div>
+      <div><b>5</b>&nbsp;chapitres capturés ci-dessous</div>
+    </div>
+  </header>
+
+  <!-- ============ 1 · At-Taqwiyya ============ -->
+  <section class="paire">
+    <div class="titre-paire">
+      <h2>1 · At-Taqwiyya</h2><span class="pages">cahier p. 4&ndash;6</span>
+    </div>
+    <ul class="corrige-liste">
+      <li><span class="avant-forme">-ilâhi ( 3 foisà voix basse )</span> &rarr; <span class="apres-forme">-ilâhi (3 fois à voix basse)</span> <span class="detail">— espaces internes retirés et «&nbsp;3 foisà&nbsp;» recollé en «&nbsp;3 fois à&nbsp;»</span></li>
+    </ul>
+    <div class="grille">
+      <figure class="cap avant"><figcaption>Avant — capture d&rsquo;origine</figcaption><a href="avant-1-taqwiyya.png" target="_blank" rel="noopener"><img src="avant-1-taqwiyya.png" alt="Capture avant correction, chapitre At-Taqwiyya"></a></figure>
+      <figure class="cap apres"><figcaption>Après — corrigé</figcaption><a href="apres-1-taqwiyya.png" target="_blank" rel="noopener"><img src="apres-1-taqwiyya.png" alt="Capture après correction, chapitre At-Taqwiyya"></a></figure>
+    </div>
+  </section>
+
+  <!-- ============ 2 · Al-Fidya ============ -->
+  <section class="paire">
+    <div class="titre-paire">
+      <h2>2 · Al-Fidya</h2><span class="pages">cahier p. 46&ndash;48</span>
+    </div>
+    <ul class="corrige-liste">
+      <li><span class="avant-forme">( 1 foisà voix haute )</span> &rarr; <span class="apres-forme">(1 fois à voix haute)</span> <span class="detail">— «&nbsp;wa kafê billâhi chahîdâ&nbsp;», collectif</span></li>
+      <li><span class="avant-forme">Sûrat (36) Yâ si~n ( 1 foisà voix basse )</span> &rarr; <span class="apres-forme">(1 fois à voix basse)</span> <span class="detail">— 2 occurrences, individuelle</span></li>
+      <li><span class="avant-forme">Ṣalat an nûriyya ( 100 foisà voix basse )</span> &rarr; <span class="apres-forme">(100 fois à voix basse)</span> <span class="detail">— par le dirigeant</span></li>
+      <li><span class="avant-forme">wa sallim ( 100 foisà voix basse ) ۞</span> &rarr; <span class="apres-forme">(100 fois à voix basse) ۞</span></li>
+      <li><span class="avant-forme">-ilâhi ( 30 foisà voix basse )</span> &rarr; <span class="apres-forme">(30 fois à voix basse)</span> <span class="detail">— par le dirigeant</span></li>
+      <li><span class="avant-forme">( à voix haute ) collectif</span> &rarr; <span class="apres-forme">(à voix haute) collectif</span></li>
+    </ul>
+    <div class="grille">
+      <figure class="cap avant"><figcaption>Avant — capture d&rsquo;origine</figcaption><a href="avant-2-fidya.png" target="_blank" rel="noopener"><img src="avant-2-fidya.png" alt="Capture avant correction, chapitre Al-Fidya"></a></figure>
+      <figure class="cap apres"><figcaption>Après — corrigé</figcaption><a href="apres-2-fidya.png" target="_blank" rel="noopener"><img src="apres-2-fidya.png" alt="Capture après correction, chapitre Al-Fidya"></a></figure>
+    </div>
+    <p class="note-capture">Capture longue : tout le corps du chapitre Al-Fidya, avec ses huit lignes concernées.</p>
+  </section>
+
+  <!-- ============ 3 · Ijtimâ' des jeunes ============ -->
+  <section class="paire">
+    <div class="titre-paire">
+      <h2>3 · Ijtimâ&lsquo; des jeunes</h2><span class="pages">cahier p. 88&ndash;89</span>
+    </div>
+    <ul class="corrige-liste">
+      <li><span class="avant-forme">Sûrat ( 1 ) al Fâtiha</span> &rarr; <span class="apres-forme">Sûrat (1) al Fâtiha</span></li>
+      <li><span class="avant-forme">lâ~ -ilâha -illâ llâh ( dix minutes)</span> &rarr; <span class="apres-forme">lâ~ -ilâha -illâ llâh (dix minutes)</span></li>
+    </ul>
+    <div class="grille">
+      <figure class="cap avant"><figcaption>Avant — capture d&rsquo;origine</figcaption><a href="avant-3-ijtima.png" target="_blank" rel="noopener"><img src="avant-3-ijtima.png" alt="Capture avant correction, chapitre Ijtima des jeunes"></a></figure>
+      <figure class="cap apres"><figcaption>Après — corrigé</figcaption><a href="apres-3-ijtima.png" target="_blank" rel="noopener"><img src="apres-3-ijtima.png" alt="Capture après correction, chapitre Ijtima des jeunes"></a></figure>
+    </div>
+  </section>
+
+  <!-- ============ 4 · Dhikr al-Mukhliṣîn ============ -->
+  <section class="paire">
+    <div class="titre-paire">
+      <h2>4 · Dhikr al-Mukhliṣîn</h2><span class="pages">cahier p. 84&ndash;86</span>
+    </div>
+    <ul class="corrige-liste">
+      <li><span class="avant-forme">Sûrat (20)Taha</span> &rarr; <span class="apres-forme">Sûrat (20) Taha</span> <span class="detail">— espace ajouté après la parenthèse</span></li>
+      <li><span class="avant-forme">Sûrat (57) al Ḥadid ( versts 1 à 6 )</span> &rarr; <span class="apres-forme">Sûrat (57) al Ḥadid (versets 1 à 6)</span> <span class="detail">— avec la coquille «&nbsp;versts&nbsp;» corrigée en «&nbsp;versets&nbsp;»</span></li>
+    </ul>
+    <div class="grille">
+      <figure class="cap avant"><figcaption>Avant — capture d&rsquo;origine</figcaption><a href="avant-4-mukhlisin.png" target="_blank" rel="noopener"><img src="avant-4-mukhlisin.png" alt="Capture avant correction, chapitre Dhikr al-Mukhlisin"></a></figure>
+      <figure class="cap apres"><figcaption>Après — corrigé</figcaption><a href="apres-4-mukhlisin.png" target="_blank" rel="noopener"><img src="apres-4-mukhlisin.png" alt="Capture après correction, chapitre Dhikr al-Mukhlisin"></a></figure>
+    </div>
+  </section>
+
+  <!-- ============ 5 · Laṭîf al-Muwaḥḥad ============ -->
+  <section class="paire">
+    <div class="titre-paire">
+      <h2>5 · Laṭîf al-Muwaḥḥad</h2><span class="pages">cahier p. 37&ndash;39</span>
+    </div>
+    <ul class="corrige-liste">
+      <li><span class="avant-forme">x 70(par le dirigeant)</span> &rarr; <span class="apres-forme">x 70 (par le dirigeant)</span> <span class="detail">— espace ajouté avant la parenthèse</span></li>
+    </ul>
+    <div class="grille">
+      <figure class="cap avant"><figcaption>Avant — capture d&rsquo;origine</figcaption><a href="avant-5-latif-muwahhad.png" target="_blank" rel="noopener"><img src="avant-5-latif-muwahhad.png" alt="Capture avant correction, chapitre Latif al-Muwahhad"></a></figure>
+      <figure class="cap apres"><figcaption>Après — corrigé</figcaption><a href="apres-5-latif-muwahhad.png" target="_blank" rel="noopener"><img src="apres-5-latif-muwahhad.png" alt="Capture après correction, chapitre Latif al-Muwahhad"></a></figure>
+    </div>
+  </section>
+
+  <!-- ============ récapitulatif ============ -->
+  <section class="recap">
+    <h2>Les autres corrections, non capturées</h2>
+    <p class="detail" style="font-size:.93rem; color:var(--encre-2); margin-top:10px;">Mêmes types de corrections — parenthèses resserrées — appliqués dans les chapitres suivants du cahier et du samâ&lsquo; :</p>
+    <table class="reel">
+      <thead>
+        <tr><th>Chapitre</th><th class="col-pages">Pages</th><th>Correction</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="chapitre">Laṭîf al-Kabîr</td><td class="col-pages">p. 43&ndash;45</td><td><span class="avant-forme">( Coran entier à lire )</span> &rarr; <span class="apres-forme">(Coran entier à lire)</span></td></tr>
+        <tr><td class="chapitre">Waẓîfa avant le Fajr</td><td class="col-pages">p. 55&ndash;57</td><td><span class="avant-forme">Sûrat ( 1 )</span> &rarr; <span class="apres-forme">Sûrat (1)</span></td></tr>
+        <tr><td class="chapitre">Waẓîfat an-Nachr</td><td class="col-pages">p. 61&ndash;64</td><td><span class="avant-forme">Sûrat ( 1 )</span> &rarr; <span class="apres-forme">Sûrat (1)</span> · en-tête <span class="avant-forme">( Waẓifa du Rayonnement )</span> &rarr; <span class="apres-forme">(Waẓifa du Rayonnement)</span></td></tr>
+        <tr><td class="chapitre">Waẓîfa de voyage</td><td class="col-pages">p. 65&ndash;67</td><td><span class="avant-forme">Sûrat ( 1 )</span> &rarr; <span class="apres-forme">Sûrat (1)</span> · en-tête <span class="avant-forme">( invocations de voyage )</span> &rarr; <span class="apres-forme">(invocations de voyage)</span></td></tr>
+        <tr><td class="chapitre">Iftitâḥ as-Silka · Iftitâḥ Dalâ&rsquo;il</td><td class="col-pages">p. 68&ndash;69</td><td><span class="avant-forme">Sûrat ( 1 )</span> et <span class="avant-forme">Sûrat ( 2 )</span> &rarr; <span class="apres-forme">Sûrat (1)</span> / <span class="apres-forme">Sûrat (2)</span></td></tr>
+        <tr><td class="chapitre">Khatm as-Silka</td><td class="col-pages">p. 70&ndash;75</td><td><span class="avant-forme">Sûrat ( 1 )</span> et <span class="avant-forme">Sûrat ( 2 )</span> &rarr; <span class="apres-forme">Sûrat (1)</span> / <span class="apres-forme">Sûrat (2)</span></td></tr>
+        <tr><td class="chapitre">Dhikr an-Nachr</td><td class="col-pages">p. 87</td><td><span class="avant-forme">Sûrat ( 1 )</span> &rarr; <span class="apres-forme">Sûrat (1)</span> · en-tête <span class="avant-forme">( invocations pour les ateliers )</span> &rarr; <span class="apres-forme">(invocations pour les ateliers)</span></td></tr>
+        <tr><td class="chapitre">Samâ&lsquo; — chant n°147</td><td class="col-pages">p. 304</td><td><span class="avant-forme">( jamâluhul &lsquo;ajîb ) x2</span> &rarr; <span class="apres-forme">(jamâluhul &lsquo;ajîb) x2</span> · <span class="avant-forme">( nuzhatul &lsquo;uchchâq ) x2</span> &rarr; <span class="apres-forme">(nuzhatul &lsquo;uchchâq) x2</span></td></tr>
+        <tr><td class="chapitre">Al-Burda</td><td class="col-pages">p. 109&ndash;126</td><td class="detail">Nettoyage technique d&rsquo;une ligne dupliquée dans les données — aucun changement visible à l&rsquo;écran</td></tr>
+      </tbody>
+    </table>
+    <div class="encart">
+      <p><b>Note sur les en-têtes entre parenthèses.</b> Les trois en-têtes internes du cahier — «&nbsp;Waẓifa du Rayonnement&nbsp;», «&nbsp;invocations de voyage&nbsp;» et «&nbsp;invocations pour les ateliers&nbsp;» — ont aussi été resserrés. Leur règle de reconnaissance a été mise à jour en même temps&nbsp;: ils s&rsquo;affichent toujours en tête de chapitre (centré, majuscules), ce qui a été vérifié dans le lecteur.</p>
+      <p class="detail" style="font-style:italic; color:var(--encre-2);">Les notations musicales du samâ&lsquo; — «&nbsp;( DA R I J A )&nbsp;», «&nbsp;( S WS )&nbsp;»&nbsp;— n&rsquo;ont volontairement pas été modifiées&nbsp;: ce sont des marqueurs rythmiques, pas des parenthèses de texte.</p>
+    </div>
+  </section>
+
+</div>
+
+<footer class="pied">
+  Zawiya Nîmes · vérification des corrections de parenthèses — étape 1 · les captures «&nbsp;après&nbsp;» reflètent l&rsquo;état en ligne du lecteur
+</footer>
+</body>
+</html>

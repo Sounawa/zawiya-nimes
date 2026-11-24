@@ -1072,3 +1072,25 @@ Stage Summary:
 - LE BOUTON « IMPRIMER CE CHAPITRE » ET LE LOGO IMPRIMANTE ONT DISPARU des sections Arabe et Adhkar (tous les chapitres des deux modes) — le folio ✦ n/N est conservé et centré
 - MÉTHODE RECONSTITUÉE POUR CE SANDBOX : les scripts OCR de /home/z/ocr-wadhifa/ + le clone GitHub permettent de tout reconstruire après reset ; vérifier TOUJOURS le process qui écoute le port 3000 avant de croire le navigateur
 - EN ATTENTE : token GitHub (push du commit) + token Vercel (déploiement CLI, le lien Git reste déconnecté) — commit local prêt, export deploy prêt
+
+---
+Task ID: 40-tokens-push-vercel-waqia-onglet
+Agent: main (Z.ai Code) — session de continuation (tokens GitHub + Vercel fournis)
+Task: pousser et déployer le commit prêt (Task 39) sur zawiya-nimes.vercel.app — puis QA complète du renvoi Waqi'a → Waẓîfa sur production.
+
+Work Log:
+- ENVIRONNEMENT VÉRIFIÉ SANS RECONSTRUCTION : git présent (remote origin OK), node_modules OK, next 16.1.3 ✓, dev serveur déjà sur le port 3000 (dev.log propre) — rien à réinstaller
+- ÉTAT DU TRAVAIL RECONNUE : le commit e7df23a (bouton « Imprimer ce chapitre » retiré, renvoi ← ص ٤٢ / → p. 14, SW v26) était déjà en place ; k18 = Munfarija avec renvoi ← ص ٤٤ = correction VOLONTAIRE de la nouvelle édition (miroir de l'ancien ← ص ٢٢), l'utilisateur n'a jamais visé cette ligne
+- VERSET k05 — RÈGLE ALIGNÉE : NUMEROS_VERSETS.k05 comptait 13 règles pour 12 blocs ﴿ (comptés programmatiquement) ; la 13ᵉ (taslīyāt finale) était morte — la Waẓîfa de l'imprimé s'achève sur ﴿فَإِنَّ مَعَ…﴾ × ٥٠ (p.44), SANS taslīyāt finale (confirmé par le cahier phonétique ch03 qui finit pareil) → règle réduite à 12, k06 comparé (11/11 aligné)
+- BUG DE L'ONGLET WAQI'A TROUVÉ + CORRIGÉ : le document autonome « Surat al-Waqi'a » (adhkar-docs.ts) passait k03/ch04 par epures(texte, 'صَدَقَ اللهُ' / 'Ṣadaqa llâhul') — depuis la nouvelle édition le renvoi contient LUI-MÊME ces mots → l'epure tronquait la ligne à « الوَظِيفَةُ مَا بَيْنَ الْعِشَاءَيْنِ ( » non cliquable ; le kitāb ne duplique plus la séquence → epures inutile → retirée (ar + ph), le renvoi reste entier et LIEN ; audit des 9 autres epures : yasin/fath (borne ﴿سُبْحَانَ — aucun renvoi en amont), nasiri/khatm (bornes ne frappent plus ou coupent en début de ligne) — intacts
+- QA NAVIGATEUR (agent-browser) : AR = bouton « الوَظِيفَةُ مَا بَيْنَ الْعِشَاءَيْنِ (صَدَقَ اللهُ الْعَظِيمُ) ← ص ٤٢ » (aria « Aller à la page ٤٢ du kitāb ») cliqué → ouvre كتاب الأذكار sur la Waẓîfa (أَعُوذُ السَّمِيعِ الْعَلِيمِ × ١ · سُورَةُ يَس × ١ · الفاتحة × ١٠ · ḥasbunâ@5757 · Nūriyya@5886 — ordre k05 exact, médaillon ٣٧ : ١٨٠-١٨٢) ; PH = « Al-Waẓîfa mâ bayna l-'Ishâ'ayn (Ṣadaqa llâhul 'aẓîm) → p. 14 » cliqué → ouvre la Waẓîfa phonétique (le bloc Ṣadaqa vit DANS ch03 après « Sûrat al-Wâqi'a x 1 ») ; 0 bouton imprimer / 0 icône printer (67 boutons audités) ; simulation bun des 3 renvois : 42→k05, 14→ch03-alwafa, 44→k05
+- PIÈGE SW : le service worker zawiya-v26 servait le bundle périmé après le hot-reload — unregister + caches.clear() puis re-test (le piège se reproduira en prod pour les visiteurs : la v26 purge automatiquement)
+- PUSH : 3 commits (e7df23a, 7008a68, cb0cec1) → GitHub Sounawa/zawiya-nimes main via token (729d881..cb0cec1) ✓
+- DÉPLOIEMENT : auto-deploy non déclenché par le push (lien Git semi-connecté) → POST /v13/deployments (gitSource org/repo/commitSha cb0cec1, target production) → dpl_9ayGAygkX1qYtfhzxyCMpGEuR7di BUILDING ≈100 s → READY, alias zawiya-nimes.vercel.app ✓ HTTP 200
+- QA PRODUCTION (agent-browser sur zawiya-nimes.vercel.app) : porte prénom → entrée ; PH : « Surat al-Waqi'a » finit par Fasabbiḥ… + renvoi → p. 14 (dotted, ENTIER) ; AR : « (صَدَقَ اللهُ الْعَظِيمُ) ← ص ٤٢ » ENTIER + aria kitāb, cliqué → Waẓîfa 2/36 (Taqwiyya 1/36 avant, taslīyāt ﴾٨٣ + médaillon ﴿سبحان…﴾ ٣٧:١٨٠-١٨٢ au chevron) ; 0 imprimer sur prod ; captures /tmp/prod-waqia-end.png, /tmp/prod-waqia-ar-end.png, /tmp/prod-final.png
+
+Stage Summary:
+- PRODUCTION zawiya-nimes.vercel.app EST À JOUR (commit cb0cec1) : la partie Sourate al-Waqi'a finit par le SEUL renvoi cliquable vers la Waẓîfa, dans les deux langues, SANS le bouton « Imprimer ce chapitre », SANS le bloc dupliqué — le bloc Ṣadaqa vit uniquement à son emplacement (p. 42, début de la Waẓîfa)
+- L'ONGLET AUTONOME « Surat al-Waqi'a » (section Adhkâr) montrait un renvoi TRONQUÉ par l'epure héritée — corrigé et déployé ; c'était le dernier défaut invisible du Task 39
+- MÉTHODE : l'epure epures(texte, borne) coupe à la PREMIÈRE occurrence de la borne — interdite si la borne peut figurer dans un renvoi ; audit de tous les appels avant suppression
+- GitHub + Vercel synchronisés ; le lien Git ne déclenche pas l'auto-déploiement → passage par l'API /v13/deployments avec le token du référent
